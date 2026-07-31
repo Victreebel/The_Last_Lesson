@@ -1,7 +1,13 @@
-import type { BuildingKind } from "../state/WorldState";
-import type { CommandId, PlayerId, SettlementId } from "../state/Ids";
+import type { BuildingKind, Position } from "../state/WorldState";
+import type { BattalionId, BuildingId, CommandId, PlayerId, SettlementId } from "../state/Ids";
 
-export type CommandType = "assign-labor" | "place-building" | "generate-faith";
+export type CommandType =
+  | "assign-labor"
+  | "place-building"
+  | "generate-faith"
+  | "create-battalion"
+  | "move-battalion"
+  | "attack-target";
 
 export interface GameCommandBase<TType extends CommandType, TPayload> {
   readonly id: CommandId;
@@ -21,6 +27,7 @@ export interface AssignLaborPayload {
 export interface PlaceBuildingPayload {
   readonly settlementId: SettlementId;
   readonly kind: BuildingKind;
+  readonly position?: Position;
 }
 
 export interface GenerateFaithPayload {
@@ -28,8 +35,25 @@ export interface GenerateFaithPayload {
   readonly amount: number;
 }
 
+export interface CreateBattalionPayload {
+  readonly settlementId: SettlementId;
+  readonly size: number;
+}
+
+export interface MoveBattalionPayload {
+  readonly battalionId: BattalionId;
+  readonly destination: Position;
+}
+
+export interface AttackTargetPayload {
+  readonly battalionId: BattalionId;
+  readonly targetId: BattalionId | BuildingId;
+}
+
 export type GameCommand =
   | GameCommandBase<"assign-labor", AssignLaborPayload>
   | GameCommandBase<"place-building", PlaceBuildingPayload>
-  | GameCommandBase<"generate-faith", GenerateFaithPayload>;
-
+  | GameCommandBase<"generate-faith", GenerateFaithPayload>
+  | GameCommandBase<"create-battalion", CreateBattalionPayload>
+  | GameCommandBase<"move-battalion", MoveBattalionPayload>
+  | GameCommandBase<"attack-target", AttackTargetPayload>;

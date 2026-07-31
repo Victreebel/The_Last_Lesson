@@ -1,14 +1,19 @@
+import Phaser from "phaser";
+import { MilestoneOneScene } from "../rendering/scenes/MilestoneOneScene";
 import "../styles.css";
 
-const app = document.querySelector<HTMLDivElement>("#app");
+const config: Phaser.Types.Core.GameConfig = {
+  type: Phaser.AUTO,
+  parent: "app",
+  backgroundColor: "#1d2319",
+  scale: {
+    mode: Phaser.Scale.RESIZE,
+    autoCenter: Phaser.Scale.CENTER_BOTH,
+    width: window.innerWidth,
+    height: window.innerHeight
+  },
+  scene: [MilestoneOneScene]
+};
 
-if (app) {
-  app.innerHTML = `
-    <main class="shell">
-      <p class="eyebrow">Milestone 0</p>
-      <h1>The Last Lesson</h1>
-      <p>Deterministic simulation kernel scaffolded. Rendering begins after the simulation proves itself.</p>
-    </main>
-  `;
-}
+new Phaser.Game(config);
 

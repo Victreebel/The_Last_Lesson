@@ -7,7 +7,12 @@ export type EventType =
   | "wood-produced"
   | "faith-produced"
   | "building-placed"
-  | "construction-progressed";
+  | "construction-progressed"
+  | "battalion-created"
+  | "battalion-moved"
+  | "attack-ordered"
+  | "damage-dealt"
+  | "entity-destroyed";
 
 export interface GameEvent {
   readonly id: EventId;
@@ -17,4 +22,3 @@ export interface GameEvent {
   readonly targetId?: EntityId;
   readonly payload: Record<string, unknown>;
 }
-

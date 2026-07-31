@@ -15,6 +15,11 @@ export interface ResourceBundle {
   readonly faith: number;
 }
 
+export interface Position {
+  readonly x: number;
+  readonly y: number;
+}
+
 export interface EmpireState {
   readonly id: EmpireId;
   readonly name: string;
@@ -78,6 +83,7 @@ export interface BuildingState {
   readonly ownerEmpireId: EmpireId;
   readonly settlementId: SettlementId;
   readonly kind: BuildingKind;
+  readonly position: Position;
   readonly defense: number;
   readonly complete: boolean;
   readonly remainingBuildTicks: number;
@@ -87,9 +93,15 @@ export interface BattalionState {
   readonly id: BattalionId;
   readonly ownerEmpireId: EmpireId;
   readonly settlementId: SettlementId;
+  readonly position: Position;
+  readonly destination?: Position;
+  readonly targetId?: BattalionId | BuildingId;
   readonly size: number;
   readonly attack: number;
   readonly defense: number;
+  readonly maxDefense: number;
+  readonly range: number;
+  readonly speed: number;
   readonly morale: number;
   readonly supply: number;
 }
@@ -183,6 +195,7 @@ export function createInitialWorld(seed: number): WorldState {
         ownerEmpireId: "empire-player",
         settlementId: "settlement-capital",
         kind: "castle",
+        position: { x: 420, y: 300 },
         defense: 500,
         complete: true,
         remainingBuildTicks: 0
@@ -192,6 +205,7 @@ export function createInitialWorld(seed: number): WorldState {
         ownerEmpireId: "empire-player",
         settlementId: "settlement-capital",
         kind: "town-square",
+        position: { x: 520, y: 360 },
         defense: 150,
         complete: true,
         remainingBuildTicks: 0
@@ -211,4 +225,3 @@ export function createInitialWorld(seed: number): WorldState {
     doctrines: {}
   };
 }
-
