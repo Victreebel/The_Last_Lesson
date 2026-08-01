@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.13.0 - 2026-08-01
+
+- Added event-driven battlefield combat feedback: projectile traces and floating damage markers for battalion and Warship attacks.
+- Integrated feedback into both continuous simulation ticks and manual Advance ticks, preserving deterministic state ownership in the simulation layer.
+
 ## 1.12.0 - 2026-08-01
 
 - Added an interactive RTS minimap with terrain, buildings, friendly and rival force markers, and an active camera frame.

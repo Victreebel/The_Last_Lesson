@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { Simulation } from "../../simulation/Simulation";
 import type { GameCommand } from "../../simulation/commands/GameCommand";
+import type { GameEvent } from "../../simulation/events/GameEvent";
 import {
   createSaveGame,
   deserializeSaveGame,
@@ -232,6 +233,7 @@ export class MilestoneOneScene extends Phaser.Scene {
         }
         const result = this.simulation.tick();
         this.renderWorld();
+        this.playCombatFeedback(result.events);
         this.updateUi(result.events.map((event) => event.type).slice(-5));
       }
     });
@@ -546,6 +548,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.addCommandButton(302, 42, "ADVANCE", "TICK", () => {
       const result = this.simulation.tick();
       this.renderWorld();
+      this.playCombatFeedback(result.events);
       this.updateUi(result.events.map((event) => event.type).slice(-4));
     });
     this.addCommandButton(14, 96, "LABOR", "FOOD", () => this.setLaborFocus("farmers"));
@@ -1530,6 +1533,65 @@ export class MilestoneOneScene extends Phaser.Scene {
       tick: this.simulation.getState().tick + 1,
       ...command
     } as GameCommand);
+  }
+
+  private playCombatFeedback(events: GameEvent[]): void {
+    for (const event of events) {
+      const isBattalionStrike = event.type === "damage-dealt";
+      const isShipStrike = event.type === "ship-fired";
+      if (!isBattalionStrike && !isShipStrike) {
+        continue;
+      }
+      const attackerId = String(event.payload.attackerId ?? event.payload.shipId ?? "");
+      const targetId = String(event.payload.targetId ?? "");
+      const attacker = this.getEntityPosition(attackerId);
+      const target = this.getEntityPosition(targetId);
+      if (!attacker || !target) {
+        continue;
+      }
+      const projectile = this.add.circle(
+        attacker.x,
+        attacker.y,
+        isShipStrike ? 5 : 3,
+        isShipStrike ? 0x9cc8d5 : 0xf0d36f,
+        0.95
+      );
+      projectile.setDepth(30);
+      this.tweens.add({
+        targets: projectile,
+        x: target.x,
+        y: target.y,
+        alpha: 0,
+        duration: isShipStrike ? 320 : 180,
+        ease: "Quad.easeOut",
+        onComplete: () => projectile.destroy()
+      });
+      const damage = Number(event.payload.damage ?? 0);
+      if (damage <= 0) {
+        continue;
+      }
+      const marker = this.add.text(target.x, target.y - 18, `-${damage}`, {
+        fontFamily: "Arial Black, Arial",
+        fontSize: isShipStrike ? "15px" : "12px",
+        color: isShipStrike ? "#b8e2ef" : "#f4cf88",
+        stroke: "#141817",
+        strokeThickness: 3
+      });
+      marker.setOrigin(0.5).setDepth(31);
+      this.tweens.add({
+        targets: marker,
+        y: target.y - 46,
+        alpha: 0,
+        duration: 620,
+        ease: "Sine.easeOut",
+        onComplete: () => marker.destroy()
+      });
+    }
+  }
+
+  private getEntityPosition(entityId: string): { x: number; y: number } | undefined {
+    const state = this.simulation.getState();
+    return state.battalions[entityId]?.position ?? state.buildings[entityId]?.position ?? state.caravans[entityId]?.position;
   }
 
   private renderWorld(): void {
