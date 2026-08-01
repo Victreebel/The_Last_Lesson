@@ -1033,7 +1033,7 @@ export class Simulation {
           : 0;
 
       if (rivalOpeningComplete && ownBattalions.length >= 2 && expeditionCandidate && !expeditionTarget) {
-        const scoutDestination = { x: 700, y: 300 };
+        const scoutDestination = { x: 650, y: 300 };
         if (
           expeditionCandidate.destination?.x !== scoutDestination.x ||
           expeditionCandidate.destination?.y !== scoutDestination.y
@@ -1057,6 +1057,38 @@ export class Simulation {
             tick
           );
         }
+        continue;
+      }
+
+      if (
+        expeditionUtility >= 30 &&
+        expeditionCandidate &&
+        expeditionTarget &&
+        expeditionCandidate.targetId !== expeditionTarget.id
+      ) {
+        this.state = {
+          ...this.state,
+          battalions: {
+            ...this.state.battalions,
+            [expeditionCandidate.id]: {
+              ...expeditionCandidate,
+              targetId: expeditionTarget.id,
+              destination: expeditionTarget.position
+            }
+          }
+        };
+        this.eventWriter.emit(tick, "attack-ordered", {
+          battalionId: expeditionCandidate.id,
+          targetId: expeditionTarget.id,
+          heirId: currentHeir.id
+        });
+        this.recordHeirDecision(
+          currentHeir.id,
+          "Lead an expedition",
+          "A prepared field force could pressure the rival throne before local danger required its return.",
+          expeditionUtility,
+          tick
+        );
         continue;
       }
 
