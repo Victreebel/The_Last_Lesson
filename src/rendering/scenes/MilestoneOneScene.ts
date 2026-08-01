@@ -818,7 +818,8 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.addCommandButton(302, 150, "RAIDERS", "8W 8I", () => this.createBattalion("raiders"));
     this.addWideCommandButton(14, 204, "BLESS HARVEST", "12 FAITH", () => this.castBlessHarvest());
     this.addWideCommandButton(210, 204, "INSPIRE ARMY", "16 FAITH", () => this.castInspireBattalions());
-    this.addWideCommandButton(14, 258, "ASSIMILATE", "4 CAPTIVES / TOWN SQUARE", () => this.assimilateCaptives());
+    this.addCommandButton(14, 258, "ASSIMILATE", "4 CAPTIVES", () => this.assimilateCaptives());
+    this.addCommandButton(110, 258, "RELEASE", "4 CAPTIVES", () => this.releaseCaptives());
     this.addWideCommandButton(210, 258, "DISEMBARK", "SELECTED CARAVAN", () => this.disembarkCaravan());
     this.addWideCommandButton(14, 312, "GARRISON", "NEAREST DEFENSE WORKS", () => this.garrisonSelectedBattalions());
     this.addWideCommandButton(210, 312, "WARSHIP", "18W 4I / TOWN SQUARE", () => this.createShip());
@@ -1799,6 +1800,24 @@ export class MilestoneOneScene extends Phaser.Scene {
       payload: { settlementId: settlement.id, count }
     });
     this.updateUi([`Assimilation ordered for ${count} captive(s).`]);
+  }
+
+  private releaseCaptives(): void {
+    const settlement = this.getActiveControlledSettlement();
+    if (!settlement) {
+      this.updateUi(["Select a Crown castle before releasing captives."]);
+      return;
+    }
+    const count = Math.min(4, settlement.population.captives);
+    if (count === 0) {
+      this.updateUi([`No captives are held in ${this.getSettlementDisplayName(settlement.id)}.`]);
+      return;
+    }
+    this.issueCommand({
+      type: "release-captives",
+      payload: { settlementId: settlement.id, count }
+    });
+    this.updateUi([`${count} captive(s) released by royal decree.`]);
   }
 
   private disembarkCaravan(): void {

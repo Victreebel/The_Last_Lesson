@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.24.0 - 2026-08-01
+
+- Added `RELEASE` captive orders. A royal decree releases up to four captives from the active settlement, trading labor for happiness, loyalty, devotion, internal Faith, and reduced rebellion exposure.
+- Releasing captives is an observable social doctrine, distinct from Town Square-based assimilation.
+
 ## 1.23.0 - 2026-08-01
 
 - Added an authoritative event-driven Lesson banner. When an heir observes, reinforces, or questions a doctrine, the battlefield now identifies the heir, action, and current confidence without altering simulation state.

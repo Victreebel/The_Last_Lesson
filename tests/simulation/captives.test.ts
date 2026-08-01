@@ -133,4 +133,39 @@ describe("captives", () => {
     expect(simulation.getState().settlements["settlement-capital"].population.captives).toBe(0);
     expect(result.events.some((event) => event.type === "captives-liberated")).toBe(true);
   });
+
+  it("lets the Crown release captives to strengthen social and religious stability", () => {
+    const initial = createInitialWorld(8181);
+    const simulation = new Simulation({
+      ...initial,
+      settlements: {
+        ...initial.settlements,
+        "settlement-capital": {
+          ...initial.settlements["settlement-capital"],
+          population: {
+            ...initial.settlements["settlement-capital"].population,
+            captives: 4
+          }
+        }
+      }
+    });
+
+    simulation.enqueueCommand({
+      id: "release-captives",
+      issuedBy: "player-1",
+      tick: 1,
+      type: "release-captives",
+      payload: { settlementId: "settlement-capital", count: 4 }
+    });
+
+    const result = simulation.tick();
+    const settlement = simulation.getState().settlements["settlement-capital"];
+
+    expect(settlement.population.captives).toBe(0);
+    expect(settlement.population.happiness).toBeGreaterThan(initial.settlements["settlement-capital"].population.happiness);
+    expect(settlement.population.loyalty).toBeGreaterThan(initial.settlements["settlement-capital"].population.loyalty);
+    expect(settlement.population.devotion).toBeGreaterThan(initial.settlements["settlement-capital"].population.devotion);
+    expect(settlement.internalFaith).toBeGreaterThan(initial.settlements["settlement-capital"].internalFaith);
+    expect(result.events.some((event) => event.type === "captives-released")).toBe(true);
+  });
 });

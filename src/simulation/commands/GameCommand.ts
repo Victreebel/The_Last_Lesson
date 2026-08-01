@@ -16,6 +16,7 @@ export type CommandType =
   | "attack-with-ship"
   | "attack-target"
   | "assimilate-captives"
+  | "release-captives"
   | "reward-heir"
   | "punish-heir"
   | "cast-miracle";
@@ -102,6 +103,11 @@ export interface AssimilateCaptivesPayload {
   readonly count: number;
 }
 
+export interface ReleaseCaptivesPayload {
+  readonly settlementId: SettlementId;
+  readonly count: number;
+}
+
 export interface HeirFeedbackPayload {
   readonly heirId: HeirId;
 }
@@ -128,6 +134,7 @@ export type GameCommand =
   | GameCommandBase<"attack-with-ship", AttackWithShipPayload>
   | GameCommandBase<"attack-target", AttackTargetPayload>
   | GameCommandBase<"assimilate-captives", AssimilateCaptivesPayload>
+  | GameCommandBase<"release-captives", ReleaseCaptivesPayload>
   | GameCommandBase<"reward-heir", HeirFeedbackPayload>
   | GameCommandBase<"punish-heir", HeirFeedbackPayload>
   | GameCommandBase<"cast-miracle", CastMiraclePayload>;

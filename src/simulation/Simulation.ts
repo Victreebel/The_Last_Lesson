@@ -701,6 +701,40 @@ export class Simulation {
       return;
     }
 
+    if (command.type === "release-captives") {
+      const settlement = this.state.settlements[command.payload.settlementId];
+      const count = Math.max(1, Math.floor(command.payload.count));
+      if (!settlement || settlement.population.captives < count) {
+        this.eventWriter.emit(tick, "command-rejected", { commandId: command.id });
+        return;
+      }
+      this.state = {
+        ...this.state,
+        settlements: {
+          ...this.state.settlements,
+          [settlement.id]: {
+            ...settlement,
+            internalFaith: Math.min(100, settlement.internalFaith + 4),
+            population: {
+              ...settlement.population,
+              captives: settlement.population.captives - count,
+              happiness: Math.min(100, settlement.population.happiness + 5),
+              loyalty: Math.min(100, settlement.population.loyalty + 7),
+              devotion: Math.min(100, settlement.population.devotion + 6)
+            }
+          }
+        }
+      };
+      this.eventWriter.emit(tick, "captives-released", {
+        commandId: command.id,
+        settlementId: settlement.id,
+        count,
+        reason: "royal-decree"
+      });
+      this.observePlayerCommand(command, tick);
+      return;
+    }
+
     if (command.type === "reward-heir" || command.type === "punish-heir") {
       this.applyHeirFeedback(
         command.payload.heirId,
@@ -2750,6 +2784,14 @@ function getDoctrineObservation(command: GameCommand, state: WorldState): Doctri
         condition: "Captives are housed and a Town Square is available",
         preferredAction: "Assimilate captives",
         goal: "Grow the citizen population"
+      };
+    case "release-captives":
+      return {
+        domain: "society",
+        key: "release-captives",
+        condition: "Captives are held by the Crown",
+        preferredAction: "Release captives",
+        goal: "Strengthen loyalty and divine legitimacy"
       };
     case "generate-faith":
       return {

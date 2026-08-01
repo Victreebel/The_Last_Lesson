@@ -29,6 +29,7 @@ export type EventType =
   | "attack-ordered"
   | "captives-taken"
   | "captives-assimilated"
+  | "captives-released"
   | "captives-liberated"
   | "captive-escape"
   | "doctrine-observed"
