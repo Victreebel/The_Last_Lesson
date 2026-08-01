@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.23.0 - 2026-08-01
+
+- Added an authoritative event-driven Lesson banner. When an heir observes, reinforces, or questions a doctrine, the battlefield now identifies the heir, action, and current confidence without altering simulation state.
+
 ## 1.22.0 - 2026-08-01
 
 - Added the compact `REALM` top-bar control and Crown Domains roster. It presents every owned settlement with its governor and population, centers the tactical camera on selection, and changes the active command seat.

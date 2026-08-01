@@ -165,6 +165,9 @@ export class MilestoneOneScene extends Phaser.Scene {
   private mode: ToolMode = "select";
   private topHud!: Phaser.GameObjects.Rectangle;
   private gameTitleText!: Phaser.GameObjects.Text;
+  private lessonBanner!: Phaser.GameObjects.Container;
+  private lessonBannerLabel!: Phaser.GameObjects.Text;
+  private lastLessonEventId?: string;
   private pauseControl!: Phaser.GameObjects.Container;
   private pauseControlButton!: Phaser.GameObjects.Rectangle;
   private pauseControlLabel!: Phaser.GameObjects.Text;
@@ -332,6 +335,7 @@ export class MilestoneOneScene extends Phaser.Scene {
 
   private createUi(): void {
     this.createTopHud();
+    this.createLessonBanner();
     this.createBookOfLessons();
     this.createRealmPanel();
     this.createVictoryPanel();
@@ -384,6 +388,59 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.paused = !this.paused;
     this.pauseControlLabel.setText(this.paused ? "RESUME" : "PAUSE");
     this.updateUi([this.paused ? "Simulation paused." : "Simulation resumed."]);
+  }
+
+  private createLessonBanner(): void {
+    const background = this.add.rectangle(0, 0, 420, 42, UI_COLORS.panelDeep, 0.96).setOrigin(0);
+    background.setStrokeStyle(1, UI_COLORS.accent);
+    this.lessonBannerLabel = this.add.text(14, 8, "", {
+      fontFamily: "Arial Black, Arial",
+      fontSize: "10px",
+      color: "#f2d77f",
+      wordWrap: { width: 390 }
+    });
+    this.lessonBanner = this.add.container(0, 0, [background, this.lessonBannerLabel]);
+    this.lessonBanner.setScrollFactor(0).setDepth(65).setVisible(false);
+  }
+
+  private updateLessonBanner(): void {
+    const lessonEvent = [...this.simulation.getEventLog()]
+      .reverse()
+      .find((event) =>
+        event.type === "doctrine-observed" ||
+        event.type === "doctrine-reinforced" ||
+        event.type === "doctrine-disciplined"
+      );
+    if (!lessonEvent || lessonEvent.id === this.lastLessonEventId) {
+      return;
+    }
+
+    this.lastLessonEventId = lessonEvent.id;
+    const heir = typeof lessonEvent.payload.heirId === "string" ? this.simulation.getState().heirs[lessonEvent.payload.heirId] : undefined;
+    const doctrine =
+      typeof lessonEvent.payload.doctrineId === "string"
+        ? this.simulation.getState().doctrines[lessonEvent.payload.doctrineId]
+        : undefined;
+    const action = doctrine?.preferredAction.toUpperCase() ?? "A NEW CONVICTION";
+    const confidence = doctrine?.confidence ?? lessonEvent.payload.confidence ?? 0;
+    const status =
+      lessonEvent.type === "doctrine-reinforced"
+        ? "REINFORCED"
+        : lessonEvent.type === "doctrine-disciplined"
+          ? "QUESTIONED"
+          : "OBSERVED";
+    this.lessonBannerLabel.setText(
+      `LESSON ${status} // ${heir?.name.toUpperCase() ?? "HEIR"}\n${action}  ${confidence}%`
+    );
+    this.tweens.killTweensOf(this.lessonBanner);
+    this.lessonBanner.setVisible(true).setAlpha(1);
+    this.tweens.add({
+      targets: this.lessonBanner,
+      alpha: 0,
+      delay: 2600,
+      duration: 450,
+      onComplete: () => this.lessonBanner.setVisible(false)
+    });
   }
 
   private createBookOfLessons(): void {
@@ -604,6 +661,8 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.commandSequence = 0;
     this.paused = false;
     this.inspectedSettlementId = "settlement-capital";
+    this.lastLessonEventId = undefined;
+    this.lessonBanner.setVisible(false);
     this.pauseControlLabel.setText("PAUSE");
     this.clearSelection();
     this.selectedBuildingKind = null;
@@ -682,6 +741,8 @@ export class MilestoneOneScene extends Phaser.Scene {
       }
       this.simulation = restoreSaveGame(deserializeSaveGame(serialized));
       this.inspectedSettlementId = "settlement-capital";
+      this.lastLessonEventId = undefined;
+      this.lessonBanner.setVisible(false);
       this.clearSelection();
       this.renderWorld();
       this.updateUi(["Local save restored."]);
@@ -1147,6 +1208,7 @@ export class MilestoneOneScene extends Phaser.Scene {
 
     this.topHud.setSize(width, topHeight);
     this.gameTitleText.setPosition(18, 10);
+    this.lessonBanner.setPosition(Math.max(16, Math.round((width - 420) / 2)), Math.max(topHeight + 14, height - 62));
     const pauseX = compact ? width - 82 : 436;
     const pauseY = compact ? 36 : 14;
     this.pauseControlButton.setPosition(pauseX, pauseY);
@@ -2190,6 +2252,7 @@ export class MilestoneOneScene extends Phaser.Scene {
         : `MANDATE: ${this.getImperialMandate()}\nLATEST INTEL: ${events.join(" // ")}`
     );
     this.updateHeirPanel();
+    this.updateLessonBanner();
     this.updateRealmPanel();
     this.updateBuildingsPanel();
     this.updateBookOfLessons();

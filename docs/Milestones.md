@@ -91,6 +91,7 @@ Implemented:
 - Inspectable Crown castles that focus the heir console and Book of Lessons on the selected settlement's governor.
 - Settlement-contextual command controls: selecting a Crown castle routes labor, construction, recruitment, logistics, assimilation, and local miracles to its governed settlement.
 - Compact Realm roster for switching between Crown domains, centering the camera, and reviewing each settlement's governor and field population.
+- Immediate lesson feedback that translates authoritative doctrine events into an in-world heir/action/confidence banner, making teaching readable at the moment it occurs.
 
 ## Milestone 4: Persistence Foundation
 
