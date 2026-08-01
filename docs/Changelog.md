@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.18.0 - 2026-08-01
+
+- Added an optional presentation-only Web Audio layer for command confirmation and throttled land/naval combat impacts; no simulation state, save data, replay data, or deterministic outcome depends on audio.
+
 ## 1.17.0 - 2026-08-01
 
 - Added an Imperial Mandate to the tactical uplink. It advances from farm establishment through military readiness, scouting, and castle capture using live simulation state.

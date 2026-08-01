@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { AudioDirector } from "../AudioDirector";
 import { Simulation } from "../../simulation/Simulation";
 import type { GameCommand } from "../../simulation/commands/GameCommand";
 import type { GameEvent } from "../../simulation/events/GameEvent";
@@ -153,6 +154,7 @@ interface HeirFeedbackControl {
 
 export class MilestoneOneScene extends Phaser.Scene {
   private simulation = new Simulation(createInitialWorld(777));
+  private readonly audio = new AudioDirector();
   private commandSequence = 0;
   private paused = false;
   private selectedBattalionId: string | null = null;
@@ -727,6 +729,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     button.setInteractive({ useHandCursor: true });
     button.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
       pointer.event.stopPropagation();
+      this.audio.play("command");
       onClick();
     });
     const primary = this.add.text(x + 8, y + 8, label, {
@@ -1627,6 +1630,7 @@ export class MilestoneOneScene extends Phaser.Scene {
       if (!isBattalionStrike && !isShipStrike) {
         continue;
       }
+      this.audio.play(isShipStrike ? "naval" : "combat");
       const attackerId = String(event.payload.attackerId ?? event.payload.shipId ?? "");
       const targetId = String(event.payload.targetId ?? "");
       const attacker = this.getEntityPosition(attackerId);
