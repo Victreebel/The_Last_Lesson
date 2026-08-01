@@ -81,6 +81,7 @@ Implemented:
 - Painterly battlefield art direction integrated beneath deterministic terrain overlays and tactical controls.
 - Direct Warship targeting, cooldown-driven naval fire, and deterministic sinking behavior.
 - Accessible pause/resume controls and verified responsive command-dock layout.
+- Interactive minimap for continuous strategic navigation and camera awareness.
 
 ## Milestone 4: Persistence Foundation
 

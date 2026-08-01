@@ -121,6 +121,8 @@ const BUILD_PANEL_WIDTH = 306;
 const HEIR_PANEL_WIDTH = 286;
 const PLACEMENT_GRID_SIZE = 32;
 const DRAG_THRESHOLD = 10;
+const MINIMAP_WIDTH = 230;
+const MINIMAP_HEIGHT = 158;
 const UI_COLORS = {
   panel: 0x12191a,
   panelDeep: 0x0b1011,
@@ -169,6 +171,10 @@ export class MilestoneOneScene extends Phaser.Scene {
   private eventText!: Phaser.GameObjects.Text;
   private resourceText!: Phaser.GameObjects.Text;
   private intelPanel!: Phaser.GameObjects.Container;
+  private minimapPanel!: Phaser.GameObjects.Rectangle;
+  private minimapGraphics!: Phaser.GameObjects.Graphics;
+  private minimapTitle!: Phaser.GameObjects.Text;
+  private minimapBounds = { x: 0, y: 0 };
   private commandDock!: Phaser.GameObjects.Container;
   private heirPanel!: Phaser.GameObjects.Container;
   private heirPanelBg!: Phaser.GameObjects.Rectangle;
@@ -313,6 +319,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.createBookOfLessons();
     this.createIntelPanel();
     this.createCommandDock();
+    this.createMinimap();
     this.createHeirPanel();
     this.createBuildingsPanel();
     this.layoutUi();
@@ -555,6 +562,72 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.addWideCommandButton(210, 258, "DISEMBARK", "SELECTED CARAVAN", () => this.disembarkCaravan());
     this.addWideCommandButton(14, 312, "GARRISON", "NEAREST DEFENSE WORKS", () => this.garrisonSelectedBattalions());
     this.addWideCommandButton(210, 312, "WARSHIP", "18W 4I / TOWN SQUARE", () => this.createShip());
+  }
+
+  private createMinimap(): void {
+    this.minimapPanel = this.add.rectangle(0, 0, MINIMAP_WIDTH, MINIMAP_HEIGHT, UI_COLORS.panelDeep, 0.95).setOrigin(0);
+    this.minimapPanel.setStrokeStyle(1, UI_COLORS.trim);
+    this.minimapPanel.setInteractive({ useHandCursor: true });
+    this.minimapPanel.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+      pointer.event.stopPropagation();
+      const innerX = Phaser.Math.Clamp(pointer.x - this.minimapBounds.x - 8, 0, MINIMAP_WIDTH - 16);
+      const innerY = Phaser.Math.Clamp(pointer.y - this.minimapBounds.y - 28, 0, MINIMAP_HEIGHT - 36);
+      this.cameras.main.centerOn(
+        (innerX / (MINIMAP_WIDTH - 16)) * 1400,
+        (innerY / (MINIMAP_HEIGHT - 36)) * 900
+      );
+      this.updateMinimap();
+    });
+    this.minimapGraphics = this.add.graphics().setScrollFactor(0).setDepth(45);
+    this.minimapTitle = this.add.text(10, 8, "MINIMAP", {
+      fontFamily: "Arial Black, Arial",
+      fontSize: "10px",
+      color: "#f2d77f"
+    });
+    this.minimapPanel.setScrollFactor(0).setDepth(44);
+    this.minimapTitle.setScrollFactor(0).setDepth(46);
+  }
+
+  private updateMinimap(): void {
+    if (!this.minimapGraphics) {
+      return;
+    }
+    const state = this.simulation.getState();
+    const x = this.minimapBounds.x + 8;
+    const y = this.minimapBounds.y + 28;
+    const width = MINIMAP_WIDTH - 16;
+    const height = MINIMAP_HEIGHT - 36;
+    const mapX = (value: number) => x + (value / 1400) * width;
+    const mapY = (value: number) => y + (value / 900) * height;
+
+    this.minimapGraphics.clear();
+    this.minimapGraphics.fillStyle(TERRAIN_COLORS.grassland, 1);
+    this.minimapGraphics.fillRect(x, y, width, height);
+    for (const zone of state.terrainZones) {
+      this.minimapGraphics.fillStyle(TERRAIN_COLORS[zone.kind], 1);
+      this.minimapGraphics.fillRect(
+        mapX(zone.bounds.x),
+        mapY(zone.bounds.y),
+        (zone.bounds.width / 1400) * width,
+        (zone.bounds.height / 900) * height
+      );
+    }
+    for (const building of Object.values(state.buildings)) {
+      this.minimapGraphics.fillStyle(building.ownerEmpireId === "empire-player" ? 0xe2bd61 : 0xbb5a54, 1);
+      this.minimapGraphics.fillRect(mapX(building.position.x) - 2, mapY(building.position.y) - 2, 4, 4);
+    }
+    for (const battalion of Object.values(state.battalions)) {
+      this.minimapGraphics.fillStyle(battalion.ownerEmpireId === "empire-player" ? 0x85c4dd : 0xd56b62, 1);
+      this.minimapGraphics.fillCircle(mapX(battalion.position.x), mapY(battalion.position.y), 2);
+    }
+    const camera = this.cameras.main.worldView;
+    this.minimapGraphics.lineStyle(1, 0xf5e7a2, 0.9);
+    this.minimapGraphics.strokeRect(
+      mapX(camera.x),
+      mapY(camera.y),
+      (camera.width / 1400) * width,
+      (camera.height / 900) * height
+    );
   }
 
   private addCommandButton(
@@ -842,6 +915,10 @@ export class MilestoneOneScene extends Phaser.Scene {
     );
     this.intelPanel.setPosition(16, topHeight + 14);
     this.commandDock.setPosition(16, Math.max(topHeight + 220, height - 396));
+    this.minimapBounds = { x: Math.max(16, width - MINIMAP_WIDTH - 16), y: Math.max(topHeight + 210, height - MINIMAP_HEIGHT - 16) };
+    this.minimapPanel.setPosition(this.minimapBounds.x, this.minimapBounds.y);
+    this.minimapTitle.setPosition(this.minimapBounds.x + 10, this.minimapBounds.y + 8);
+    this.updateMinimap();
     if (this.heirPanel) {
       this.heirPanel.setScale(scale);
       this.heirPanel.setPosition(Math.max(16, heirPanelX), topHeight + 14);
@@ -1725,6 +1802,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.updateHeirPanel();
     this.updateBuildingsPanel();
     this.updateBookOfLessons();
+    this.updateMinimap();
   }
 
   private getModeLabel(): string {

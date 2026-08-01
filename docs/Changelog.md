@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.12.0 - 2026-08-01
+
+- Added an interactive RTS minimap with terrain, buildings, friendly and rival force markers, and an active camera frame.
+- Clicking the minimap now recenters the tactical camera; the interaction was verified in the live browser build.
+
 ## 1.11.0 - 2026-08-01
 
 - Added a top-bar Pause/Resume control with Space-key support, keeping the continuous simulation available for tactical planning.
