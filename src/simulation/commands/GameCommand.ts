@@ -7,6 +7,7 @@ export type CommandType =
   | "generate-faith"
   | "create-battalion"
   | "create-caravan"
+  | "create-ship"
   | "move-battalion"
   | "move-caravan"
   | "embark-battalion"
@@ -62,6 +63,10 @@ export interface CreateCaravanPayload {
   readonly settlementId: SettlementId;
 }
 
+export interface CreateShipPayload {
+  readonly settlementId: SettlementId;
+}
+
 export interface MoveCaravanPayload {
   readonly caravanId: CaravanId;
   readonly destination: Position;
@@ -108,6 +113,7 @@ export type GameCommand =
   | GameCommandBase<"generate-faith", GenerateFaithPayload>
   | GameCommandBase<"create-battalion", CreateBattalionPayload>
   | GameCommandBase<"create-caravan", CreateCaravanPayload>
+  | GameCommandBase<"create-ship", CreateShipPayload>
   | GameCommandBase<"move-battalion", MoveBattalionPayload>
   | GameCommandBase<"move-caravan", MoveCaravanPayload>
   | GameCommandBase<"embark-battalion", EmbarkBattalionPayload>

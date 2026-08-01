@@ -516,10 +516,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.addWideCommandButton(14, 258, "ASSIMILATE", "4 CAPTIVES / TOWN SQUARE", () => this.assimilateCaptives());
     this.addWideCommandButton(210, 258, "DISEMBARK", "SELECTED CARAVAN", () => this.disembarkCaravan());
     this.addWideCommandButton(14, 312, "GARRISON", "NEAREST DEFENSE WORKS", () => this.garrisonSelectedBattalions());
-    this.addWideCommandButton(210, 312, "RELEASE", "MOVE ORDER RELEASES", () => {
-      this.mode = "move";
-      this.updateUi(["Select garrisoned troops, then designate a destination to release them."]);
-    });
+    this.addWideCommandButton(210, 312, "WARSHIP", "18W 4I / TOWN SQUARE", () => this.createShip());
   }
 
   private addCommandButton(
@@ -1246,6 +1243,12 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.updateUi(["Supply wagon queued. Requires a completed Town Square and 12 local food."]);
   }
 
+  private createShip(): void {
+    const settlement = this.simulation.getState().settlements["settlement-capital"];
+    this.issueCommand({ type: "create-ship", payload: { settlementId: settlement.id } });
+    this.updateUi(["Warship queued. It launches on water and requires a Town Square, 18 wood, and 4 iron."]);
+  }
+
   private setLaborFocus(focus: "farmers" | "builders" | "lumberjacks" | "miners"): void {
     const settlement = this.simulation.getState().settlements["settlement-capital"];
     const available = settlement.population.citizens - settlement.population.militarizedCitizens;
@@ -1602,7 +1605,11 @@ export class MilestoneOneScene extends Phaser.Scene {
     }
     container.setPosition(caravan.position.x, caravan.position.y);
     const base = container.getAt(0) as Phaser.GameObjects.Rectangle;
-    base.setFillStyle(caravan.ownerEmpireId === "empire-player" ? 0xb58c43 : 0x7c4542);
+    base.setFillStyle(
+      caravan.kind === "ship"
+        ? caravan.ownerEmpireId === "empire-player" ? 0x2f667c : 0x5f3f62
+        : caravan.ownerEmpireId === "empire-player" ? 0xb58c43 : 0x7c4542
+    );
     base.setStrokeStyle(this.selectedCaravanId === caravan.id ? 4 : 2, 0xf0d36f);
     const label = container.getAt(1) as Phaser.GameObjects.Text;
     label.setText(this.getCaravanLabel(caravan));
@@ -1618,7 +1625,8 @@ export class MilestoneOneScene extends Phaser.Scene {
       (total, battalionId) => total + (this.simulation.getState().battalions[battalionId]?.size ?? 0),
       0
     );
-    return `${caravan.ownerEmpireId === "empire-player" ? "CROWN" : "RIVAL"} WAGON\nF${caravan.cargoFood} U${passengerSize}`;
+    const vehicle = caravan.kind === "ship" ? "WARSHIP" : "WAGON";
+    return `${caravan.ownerEmpireId === "empire-player" ? "CROWN" : "RIVAL"} ${vehicle}\nF${caravan.cargoFood} U${passengerSize}`;
   }
 
   private getBuildingWorldLabel(building: BuildingState): string {

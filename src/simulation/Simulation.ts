@@ -390,6 +390,35 @@ export class Simulation {
       return;
     }
 
+    if (command.type === "create-ship") {
+      const settlement = this.state.settlements[command.payload.settlementId];
+      const empire = settlement ? this.state.empires[settlement.ownerEmpireId] : undefined;
+      const hasTownSquare = settlement?.buildingIds.some((id) => {
+        const building = this.state.buildings[id];
+        return building?.kind === "town-square" && building.complete;
+      });
+      const launch = settlement ? this.getWaterLaunchPoint(settlement.id) : undefined;
+      const foodLoad = settlement ? Math.min(24, settlement.localFood) : 0;
+      if (!settlement || !empire || !hasTownSquare || !launch || empire.resources.wood < 18 || empire.resources.iron < 4 || foodLoad < 12) {
+        this.eventWriter.emit(tick, "command-rejected", { commandId: command.id });
+        return;
+      }
+      const shipId = `ship-${tick}-${settlement.caravanIds.length + 1}`;
+      const ship: CaravanState = {
+        id: shipId, ownerEmpireId: settlement.ownerEmpireId, settlementId: settlement.id, kind: "ship", position: launch,
+        cargoFood: foodLoad, capacity: 52, passengerBattalionIds: [], defense: 110, maxDefense: 110, speed: 56
+      };
+      this.state = {
+        ...this.state,
+        caravans: { ...this.state.caravans, [shipId]: ship },
+        empires: { ...this.state.empires, [empire.id]: { ...empire, resources: { ...empire.resources, wood: empire.resources.wood - 18, iron: empire.resources.iron - 4 } } },
+        settlements: { ...this.state.settlements, [settlement.id]: { ...settlement, caravanIds: [...settlement.caravanIds, shipId], localFood: settlement.localFood - foodLoad } }
+      };
+      this.eventWriter.emit(tick, "ship-created", { commandId: command.id, shipId, foodLoad });
+      this.observePlayerCommand(command, tick);
+      return;
+    }
+
     if (command.type === "move-battalion") {
       const battalion = this.state.battalions[command.payload.battalionId];
       if (!battalion || battalion.embarkedInCaravanId) {
@@ -438,7 +467,11 @@ export class Simulation {
     if (command.type === "move-caravan") {
       const caravan = this.state.caravans[command.payload.caravanId];
       const terrain = terrainAtPosition(this.state, command.payload.destination);
-      if (!caravan || terrain === "water") {
+      if (
+        !caravan ||
+        (caravan.kind === "caravan" && terrain === "water") ||
+        (caravan.kind === "ship" && terrain !== "water")
+      ) {
         this.eventWriter.emit(tick, "command-rejected", { commandId: command.id });
         return;
       }
@@ -1789,6 +1822,18 @@ export class Simulation {
     );
   }
 
+  private getWaterLaunchPoint(settlementId: string): Position | undefined {
+    const settlement = this.state.settlements[settlementId];
+    const castle = settlement ? this.state.buildings[settlement.centralBuildingId] : undefined;
+    if (!castle) {
+      return undefined;
+    }
+    return this.state.terrainZones
+      .filter((zone) => zone.kind === "water")
+      .map((zone) => ({ x: zone.bounds.x + zone.bounds.width / 2, y: zone.bounds.y + zone.bounds.height / 2 }))
+      .sort((left, right) => distance(left, castle.position) - distance(right, castle.position))[0];
+  }
+
   private roadMovementMultiplier(unit: BattalionState | CaravanState): number {
     const onRoad = Object.values(this.state.buildings).some(
       (building) =>
@@ -1842,6 +1887,9 @@ export class Simulation {
     for (const candidate of Object.values(battalions).sort((a, b) => a.id.localeCompare(b.id))) {
       const battalion = battalions[candidate.id];
       if (!battalion) {
+        continue;
+      }
+      if (battalion.embarkedInCaravanId && caravans[battalion.embarkedInCaravanId]?.kind === "ship") {
         continue;
       }
       if (!battalion.targetId) {
@@ -2435,6 +2483,14 @@ function getDoctrineObservation(command: GameCommand, state: WorldState): Doctri
         condition: "Food reserves and a Town Square are available",
         preferredAction: "Establish supply caravans",
         goal: "Sustain distant forces"
+      };
+    case "create-ship":
+      return {
+        domain: "military",
+        key: "create-ship",
+        condition: "Water access and a Town Square are available",
+        preferredAction: "Launch warships",
+        goal: "Control waterways"
       };
     case "move-battalion":
       return {

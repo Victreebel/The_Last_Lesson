@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.8.0 - 2026-08-01
+
+- Added Town Square-built Warships with water-only launch and movement, transport capacity, and distinctive world labels.
+- Prevented battalions embarked aboard Warships from attacking independently.
+- Added deterministic naval transport coverage.
+
 ## 1.7.0 - 2026-08-01
 
 - Expanded governor AI with explainable concerns for scarcity, rebellion, military danger, and insufficient faith.
