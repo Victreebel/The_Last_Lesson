@@ -1957,7 +1957,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.eventText.setText(
       victory
         ? `VICTORY // ${state.empires[victory]?.name.toUpperCase() ?? "THE WINNER"} HOLDS EVERY THRONE.`
-        : `LATEST INTEL: ${events.join(" // ")}`
+        : `MANDATE: ${this.getImperialMandate()}\nLATEST INTEL: ${events.join(" // ")}`
     );
     this.updateHeirPanel();
     this.updateBuildingsPanel();
@@ -1972,5 +1972,29 @@ export class MilestoneOneScene extends Phaser.Scene {
     }
 
     return this.mode.toUpperCase();
+  }
+
+  private getImperialMandate(): string {
+    const state = this.simulation.getState();
+    const capital = state.settlements["settlement-capital"];
+    const hasFarm = capital.buildingIds.some((id) => state.buildings[id]?.kind === "farm" && state.buildings[id]?.complete);
+    if (!hasFarm) {
+      return "ESTABLISH A FARM ON FERTILE GROUND.";
+    }
+    const hasFieldForce = Object.values(state.battalions).some(
+      (battalion) => battalion.ownerEmpireId === "empire-player"
+    );
+    if (!hasFieldForce) {
+      return "RAISE A BATTALION TO SECURE THE CROWN.";
+    }
+    const rivalObserved = Object.values(state.buildings).some(
+      (building) =>
+        building.ownerEmpireId === "empire-rival" &&
+        isPositionVisibleToEmpire(state, "empire-player", building.position)
+    );
+    if (!rivalObserved) {
+      return "SCOUT THE FRONTIER AND FIND THE RIVAL THRONE.";
+    }
+    return "BREAK THE RIVAL CASTLE AND TAKE THE THRONE.";
   }
 }
