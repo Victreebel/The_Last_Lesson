@@ -13,6 +13,11 @@ export class MilestoneOneScene extends Phaser.Scene {
   private statusText!: Phaser.GameObjects.Text;
   private eventText!: Phaser.GameObjects.Text;
   private resourceText!: Phaser.GameObjects.Text;
+  private buildingsPanel!: Phaser.GameObjects.Container;
+  private buildingsPanelBg!: Phaser.GameObjects.Rectangle;
+  private buildingsPanelTitle!: Phaser.GameObjects.Text;
+  private buildingsPanelBody!: Phaser.GameObjects.Text;
+  private buildingsPanelExpanded = false;
   private worldLayer!: Phaser.GameObjects.Container;
   private readonly buildingSprites = new Map<string, Phaser.GameObjects.Rectangle>();
   private readonly battalionSprites = new Map<string, Phaser.GameObjects.Container>();
@@ -29,6 +34,7 @@ export class MilestoneOneScene extends Phaser.Scene {
 
     this.drawTerrain();
     this.createUi();
+    this.scale.on("resize", () => this.layoutBuildingsPanel());
     this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => this.handleWorldClick(pointer));
 
     this.time.addEvent({
@@ -110,24 +116,25 @@ export class MilestoneOneScene extends Phaser.Scene {
     });
     this.eventText.setScrollFactor(0);
 
-    this.addButton(380, 18, "Place Farm", () => {
+    this.addButton(18, 206, "Place Farm", () => {
       this.mode = "farm";
       this.updateUi(["Click the map to place a farm"]);
     });
-    this.addButton(500, 18, "Raise Battalion", () => this.createBattalion());
-    this.addButton(644, 18, "Move", () => {
+    this.addButton(138, 206, "Raise Battalion", () => this.createBattalion());
+    this.addButton(18, 250, "Move", () => {
       this.mode = "move";
       this.updateUi(["Select a battalion, then click destination"]);
     });
-    this.addButton(724, 18, "Attack", () => {
+    this.addButton(138, 250, "Attack", () => {
       this.mode = "attack";
       this.updateUi(["Select a battalion, then click a target"]);
     });
-    this.addButton(816, 18, "Tick", () => {
+    this.addButton(258, 250, "Tick", () => {
       const result = this.simulation.tick();
       this.renderWorld();
       this.updateUi(result.events.map((event) => event.type).slice(-5));
     });
+    this.createBuildingsPanel();
   }
 
   private addButton(x: number, y: number, label: string, onClick: () => void): void {
@@ -142,6 +149,92 @@ export class MilestoneOneScene extends Phaser.Scene {
       color: "#efe8d1"
     });
     text.setScrollFactor(0);
+  }
+
+  private createBuildingsPanel(): void {
+    this.buildingsPanelBg = this.add.rectangle(0, 0, 194, 48, 0x11150f, 0.94).setOrigin(0);
+    this.buildingsPanelBg.setStrokeStyle(1, 0x6f7c55);
+    this.buildingsPanelTitle = this.add.text(14, 10, "", {
+      fontFamily: "Inter, Arial",
+      fontSize: "13px",
+      color: "#efe8d1"
+    });
+    this.buildingsPanelBody = this.add.text(14, 34, "", {
+      fontFamily: "Inter, Arial",
+      fontSize: "12px",
+      color: "#bfc8a8",
+      lineSpacing: 6
+    });
+    this.buildingsPanel = this.add.container(0, 0, [
+      this.buildingsPanelBg,
+      this.buildingsPanelTitle,
+      this.buildingsPanelBody
+    ]);
+    this.buildingsPanel.setScrollFactor(0);
+    this.buildingsPanel.setDepth(20);
+    this.buildingsPanel.setSize(194, 48);
+    this.buildingsPanel.setInteractive(
+      new Phaser.Geom.Rectangle(0, 0, 194, 48),
+      Phaser.Geom.Rectangle.Contains
+    );
+    this.buildingsPanel.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+      pointer.event.stopPropagation();
+      this.buildingsPanelExpanded = !this.buildingsPanelExpanded;
+      this.updateBuildingsPanel();
+    });
+    this.layoutBuildingsPanel();
+    this.updateBuildingsPanel();
+  }
+
+  private layoutBuildingsPanel(): void {
+    if (!this.buildingsPanel) {
+      return;
+    }
+
+    const width = this.scale.width;
+    const panelWidth = this.buildingsPanelExpanded ? 248 : 194;
+    this.buildingsPanel.setPosition(Math.max(380, width - panelWidth - 18), 18);
+  }
+
+  private updateBuildingsPanel(): void {
+    const counts = this.getBuildingCounts();
+    const total = Object.values(counts).reduce((sum, count) => sum + count, 0);
+    const width = this.buildingsPanelExpanded ? 248 : 194;
+    const height = this.buildingsPanelExpanded ? 190 : 48;
+
+    this.buildingsPanelBg.setSize(width, height);
+    this.buildingsPanel.setSize(width, height);
+    this.buildingsPanel.input?.hitArea.setTo(0, 0, width, height);
+    this.buildingsPanelTitle.setText(
+      this.buildingsPanelExpanded ? `Buildings (${total})  ▲` : `Buildings: ${total}  ▼`
+    );
+    this.buildingsPanelBody.setVisible(this.buildingsPanelExpanded);
+
+    if (this.buildingsPanelExpanded) {
+      this.buildingsPanelBody.setText(
+        [
+          `Castle ${counts.castle ?? 0}`,
+          `Town Square ${counts["town-square"] ?? 0}`,
+          `Military Quarters ${counts["military-quarters"] ?? 0}`,
+          `Farms ${counts.farm ?? 0}`,
+          `Villas ${counts.villa ?? 0}`,
+          `Hovels ${counts.hovel ?? 0}`,
+          `Roads ${counts.road ?? 0}`
+        ].join("\n")
+      );
+    }
+
+    this.layoutBuildingsPanel();
+  }
+
+  private getBuildingCounts(): Record<string, number> {
+    return Object.values(this.simulation.getState().buildings).reduce<Record<string, number>>(
+      (counts, building) => {
+        counts[building.kind] = (counts[building.kind] ?? 0) + 1;
+        return counts;
+      },
+      {}
+    );
   }
 
   private handleWorldClick(pointer: Phaser.Input.Pointer): void {
@@ -285,6 +378,6 @@ export class MilestoneOneScene extends Phaser.Scene {
     );
     this.statusText.setText(`Mode: ${this.mode}  Selected: ${this.selectedBattalionId ?? "none"}`);
     this.eventText.setText(events.join("\n"));
+    this.updateBuildingsPanel();
   }
 }
-
