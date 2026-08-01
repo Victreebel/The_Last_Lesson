@@ -1372,5 +1372,7 @@ The following compatible systems are now implemented in the prototype and are th
 - Battalions are specialized as militia, spears, archers, or raiders. Military Quarters gate specialist training; doctrine-relevant counterplay, range, supply, and attack cadence all resolve inside the deterministic combat loop.
 - Defeated battalions can create captives when the victor has hovel capacity. Hovel destruction liberates its excess population, rebellion produces escapes, and Town Squares assimilate captives into the citizen population.
 - Land caravans are Town Square-built physical supply units. They load local food, benefit from roads, replenish nearby battalions, and can be raided to destroy cargo and sever a settlement's transport capacity.
+- Caravans also carry battalions within explicit capacity. Embarked troops move with the transport and retain combat capability; the player can disembark them, while a destroyed caravan forcibly ejects passengers with a morale and supply shock.
+- The Book of Lessons is the player-facing explainability surface: it exposes current heir convictions and recent world events, and provides local save/load using the versioned save format.
 
 Implementation remains deliberately gray-box. Art, audio, campaign content, advanced diplomacy, transport vehicles, full captive gameplay, and multiplayer authority are planned production milestones rather than implied completed features.

@@ -359,7 +359,8 @@ export class Simulation {
         kind: "caravan",
         position: { x: castle.position.x + 90, y: castle.position.y + 20 },
         cargoFood: foodLoad,
-        capacity: 24,
+        capacity: 40,
+        passengerBattalionIds: [],
         defense: 60,
         maxDefense: 60,
         speed: 48
@@ -390,7 +391,7 @@ export class Simulation {
 
     if (command.type === "move-battalion") {
       const battalion = this.state.battalions[command.payload.battalionId];
-      if (!battalion) {
+      if (!battalion || battalion.embarkedInCaravanId) {
         this.eventWriter.emit(tick, "command-rejected", { commandId: command.id });
         return;
       }
@@ -426,6 +427,81 @@ export class Simulation {
         }
       };
       this.eventWriter.emit(tick, "command-applied", { commandId: command.id });
+      this.observePlayerCommand(command, tick);
+      return;
+    }
+
+    if (command.type === "embark-battalion") {
+      const battalion = this.state.battalions[command.payload.battalionId];
+      const caravan = this.state.caravans[command.payload.caravanId];
+      if (
+        !battalion ||
+        !caravan ||
+        battalion.embarkedInCaravanId ||
+        battalion.ownerEmpireId !== caravan.ownerEmpireId ||
+        distance(battalion.position, caravan.position) > 72 ||
+        this.getCaravanUsedCapacity(caravan) + battalion.size > caravan.capacity
+      ) {
+        this.eventWriter.emit(tick, "command-rejected", { commandId: command.id });
+        return;
+      }
+      this.state = {
+        ...this.state,
+        caravans: {
+          ...this.state.caravans,
+          [caravan.id]: {
+            ...caravan,
+            passengerBattalionIds: [...caravan.passengerBattalionIds, battalion.id]
+          }
+        },
+        battalions: {
+          ...this.state.battalions,
+          [battalion.id]: {
+            ...battalion,
+            embarkedInCaravanId: caravan.id,
+            position: caravan.position,
+            destination: undefined
+          }
+        }
+      };
+      this.eventWriter.emit(tick, "battalion-embarked", {
+        commandId: command.id,
+        battalionId: battalion.id,
+        caravanId: caravan.id
+      });
+      this.observePlayerCommand(command, tick);
+      return;
+    }
+
+    if (command.type === "disembark-caravan") {
+      const caravan = this.state.caravans[command.payload.caravanId];
+      if (!caravan || caravan.passengerBattalionIds.length === 0) {
+        this.eventWriter.emit(tick, "command-rejected", { commandId: command.id });
+        return;
+      }
+      const nextBattalions: Record<string, BattalionState> = { ...this.state.battalions };
+      for (const battalionId of caravan.passengerBattalionIds) {
+        const battalion = nextBattalions[battalionId];
+        if (battalion) {
+          nextBattalions[battalionId] = {
+            ...battalion,
+            embarkedInCaravanId: undefined,
+            position: caravan.position
+          };
+        }
+      }
+      this.state = {
+        ...this.state,
+        caravans: {
+          ...this.state.caravans,
+          [caravan.id]: { ...caravan, passengerBattalionIds: [] }
+        },
+        battalions: nextBattalions
+      };
+      this.eventWriter.emit(tick, "battalion-disembarked", {
+        commandId: command.id,
+        caravanId: caravan.id
+      });
       this.observePlayerCommand(command, tick);
       return;
     }
@@ -1194,6 +1270,14 @@ export class Simulation {
     for (const battalion of Object.values(this.state.battalions).sort((a, b) =>
       a.id.localeCompare(b.id)
     )) {
+      if (battalion.embarkedInCaravanId) {
+        const caravan = this.state.caravans[battalion.embarkedInCaravanId];
+        updatedBattalions[battalion.id] = caravan
+          ? { ...battalion, position: caravan.position, destination: undefined }
+          : { ...battalion, embarkedInCaravanId: undefined, destination: undefined };
+        continue;
+      }
+
       if (!battalion.destination) {
         updatedBattalions[battalion.id] = battalion;
         continue;
@@ -1256,7 +1340,20 @@ export class Simulation {
         y: Math.round(nextPosition.y)
       });
     }
-    this.state = { ...this.state, caravans: nextCaravans };
+    const nextBattalions: Record<string, BattalionState> = { ...this.state.battalions };
+    for (const caravan of Object.values(nextCaravans)) {
+      for (const battalionId of caravan.passengerBattalionIds) {
+        const battalion = nextBattalions[battalionId];
+        if (battalion?.embarkedInCaravanId === caravan.id) {
+          nextBattalions[battalion.id] = {
+            ...battalion,
+            position: caravan.position,
+            destination: undefined
+          };
+        }
+      }
+    }
+    this.state = { ...this.state, caravans: nextCaravans, battalions: nextBattalions };
   }
 
   private updateCaravanDeliveries(tick: number): void {
@@ -1295,6 +1392,16 @@ export class Simulation {
       });
     }
     this.state = { ...this.state, caravans, battalions };
+  }
+
+  private getCaravanUsedCapacity(caravan: CaravanState): number {
+    return (
+      caravan.cargoFood +
+      caravan.passengerBattalionIds.reduce(
+        (used, battalionId) => used + (this.state.battalions[battalionId]?.size ?? 0),
+        0
+      )
+    );
   }
 
   private roadMovementMultiplier(unit: BattalionState | CaravanState): number {
@@ -1345,7 +1452,7 @@ export class Simulation {
     const capturedCastleIds: Array<{ readonly castleId: string; readonly attackerId: string }> = [];
     const defeatedBattalions: Array<{ readonly attackerId: string; readonly defender: BattalionState }> = [];
     const destroyedBuildingIds: string[] = [];
-    const destroyedCaravanIds: string[] = [];
+    const destroyedCaravans: CaravanState[] = [];
 
     for (const candidate of Object.values(battalions).sort((a, b) => a.id.localeCompare(b.id))) {
       const battalion = battalions[candidate.id];
@@ -1431,7 +1538,7 @@ export class Simulation {
         if (nextDefense === 0) {
           const { [targetCaravan.id]: _destroyed, ...remainingCaravans } = caravans;
           caravans = remainingCaravans;
-          destroyedCaravanIds.push(targetCaravan.id);
+          destroyedCaravans.push(targetCaravan);
           this.eventWriter.emit(tick, "entity-destroyed", { entityId: targetCaravan.id });
           this.eventWriter.emit(tick, "caravan-destroyed", {
             caravanId: targetCaravan.id,
@@ -1472,7 +1579,8 @@ export class Simulation {
     };
 
     this.removeDestroyedBuildings(destroyedBuildingIds);
-    this.removeDestroyedCaravans(destroyedCaravanIds);
+    this.removeDestroyedCaravans(destroyedCaravans.map((caravan) => caravan.id));
+    this.ejectPassengersFromDestroyedCaravans(destroyedCaravans, tick);
     for (const defeated of defeatedBattalions) {
       const attacker = this.state.battalions[defeated.attackerId];
       if (attacker) {
@@ -1524,6 +1632,34 @@ export class Simulation {
       ])
     ) as WorldState["settlements"];
     this.state = { ...this.state, settlements: nextSettlements };
+  }
+
+  private ejectPassengersFromDestroyedCaravans(caravans: CaravanState[], tick: number): void {
+    if (caravans.length === 0) {
+      return;
+    }
+    const nextBattalions: Record<string, BattalionState> = { ...this.state.battalions };
+    for (const caravan of caravans) {
+      for (const battalionId of caravan.passengerBattalionIds) {
+        const battalion = nextBattalions[battalionId];
+        if (!battalion) {
+          continue;
+        }
+        nextBattalions[battalion.id] = {
+          ...battalion,
+          embarkedInCaravanId: undefined,
+          position: caravan.position,
+          morale: Math.max(0, battalion.morale - 20),
+          supply: Math.max(0, battalion.supply - 25)
+        };
+        this.eventWriter.emit(tick, "battalion-disembarked", {
+          battalionId: battalion.id,
+          caravanId: caravan.id,
+          reason: "caravan-destroyed"
+        });
+      }
+    }
+    this.state = { ...this.state, battalions: nextBattalions };
   }
 
   private captureDefeatedBattalion(

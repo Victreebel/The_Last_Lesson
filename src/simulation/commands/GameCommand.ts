@@ -9,6 +9,8 @@ export type CommandType =
   | "create-caravan"
   | "move-battalion"
   | "move-caravan"
+  | "embark-battalion"
+  | "disembark-caravan"
   | "attack-target"
   | "assimilate-captives"
   | "reward-heir"
@@ -64,6 +66,15 @@ export interface MoveCaravanPayload {
   readonly destination: Position;
 }
 
+export interface EmbarkBattalionPayload {
+  readonly battalionId: BattalionId;
+  readonly caravanId: CaravanId;
+}
+
+export interface DisembarkCaravanPayload {
+  readonly caravanId: CaravanId;
+}
+
 export interface AttackTargetPayload {
   readonly battalionId: BattalionId;
   readonly targetId: BattalionId | BuildingId | CaravanId;
@@ -93,6 +104,8 @@ export type GameCommand =
   | GameCommandBase<"create-caravan", CreateCaravanPayload>
   | GameCommandBase<"move-battalion", MoveBattalionPayload>
   | GameCommandBase<"move-caravan", MoveCaravanPayload>
+  | GameCommandBase<"embark-battalion", EmbarkBattalionPayload>
+  | GameCommandBase<"disembark-caravan", DisembarkCaravanPayload>
   | GameCommandBase<"attack-target", AttackTargetPayload>
   | GameCommandBase<"assimilate-captives", AssimilateCaptivesPayload>
   | GameCommandBase<"reward-heir", HeirFeedbackPayload>

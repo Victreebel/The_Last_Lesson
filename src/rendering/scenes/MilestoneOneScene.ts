@@ -2,6 +2,12 @@ import Phaser from "phaser";
 import { Simulation } from "../../simulation/Simulation";
 import type { GameCommand } from "../../simulation/commands/GameCommand";
 import {
+  createSaveGame,
+  deserializeSaveGame,
+  restoreSaveGame,
+  serializeSaveGame
+} from "../../simulation/save/SaveGame";
+import {
   createInitialWorld,
   getBuildingCost,
   isBuildingTerrainCompatible,
@@ -127,6 +133,8 @@ const UI_COLORS = {
   danger: 0x783c37
 };
 
+const LOCAL_SAVE_KEY = "the-last-lesson.primary-save.v1";
+
 interface BuildingTile {
   readonly button: Phaser.GameObjects.Rectangle;
   readonly icon: Phaser.GameObjects.Rectangle;
@@ -148,6 +156,11 @@ export class MilestoneOneScene extends Phaser.Scene {
   private mode: ToolMode = "select";
   private topHud!: Phaser.GameObjects.Rectangle;
   private gameTitleText!: Phaser.GameObjects.Text;
+  private bookControl!: Phaser.GameObjects.Container;
+  private bookControlLabel!: Phaser.GameObjects.Text;
+  private bookPanel!: Phaser.GameObjects.Container;
+  private bookPanelBody!: Phaser.GameObjects.Text;
+  private bookPanelExpanded = false;
   private statusText!: Phaser.GameObjects.Text;
   private eventText!: Phaser.GameObjects.Text;
   private resourceText!: Phaser.GameObjects.Text;
@@ -280,6 +293,7 @@ export class MilestoneOneScene extends Phaser.Scene {
 
   private createUi(): void {
     this.createTopHud();
+    this.createBookOfLessons();
     this.createIntelPanel();
     this.createCommandDock();
     this.createHeirPanel();
@@ -307,6 +321,130 @@ export class MilestoneOneScene extends Phaser.Scene {
       color: UI_COLORS.text
     });
     this.resourceText.setScrollFactor(0).setDepth(41);
+  }
+
+  private createBookOfLessons(): void {
+    const control = this.add.rectangle(174, 14, 118, 30, UI_COLORS.command, 1).setOrigin(0);
+    control.setStrokeStyle(1, UI_COLORS.trim);
+    control.setInteractive({ useHandCursor: true });
+    control.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+      pointer.event.stopPropagation();
+      this.bookPanelExpanded = !this.bookPanelExpanded;
+      this.updateBookOfLessons();
+    });
+    this.bookControlLabel = this.add.text(184, 23, "BOOK [+]", {
+      fontFamily: "Arial Black, Arial",
+      fontSize: "10px",
+      color: UI_COLORS.text
+    });
+    this.bookControl = this.add.container(0, 0, [control, this.bookControlLabel]);
+    this.bookControl.setScrollFactor(0).setDepth(41);
+
+    const background = this.add.rectangle(0, 0, 470, 410, UI_COLORS.panelDeep, 0.98).setOrigin(0);
+    background.setStrokeStyle(2, UI_COLORS.accent);
+    background.setInteractive({ useHandCursor: false });
+    background.on("pointerdown", (pointer: Phaser.Input.Pointer) => pointer.event.stopPropagation());
+    const title = this.add.text(18, 14, "BOOK OF LESSONS", {
+      fontFamily: "Arial Black, Arial",
+      fontSize: "16px",
+      color: "#f2d77f"
+    });
+    this.bookPanelBody = this.add.text(18, 48, "", {
+      fontFamily: "Arial, sans-serif",
+      fontSize: "11px",
+      color: UI_COLORS.text,
+      lineSpacing: 4,
+      wordWrap: { width: 434 }
+    });
+    const saveButton = this.add.rectangle(18, 360, 204, 34, UI_COLORS.commandActive, 1).setOrigin(0);
+    saveButton.setStrokeStyle(1, UI_COLORS.trim);
+    saveButton.setInteractive({ useHandCursor: true });
+    saveButton.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+      pointer.event.stopPropagation();
+      this.saveLocalGame();
+    });
+    const loadButton = this.add.rectangle(248, 360, 204, 34, UI_COLORS.command, 1).setOrigin(0);
+    loadButton.setStrokeStyle(1, UI_COLORS.trim);
+    loadButton.setInteractive({ useHandCursor: true });
+    loadButton.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+      pointer.event.stopPropagation();
+      this.loadLocalGame();
+    });
+    const saveLabel = this.add.text(30, 371, "SAVE LOCAL", {
+      fontFamily: "Arial Black, Arial",
+      fontSize: "10px",
+      color: UI_COLORS.text
+    });
+    const loadLabel = this.add.text(260, 371, "LOAD LOCAL", {
+      fontFamily: "Arial Black, Arial",
+      fontSize: "10px",
+      color: UI_COLORS.text
+    });
+    this.bookPanel = this.add.container(0, 0, [
+      background,
+      title,
+      this.bookPanelBody,
+      saveButton,
+      loadButton,
+      saveLabel,
+      loadLabel
+    ]);
+    this.bookPanel.setScrollFactor(0).setDepth(70).setVisible(false);
+    this.updateBookOfLessons();
+  }
+
+  private updateBookOfLessons(): void {
+    this.bookPanel.setVisible(this.bookPanelExpanded);
+    this.bookControlLabel.setText(this.bookPanelExpanded ? "BOOK [-]" : "BOOK [+]");
+    if (!this.bookPanelExpanded) {
+      return;
+    }
+    const state = this.simulation.getState();
+    const heir = this.getActiveHeir();
+    const doctrines = this.getHeirDoctrines(heir).slice(0, 4);
+    const recentEvents = this.simulation
+      .getEventLog()
+      .slice(-6)
+      .map((event) => `${event.tick}: ${event.type.replaceAll("-", " ").toUpperCase()}`);
+    this.bookPanelBody.setText(
+      [
+        `CURRENT HEIR: ${heir?.name.toUpperCase() ?? "UNASSIGNED"}`,
+        `STATE: ${heir?.mode.toUpperCase() ?? "NONE"}  //  TRUST: ${heir?.trust ?? 0}`,
+        "",
+        "CONVICTIONS:",
+        ...(doctrines.length
+          ? doctrines.map((doctrine) => `- ${doctrine.preferredAction} (${doctrine.confidence}%)`)
+          : ["- No conviction has been observed."]),
+        "",
+        "RECENT HISTORY:",
+        ...(recentEvents.length ? recentEvents : ["- No events recorded."])
+      ].join("\n")
+    );
+  }
+
+  private saveLocalGame(): void {
+    try {
+      window.localStorage.setItem(LOCAL_SAVE_KEY, serializeSaveGame(createSaveGame(this.simulation)));
+      this.updateUi(["Local save recorded in the Book of Lessons."]);
+    } catch {
+      this.updateUi(["Local save could not be recorded in this browser."]);
+    }
+  }
+
+  private loadLocalGame(): void {
+    try {
+      const serialized = window.localStorage.getItem(LOCAL_SAVE_KEY);
+      if (!serialized) {
+        this.updateUi(["No local save is available."]);
+        return;
+      }
+      this.simulation = restoreSaveGame(deserializeSaveGame(serialized));
+      this.clearSelection();
+      this.renderWorld();
+      this.updateUi(["Local save restored."]);
+    } catch {
+      this.updateUi(["Local save could not be restored."]);
+    }
   }
 
   private createIntelPanel(): void {
@@ -376,7 +514,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.addWideCommandButton(14, 204, "BLESS HARVEST", "12 FAITH", () => this.castBlessHarvest());
     this.addWideCommandButton(210, 204, "INSPIRE ARMY", "16 FAITH", () => this.castInspireBattalions());
     this.addWideCommandButton(14, 258, "ASSIMILATE", "4 CAPTIVES / TOWN SQUARE", () => this.assimilateCaptives());
-    this.addWideCommandButton(210, 258, "CAPTIVE STATUS", "CAPACITY / REBELLION", () => this.showCaptiveStatus());
+    this.addWideCommandButton(210, 258, "DISEMBARK", "SELECTED CARAVAN", () => this.disembarkCaravan());
   }
 
   private addCommandButton(
@@ -650,6 +788,11 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.topHud.setSize(width, topHeight);
     this.gameTitleText.setPosition(18, 10);
     this.resourceText.setPosition(compact ? 18 : 312, compact ? 47 : 19);
+    this.bookControl.setPosition(0, 0);
+    this.bookPanel.setPosition(
+      Math.max(16, Math.round((width - 470) / 2)),
+      Math.max(topHeight + 18, Math.round((height - 410) / 2))
+    );
     this.intelPanel.setPosition(16, topHeight + 14);
     this.commandDock.setPosition(16, Math.max(topHeight + 348, height - 342));
     if (this.heirPanel) {
@@ -1156,11 +1299,13 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.updateUi([`Assimilation ordered for ${count} captive(s).`]);
   }
 
-  private showCaptiveStatus(): void {
-    const settlement = this.simulation.getState().settlements["settlement-capital"];
-    this.updateUi([
-      `Captives ${settlement.population.captives}/${this.getCaptiveCapacity(settlement.id)} // rebellion ${settlement.pressures.rebellion}%.`
-    ]);
+  private disembarkCaravan(): void {
+    if (!this.selectedCaravanId) {
+      this.updateUi(["Select a Crown caravan before ordering disembarkation."]);
+      return;
+    }
+    this.issueCommand({ type: "disembark-caravan", payload: { caravanId: this.selectedCaravanId } });
+    this.updateUi(["Caravan disembarkation ordered."]);
   }
 
   private getCaptiveCapacity(settlementId: string): number {
@@ -1353,6 +1498,17 @@ export class MilestoneOneScene extends Phaser.Scene {
       container.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
         pointer.event.stopPropagation();
         if (
+          caravan.ownerEmpireId === "empire-player" &&
+          this.isRightClick(pointer) &&
+          this.selectedBattalionIds.size > 0
+        ) {
+          for (const battalionId of this.selectedBattalionIds) {
+            this.issueCommand({ type: "embark-battalion", payload: { battalionId, caravanId: caravan.id } });
+          }
+          this.updateUi([`Embarkation ordered for ${this.selectedBattalionIds.size} battalion(s).`]);
+          return;
+        }
+        if (
           caravan.ownerEmpireId !== "empire-player" &&
           (this.isRightClick(pointer) || this.mode === "attack") &&
           this.selectedBattalionIds.size > 0
@@ -1385,7 +1541,11 @@ export class MilestoneOneScene extends Phaser.Scene {
   }
 
   private getCaravanLabel(caravan: CaravanState): string {
-    return `${caravan.ownerEmpireId === "empire-player" ? "CROWN" : "RIVAL"} WAGON\nF ${caravan.cargoFood}`;
+    const passengerSize = caravan.passengerBattalionIds.reduce(
+      (total, battalionId) => total + (this.simulation.getState().battalions[battalionId]?.size ?? 0),
+      0
+    );
+    return `${caravan.ownerEmpireId === "empire-player" ? "CROWN" : "RIVAL"} WAGON\nF${caravan.cargoFood} U${passengerSize}`;
   }
 
   private getBuildingWorldLabel(building: BuildingState): string {
@@ -1417,6 +1577,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     );
     this.updateHeirPanel();
     this.updateBuildingsPanel();
+    this.updateBookOfLessons();
   }
 
   private getModeLabel(): string {

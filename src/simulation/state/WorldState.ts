@@ -137,6 +137,7 @@ export interface CaravanState {
   readonly destination?: Position;
   readonly cargoFood: number;
   readonly capacity: number;
+  readonly passengerBattalionIds: BattalionId[];
   readonly defense: number;
   readonly maxDefense: number;
   readonly speed: number;
@@ -149,6 +150,7 @@ export interface BattalionState {
   readonly position: Position;
   readonly destination?: Position;
   readonly targetId?: BattalionId | BuildingId | CaravanId;
+  readonly embarkedInCaravanId?: CaravanId;
   readonly specialization: BattalionSpecialization;
   readonly size: number;
   readonly attack: number;

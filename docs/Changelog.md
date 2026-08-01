@@ -19,3 +19,8 @@
 
 - Added physical land caravans with food cargo, road acceleration, battalion supply delivery, visible selection/routing, and hostile raiding.
 - Added deterministic transport and logistics disruption coverage.
+
+## 1.4.0 - 2026-08-01
+
+- Added capacity-limited battalion embarkation, synchronized transport movement, player disembarkation, and emergency ejection after caravan destruction.
+- Added Book of Lessons UI with heir doctrine history, recent event history, and local save/load controls.

@@ -73,6 +73,7 @@ Implemented:
 - Militia, spears, archers, and raiders with resource-gated specialist training, range, counters, and attack cadence.
 - Captive capture, hovel capacity, hovel liberation, rebellion escape, and Town Square assimilation.
 - Town Square-built land caravans that load food, use roads, deliver battalion supply, and can be raided.
+- Battalion embarkation, transport movement, and player-controlled disembarkation.
 
 ## Milestone 4: Persistence Foundation
 

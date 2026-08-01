@@ -14,6 +14,8 @@ export type EventType =
   | "battalion-created"
   | "caravan-created"
   | "caravan-moved"
+  | "battalion-embarked"
+  | "battalion-disembarked"
   | "supply-delivered"
   | "caravan-destroyed"
   | "battalion-moved"
