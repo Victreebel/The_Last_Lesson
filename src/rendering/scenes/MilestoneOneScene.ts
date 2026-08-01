@@ -905,6 +905,18 @@ export class MilestoneOneScene extends Phaser.Scene {
     return state.settlements[this.inspectedSettlementId] ?? state.settlements["settlement-capital"];
   }
 
+  private getActiveControlledSettlement(): SettlementState | undefined {
+    const activeSettlement = this.getActiveSettlement();
+    if (activeSettlement?.ownerEmpireId === "empire-player") {
+      return activeSettlement;
+    }
+
+    const state = this.simulation.getState();
+    return state.empires["empire-player"].settlementIds
+      .map((settlementId) => state.settlements[settlementId])
+      .find((settlement): settlement is SettlementState => settlement?.ownerEmpireId === "empire-player");
+  }
+
   private getSettlementDisplayName(settlementId: string | undefined): string {
     if (!settlementId) {
       return "UNASSIGNED";
@@ -1053,6 +1065,7 @@ export class MilestoneOneScene extends Phaser.Scene {
   }
 
   private updateBuildingsPanel(): void {
+    const settlement = this.getActiveControlledSettlement();
     const counts = this.getBuildingCounts();
     const buildRows = Math.ceil(BUILDING_OPTIONS.length / 3);
     const height = this.buildingsPanelExpanded ? 76 + buildRows * 76 + 8 : 48;
@@ -1060,7 +1073,9 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.buildingsPanelBg.setSize(BUILD_PANEL_WIDTH, height);
     this.buildingsPanel.setSize(BUILD_PANEL_WIDTH, height);
     this.buildingsPanelTitle.setText(
-      this.buildingsPanelExpanded ? "BUILD // STRUCTURES [-]" : "BUILD // STRUCTURES [+]"
+      this.buildingsPanelExpanded
+        ? `BUILD // ${this.getSettlementDisplayName(settlement?.id)} [-]`
+        : `BUILD // ${this.getSettlementDisplayName(settlement?.id)} [+]`
     );
     this.buildingsPanelBody.setVisible(this.buildingsPanelExpanded);
     for (const [kind, tile] of this.buildingTiles) {
@@ -1087,9 +1102,15 @@ export class MilestoneOneScene extends Phaser.Scene {
   }
 
   private getBuildingCounts(): Partial<Record<BuildingKind, number>> {
+    const settlement = this.getActiveControlledSettlement();
+    if (!settlement) {
+      return {};
+    }
     return Object.values(this.simulation.getState().buildings).reduce<Partial<Record<BuildingKind, number>>>(
       (counts, building) => {
-        counts[building.kind] = (counts[building.kind] ?? 0) + 1;
+        if (building.settlementId === settlement.id) {
+          counts[building.kind] = (counts[building.kind] ?? 0) + 1;
+        }
         return counts;
       },
       {}
@@ -1237,6 +1258,11 @@ export class MilestoneOneScene extends Phaser.Scene {
   }
 
   private placeBuildingAt(kind: BuildingKind, point: Phaser.Math.Vector2): boolean {
+    const settlement = this.getActiveControlledSettlement();
+    if (!settlement) {
+      this.updateUi(["Select a Crown castle before authorizing construction."]);
+      return false;
+    }
     const position = this.snapToGrid(point);
     if (!this.isValidBuildingPosition(kind, position)) {
       this.updateUi(["Construction site blocked. Choose open terrain."]);
@@ -1246,7 +1272,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.issueCommand({
       type: "place-building",
       payload: {
-        settlementId: "settlement-capital",
+        settlementId: settlement.id,
         kind,
         position: { x: position.x, y: position.y }
       }
@@ -1259,6 +1285,11 @@ export class MilestoneOneScene extends Phaser.Scene {
   }
 
   private placeLinearBuildings(kind: BuildingKind, from: Phaser.Math.Vector2, to: Phaser.Math.Vector2): void {
+    const settlement = this.getActiveControlledSettlement();
+    if (!settlement) {
+      this.updateUi(["Select a Crown castle before authorizing construction."]);
+      return;
+    }
     const length = Phaser.Math.Distance.BetweenPoints(from, to);
     const steps = Math.max(1, Math.ceil(length / PLACEMENT_GRID_SIZE));
     const placedPositions = new Set<string>();
@@ -1280,7 +1311,7 @@ export class MilestoneOneScene extends Phaser.Scene {
       this.issueCommand({
         type: "place-building",
         payload: {
-          settlementId: "settlement-capital",
+          settlementId: settlement.id,
           kind,
           position: { x: position.x, y: position.y }
         }
@@ -1469,9 +1500,15 @@ export class MilestoneOneScene extends Phaser.Scene {
   }
 
   private createBattalion(specialization: BattalionSpecialization = "militia"): void {
+    const settlement = this.getActiveControlledSettlement();
+    if (!settlement) {
+      this.updateUi(["Select a Crown castle before training a battalion."]);
+      return;
+    }
     const hasMilitaryQuarters = Object.values(this.simulation.getState().buildings).some(
       (building) =>
         building.ownerEmpireId === "empire-player" &&
+        building.settlementId === settlement.id &&
         building.kind === "military-quarters" &&
         building.complete
     );
@@ -1482,7 +1519,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.issueCommand({
       type: "create-battalion",
       payload: {
-        settlementId: "settlement-capital",
+        settlementId: settlement.id,
         size: specialization === "militia" ? 10 : 8,
         specialization
       }
@@ -1491,19 +1528,31 @@ export class MilestoneOneScene extends Phaser.Scene {
   }
 
   private createCaravan(): void {
-    const settlement = this.simulation.getState().settlements["settlement-capital"];
+    const settlement = this.getActiveControlledSettlement();
+    if (!settlement) {
+      this.updateUi(["Select a Crown castle before commissioning a supply wagon."]);
+      return;
+    }
     this.issueCommand({ type: "create-caravan", payload: { settlementId: settlement.id } });
     this.updateUi(["Supply wagon queued. Requires a completed Town Square and 12 local food."]);
   }
 
   private createShip(): void {
-    const settlement = this.simulation.getState().settlements["settlement-capital"];
+    const settlement = this.getActiveControlledSettlement();
+    if (!settlement) {
+      this.updateUi(["Select a Crown castle before commissioning a Warship."]);
+      return;
+    }
     this.issueCommand({ type: "create-ship", payload: { settlementId: settlement.id } });
     this.updateUi(["Warship queued. It launches on water and requires a Town Square, 18 wood, and 4 iron."]);
   }
 
   private setLaborFocus(focus: "farmers" | "builders" | "lumberjacks" | "miners"): void {
-    const settlement = this.simulation.getState().settlements["settlement-capital"];
+    const settlement = this.getActiveControlledSettlement();
+    if (!settlement) {
+      this.updateUi(["Select a Crown castle before assigning labor."]);
+      return;
+    }
     const available = settlement.population.citizens - settlement.population.militarizedCitizens;
     const roles: Array<"farmers" | "builders" | "lumberjacks" | "miners"> = [
       focus,
@@ -1524,12 +1573,17 @@ export class MilestoneOneScene extends Phaser.Scene {
   }
 
   private castBlessHarvest(): void {
+    const settlement = this.getActiveControlledSettlement();
+    if (!settlement) {
+      this.updateUi(["Select a Crown castle before invoking Bless Harvest."]);
+      return;
+    }
     this.issueCommand({
       type: "cast-miracle",
       payload: {
         empireId: "empire-player",
         kind: "bless-harvest",
-        settlementId: "settlement-capital"
+        settlementId: settlement.id
       }
     });
     this.updateUi(["Bless Harvest petitioned. 12 Faith will be spent on confirmation."]);
@@ -1550,10 +1604,14 @@ export class MilestoneOneScene extends Phaser.Scene {
   }
 
   private assimilateCaptives(): void {
-    const settlement = this.simulation.getState().settlements["settlement-capital"];
+    const settlement = this.getActiveControlledSettlement();
+    if (!settlement) {
+      this.updateUi(["Select a Crown castle before ordering assimilation."]);
+      return;
+    }
     const count = Math.min(4, settlement.population.captives);
     if (count === 0) {
-      this.updateUi(["No captives are housed in the capital."]);
+      this.updateUi([`No captives are housed in ${this.getSettlementDisplayName(settlement.id)}.`]);
       return;
     }
     this.issueCommand({
@@ -1992,9 +2050,12 @@ export class MilestoneOneScene extends Phaser.Scene {
   private updateUi(events: string[]): void {
     const state = this.simulation.getState();
     const empire = state.empires["empire-player"];
-    const settlement = state.settlements["settlement-capital"];
+    const settlement = this.getActiveControlledSettlement();
+    if (!settlement) {
+      return;
+    }
     this.resourceText.setText(
-      `FOOD ${settlement.localFood}    WOOD ${empire.resources.wood}    IRON ${empire.resources.iron}    FAITH ${empire.resources.faith}    TICK ${state.tick}`
+      `SEAT ${this.getSettlementDisplayName(settlement.id)}    FOOD ${settlement.localFood}    WOOD ${empire.resources.wood}    IRON ${empire.resources.iron}    FAITH ${empire.resources.faith}    TICK ${state.tick}`
     );
     this.statusText.setText(
       [
@@ -2028,8 +2089,12 @@ export class MilestoneOneScene extends Phaser.Scene {
 
   private getImperialMandate(): string {
     const state = this.simulation.getState();
-    const capital = state.settlements["settlement-capital"];
-    const hasFarm = capital.buildingIds.some((id) => state.buildings[id]?.kind === "farm" && state.buildings[id]?.complete);
+    const playerSettlements = state.empires["empire-player"].settlementIds
+      .map((id) => state.settlements[id])
+      .filter((settlement): settlement is SettlementState => Boolean(settlement));
+    const hasFarm = playerSettlements.some((settlement) =>
+      settlement.buildingIds.some((id) => state.buildings[id]?.kind === "farm" && state.buildings[id]?.complete)
+    );
     if (!hasFarm) {
       return "ESTABLISH A FARM ON FERTILE GROUND.";
     }

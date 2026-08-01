@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.21.0 - 2026-08-01
+
+- Selecting a Crown castle now establishes the active command seat. The tactical readout, building inventory, placement commands, labor, recruitment, transport, assimilation, and Bless Harvest all operate on that settlement.
+- Specialist training now requires Military Quarters in the active settlement, preserving independent settlement development after conquest.
+
 ## 1.20.0 - 2026-08-01
 
 - Crown castles are now inspectable governor seats: selecting one focuses the Heir panel, Book of Lessons, and reward/punishment controls on that settlement's live heir.
