@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.11.0 - 2026-08-01
+
+- Added a top-bar Pause/Resume control with Space-key support, keeping the continuous simulation available for tactical planning.
+- Repositioned the command dock so its complete command set remains reachable on common laptop-height viewports.
+- Replaced the prototype opening status with a game-world state message and manually verified the pause state in the live browser build.
+
 ## 1.10.0 - 2026-08-01
 
 - Added direct Warship attack orders against hostile vessels, deterministic naval fire, cooldowns, sinking events, and route-aware UI targeting.

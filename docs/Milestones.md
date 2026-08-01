@@ -80,6 +80,7 @@ Implemented:
 - Water-only Warship launch and movement from Town Squares, with transport capacity and embarked-fire restrictions.
 - Painterly battlefield art direction integrated beneath deterministic terrain overlays and tactical controls.
 - Direct Warship targeting, cooldown-driven naval fire, and deterministic sinking behavior.
+- Accessible pause/resume controls and verified responsive command-dock layout.
 
 ## Milestone 4: Persistence Foundation
 

@@ -150,12 +150,16 @@ interface HeirFeedbackControl {
 export class MilestoneOneScene extends Phaser.Scene {
   private simulation = new Simulation(createInitialWorld(777));
   private commandSequence = 0;
+  private paused = false;
   private selectedBattalionId: string | null = null;
   private selectedCaravanId: string | null = null;
   private readonly selectedBattalionIds = new Set<string>();
   private mode: ToolMode = "select";
   private topHud!: Phaser.GameObjects.Rectangle;
   private gameTitleText!: Phaser.GameObjects.Text;
+  private pauseControl!: Phaser.GameObjects.Container;
+  private pauseControlButton!: Phaser.GameObjects.Rectangle;
+  private pauseControlLabel!: Phaser.GameObjects.Text;
   private bookControl!: Phaser.GameObjects.Container;
   private bookControlLabel!: Phaser.GameObjects.Text;
   private bookPanel!: Phaser.GameObjects.Container;
@@ -204,6 +208,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.cameras.main.setBounds(0, 0, 1400, 900);
     this.worldLayer = this.add.container(0, 0);
     this.cursors = this.input.keyboard?.createCursorKeys();
+    this.input.keyboard?.on("keydown-SPACE", () => this.togglePause());
 
     this.drawTerrain();
     this.createUi();
@@ -216,6 +221,9 @@ export class MilestoneOneScene extends Phaser.Scene {
       delay: 5000,
       loop: true,
       callback: () => {
+        if (this.paused) {
+          return;
+        }
         const result = this.simulation.tick();
         this.renderWorld();
         this.updateUi(result.events.map((event) => event.type).slice(-5));
@@ -233,7 +241,7 @@ export class MilestoneOneScene extends Phaser.Scene {
       }
     });
     this.renderWorld();
-    this.updateUi(["Milestone 1 online"]);
+    this.updateUi(["The Crown is established."]);
   }
 
   update(): void {
@@ -324,12 +332,33 @@ export class MilestoneOneScene extends Phaser.Scene {
     });
     this.gameTitleText.setScrollFactor(0).setDepth(41);
 
-    this.resourceText = this.add.text(312, 18, "", {
+    this.pauseControlButton = this.add.rectangle(302, 14, 64, 30, UI_COLORS.command, 1).setOrigin(0);
+    this.pauseControlButton.setStrokeStyle(1, UI_COLORS.trim);
+    this.pauseControlButton.setInteractive({ useHandCursor: true });
+    this.pauseControlButton.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+      pointer.event.stopPropagation();
+      this.togglePause();
+    });
+    this.pauseControlLabel = this.add.text(312, 23, "PAUSE", {
+      fontFamily: "Arial Black, Arial",
+      fontSize: "10px",
+      color: UI_COLORS.text
+    });
+    this.pauseControl = this.add.container(0, 0, [this.pauseControlButton, this.pauseControlLabel]);
+    this.pauseControl.setScrollFactor(0).setDepth(41);
+
+    this.resourceText = this.add.text(382, 18, "", {
       fontFamily: "Arial, sans-serif",
       fontSize: "13px",
       color: UI_COLORS.text
     });
     this.resourceText.setScrollFactor(0).setDepth(41);
+  }
+
+  private togglePause(): void {
+    this.paused = !this.paused;
+    this.pauseControlLabel.setText(this.paused ? "RESUME" : "PAUSE");
+    this.updateUi([this.paused ? "Simulation paused." : "Simulation resumed."]);
   }
 
   private createBookOfLessons(): void {
@@ -801,14 +830,18 @@ export class MilestoneOneScene extends Phaser.Scene {
 
     this.topHud.setSize(width, topHeight);
     this.gameTitleText.setPosition(18, 10);
-    this.resourceText.setPosition(compact ? 18 : 312, compact ? 47 : 19);
+    const pauseX = compact ? width - 82 : 302;
+    const pauseY = compact ? 36 : 14;
+    this.pauseControlButton.setPosition(pauseX, pauseY);
+    this.pauseControlLabel.setPosition(pauseX + 10, pauseY + 9);
+    this.resourceText.setPosition(compact ? 18 : 382, compact ? 47 : 19);
     this.bookControl.setPosition(0, 0);
     this.bookPanel.setPosition(
       Math.max(16, Math.round((width - 470) / 2)),
       Math.max(topHeight + 18, Math.round((height - 410) / 2))
     );
     this.intelPanel.setPosition(16, topHeight + 14);
-    this.commandDock.setPosition(16, Math.max(topHeight + 348, height - 396));
+    this.commandDock.setPosition(16, Math.max(topHeight + 220, height - 396));
     if (this.heirPanel) {
       this.heirPanel.setScale(scale);
       this.heirPanel.setPosition(Math.max(16, heirPanelX), topHeight + 14);
