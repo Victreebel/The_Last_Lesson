@@ -1,6 +1,7 @@
 import type {
   BattalionId,
   BuildingId,
+  CaravanId,
   DoctrineId,
   EmpireId,
   HeirId,
@@ -90,6 +91,7 @@ export interface SettlementState {
   readonly centralBuildingId: BuildingId;
   readonly buildingIds: BuildingId[];
   readonly battalionIds: BattalionId[];
+  readonly caravanIds: CaravanId[];
   readonly population: CitizenPopulation;
   readonly localFood: number;
   readonly internalFaith: number;
@@ -124,13 +126,29 @@ export interface BuildingState {
 
 export type BattalionSpecialization = "militia" | "spears" | "archers" | "raiders";
 
+export type CaravanKind = "caravan" | "ship";
+
+export interface CaravanState {
+  readonly id: CaravanId;
+  readonly ownerEmpireId: EmpireId;
+  readonly settlementId: SettlementId;
+  readonly kind: CaravanKind;
+  readonly position: Position;
+  readonly destination?: Position;
+  readonly cargoFood: number;
+  readonly capacity: number;
+  readonly defense: number;
+  readonly maxDefense: number;
+  readonly speed: number;
+}
+
 export interface BattalionState {
   readonly id: BattalionId;
   readonly ownerEmpireId: EmpireId;
   readonly settlementId: SettlementId;
   readonly position: Position;
   readonly destination?: Position;
-  readonly targetId?: BattalionId | BuildingId;
+  readonly targetId?: BattalionId | BuildingId | CaravanId;
   readonly specialization: BattalionSpecialization;
   readonly size: number;
   readonly attack: number;
@@ -185,6 +203,7 @@ export interface WorldState {
   readonly settlements: Record<SettlementId, SettlementState>;
   readonly buildings: Record<BuildingId, BuildingState>;
   readonly battalions: Record<BattalionId, BattalionState>;
+  readonly caravans: Record<CaravanId, CaravanState>;
   readonly heirs: Record<HeirId, HeirState>;
   readonly doctrines: Record<DoctrineId, DoctrineRule>;
 }
@@ -266,6 +285,7 @@ export function createInitialWorld(seed: number): WorldState {
         centralBuildingId: "building-castle",
         buildingIds: ["building-castle"],
         battalionIds: [],
+        caravanIds: [],
         population: {
           citizens: 24,
           captives: 0,
@@ -304,6 +324,7 @@ export function createInitialWorld(seed: number): WorldState {
         centralBuildingId: "building-rival-castle",
         buildingIds: ["building-rival-castle"],
         battalionIds: ["battalion-rival-1"],
+        caravanIds: [],
         population: {
           citizens: 24,
           captives: 0,
@@ -378,6 +399,7 @@ export function createInitialWorld(seed: number): WorldState {
         supply: 100
       }
     },
+    caravans: {},
     heirs: {
       "heir-prime": {
         id: "heir-prime",

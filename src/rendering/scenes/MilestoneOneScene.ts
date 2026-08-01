@@ -8,6 +8,7 @@ import {
   terrainAtPosition,
   type BattalionState,
   type BattalionSpecialization,
+  type CaravanState,
   type BuildingKind,
   type BuildingState,
   type DoctrineRule,
@@ -142,6 +143,7 @@ export class MilestoneOneScene extends Phaser.Scene {
   private simulation = new Simulation(createInitialWorld(777));
   private commandSequence = 0;
   private selectedBattalionId: string | null = null;
+  private selectedCaravanId: string | null = null;
   private readonly selectedBattalionIds = new Set<string>();
   private mode: ToolMode = "select";
   private topHud!: Phaser.GameObjects.Rectangle;
@@ -170,6 +172,7 @@ export class MilestoneOneScene extends Phaser.Scene {
   private readonly buildingSprites = new Map<string, Phaser.GameObjects.Rectangle>();
   private readonly buildingLabelSprites = new Map<string, Phaser.GameObjects.Text>();
   private readonly battalionSprites = new Map<string, Phaser.GameObjects.Container>();
+  private readonly caravanSprites = new Map<string, Phaser.GameObjects.Container>();
   private placementPreview?: Phaser.GameObjects.Rectangle;
   private selectionBox?: Phaser.GameObjects.Rectangle;
   private pointerDownWorld?: Phaser.Math.Vector2;
@@ -348,7 +351,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.commandDock = this.add.container(0, 0, [background, title, divider]);
     this.commandDock.setScrollFactor(0).setDepth(40);
 
-    this.addCommandButton(14, 42, "MOBILIZE", "BATTALION", () => this.createBattalion());
+    this.addCommandButton(14, 42, "SUPPLY", "WAGON", () => this.createCaravan());
     this.addCommandButton(110, 42, "MOVE", "UNIT", () => {
       this.mode = "move";
       this.updateUi(["Select a battalion, then designate a destination."]);
@@ -727,7 +730,11 @@ export class MilestoneOneScene extends Phaser.Scene {
         this.cancelPlacement();
       } else {
         this.mode = "select";
-        this.issueMoveOrder(worldPoint);
+        if (this.selectedCaravanId) {
+          this.issueCaravanMoveOrder(worldPoint);
+        } else {
+          this.issueMoveOrder(worldPoint);
+        }
       }
       return;
     }
@@ -990,6 +997,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     if (!append) {
       this.clearSelection();
     }
+    this.selectedCaravanId = null;
     this.selectedBattalionIds.add(id);
     this.selectedBattalionId = id;
     this.updateUi([`Selected ${id}.`]);
@@ -998,6 +1006,7 @@ export class MilestoneOneScene extends Phaser.Scene {
   private clearSelection(): void {
     this.selectedBattalionIds.clear();
     this.selectedBattalionId = null;
+    this.selectedCaravanId = null;
   }
 
   private issueMoveOrder(point: Phaser.Math.Vector2): void {
@@ -1016,7 +1025,21 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.updateUi([`Move order issued to ${this.selectedBattalionIds.size} battalion(s).`]);
   }
 
-  private issueAttackOrder(targetId: BattalionState["id"] | BuildingState["id"]): void {
+  private issueCaravanMoveOrder(point: Phaser.Math.Vector2): void {
+    if (!this.selectedCaravanId) {
+      return;
+    }
+    const destination = this.snapToGrid(point);
+    this.issueCommand({
+      type: "move-caravan",
+      payload: { caravanId: this.selectedCaravanId, destination: { x: destination.x, y: destination.y } }
+    });
+    this.updateUi(["Supply caravan routed to new destination."]);
+  }
+
+  private issueAttackOrder(
+    targetId: BattalionState["id"] | BuildingState["id"] | CaravanState["id"]
+  ): void {
     if (this.selectedBattalionIds.size === 0) {
       this.updateUi(["Select a battalion before designating a target."]);
       return;
@@ -1064,6 +1087,12 @@ export class MilestoneOneScene extends Phaser.Scene {
       }
     });
     this.updateUi([`${specialization.toUpperCase()} battalion queued for training.`]);
+  }
+
+  private createCaravan(): void {
+    const settlement = this.simulation.getState().settlements["settlement-capital"];
+    this.issueCommand({ type: "create-caravan", payload: { settlementId: settlement.id } });
+    this.updateUi(["Supply wagon queued. Requires a completed Town Square and 12 local food."]);
   }
 
   private setLaborFocus(focus: "farmers" | "builders" | "lumberjacks" | "miners"): void {
@@ -1163,6 +1192,10 @@ export class MilestoneOneScene extends Phaser.Scene {
       this.renderBattalion(battalion);
     }
 
+    for (const caravan of Object.values(state.caravans)) {
+      this.renderCaravan(caravan);
+    }
+
     for (const [id, sprite] of this.battalionSprites) {
       if (!state.battalions[id]) {
         sprite.destroy();
@@ -1177,6 +1210,16 @@ export class MilestoneOneScene extends Phaser.Scene {
         this.buildingSprites.delete(id);
         this.buildingLabelSprites.get(id)?.destroy();
         this.buildingLabelSprites.delete(id);
+      }
+    }
+
+    for (const [id, sprite] of this.caravanSprites) {
+      if (!state.caravans[id]) {
+        sprite.destroy();
+        this.caravanSprites.delete(id);
+        if (this.selectedCaravanId === id) {
+          this.selectedCaravanId = null;
+        }
       }
     }
 
@@ -1285,9 +1328,64 @@ export class MilestoneOneScene extends Phaser.Scene {
     label.setText(this.getBattalionLabel(battalion));
   }
 
+  private renderCaravan(caravan: CaravanState): void {
+    let container = this.caravanSprites.get(caravan.id);
+    if (!container) {
+      const base = this.add.rectangle(
+        0,
+        0,
+        54,
+        28,
+        caravan.ownerEmpireId === "empire-player" ? 0xb58c43 : 0x7c4542,
+        1
+      );
+      base.setStrokeStyle(2, 0x201614);
+      const label = this.add.text(0, 0, this.getCaravanLabel(caravan), {
+        fontFamily: "Arial Black, Arial",
+        fontSize: "8px",
+        color: "#ffffff",
+        align: "center"
+      });
+      label.setOrigin(0.5);
+      container = this.add.container(caravan.position.x, caravan.position.y, [base, label]);
+      container.setSize(54, 28);
+      container.setInteractive({ useHandCursor: true });
+      container.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+        pointer.event.stopPropagation();
+        if (
+          caravan.ownerEmpireId !== "empire-player" &&
+          (this.isRightClick(pointer) || this.mode === "attack") &&
+          this.selectedBattalionIds.size > 0
+        ) {
+          this.issueAttackOrder(caravan.id);
+          return;
+        }
+        if (caravan.ownerEmpireId !== "empire-player") {
+          this.updateUi(["Rival supply convoy detected. Select Crown battalions to raid it."]);
+          return;
+        }
+        this.clearSelection();
+        this.selectedCaravanId = caravan.id;
+        this.updateUi(["Supply caravan selected. Right-click terrain to route it."]);
+      });
+      this.worldLayer.add(container);
+      this.caravanSprites.set(caravan.id, container);
+    }
+    container.setPosition(caravan.position.x, caravan.position.y);
+    const base = container.getAt(0) as Phaser.GameObjects.Rectangle;
+    base.setFillStyle(caravan.ownerEmpireId === "empire-player" ? 0xb58c43 : 0x7c4542);
+    base.setStrokeStyle(this.selectedCaravanId === caravan.id ? 4 : 2, 0xf0d36f);
+    const label = container.getAt(1) as Phaser.GameObjects.Text;
+    label.setText(this.getCaravanLabel(caravan));
+  }
+
   private getBattalionLabel(battalion: BattalionState): string {
     const suffix = battalion.id.split("-").at(-1) ?? "1";
     return `${battalion.specialization.toUpperCase()} ${suffix}\n${battalion.size} TROOPS`;
+  }
+
+  private getCaravanLabel(caravan: CaravanState): string {
+    return `${caravan.ownerEmpireId === "empire-player" ? "CROWN" : "RIVAL"} WAGON\nF ${caravan.cargoFood}`;
   }
 
   private getBuildingWorldLabel(building: BuildingState): string {
@@ -1305,7 +1403,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.statusText.setText(
       [
         `ORDER: ${this.getModeLabel()}`,
-        `SELECTION: ${this.selectedBattalionIds.size ? `${this.selectedBattalionIds.size} BATTALION(S)` : "NO UNIT SELECTED"}`,
+        `SELECTION: ${this.selectedCaravanId ? "SUPPLY CARAVAN" : this.selectedBattalionIds.size ? `${this.selectedBattalionIds.size} BATTALION(S)` : "NO UNIT SELECTED"}`,
         `POPULATION: ${settlement.population.citizens}  //  MILITARY: ${settlement.population.militarizedCitizens}`,
         `LABOR: FARM ${settlement.population.farmers}  BUILD ${settlement.population.builders}  LUMBER ${settlement.population.lumberjacks}  MINE ${settlement.population.miners}`,
         `CAPTIVES: ${settlement.population.captives}/${this.getCaptiveCapacity(settlement.id)}  //  REBELLION: ${settlement.pressures.rebellion}%`

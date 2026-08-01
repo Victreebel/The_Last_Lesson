@@ -14,3 +14,8 @@
 - Added specialized militia, spear, archer, and raider battalions with Military Quarters gating, resource costs, range, cadence, and counterplay.
 - Added captive capture from routed battalions, hovel capacity, liberation after housing destruction, rebellion escape, and Town Square assimilation.
 - Expanded the command dock with visible specialization, captive, and social-state controls.
+
+## 1.3.0 - 2026-08-01
+
+- Added physical land caravans with food cargo, road acceleration, battalion supply delivery, visible selection/routing, and hostile raiding.
+- Added deterministic transport and logistics disruption coverage.

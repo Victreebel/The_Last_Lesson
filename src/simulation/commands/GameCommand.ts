@@ -1,12 +1,14 @@
 import type { BattalionSpecialization, BuildingKind, Position } from "../state/WorldState";
-import type { BattalionId, BuildingId, CommandId, HeirId, PlayerId, SettlementId } from "../state/Ids";
+import type { BattalionId, BuildingId, CaravanId, CommandId, HeirId, PlayerId, SettlementId } from "../state/Ids";
 
 export type CommandType =
   | "assign-labor"
   | "place-building"
   | "generate-faith"
   | "create-battalion"
+  | "create-caravan"
   | "move-battalion"
+  | "move-caravan"
   | "attack-target"
   | "assimilate-captives"
   | "reward-heir"
@@ -53,9 +55,18 @@ export interface MoveBattalionPayload {
   readonly destination: Position;
 }
 
+export interface CreateCaravanPayload {
+  readonly settlementId: SettlementId;
+}
+
+export interface MoveCaravanPayload {
+  readonly caravanId: CaravanId;
+  readonly destination: Position;
+}
+
 export interface AttackTargetPayload {
   readonly battalionId: BattalionId;
-  readonly targetId: BattalionId | BuildingId;
+  readonly targetId: BattalionId | BuildingId | CaravanId;
 }
 
 export interface AssimilateCaptivesPayload {
@@ -79,7 +90,9 @@ export type GameCommand =
   | GameCommandBase<"place-building", PlaceBuildingPayload>
   | GameCommandBase<"generate-faith", GenerateFaithPayload>
   | GameCommandBase<"create-battalion", CreateBattalionPayload>
+  | GameCommandBase<"create-caravan", CreateCaravanPayload>
   | GameCommandBase<"move-battalion", MoveBattalionPayload>
+  | GameCommandBase<"move-caravan", MoveCaravanPayload>
   | GameCommandBase<"attack-target", AttackTargetPayload>
   | GameCommandBase<"assimilate-captives", AssimilateCaptivesPayload>
   | GameCommandBase<"reward-heir", HeirFeedbackPayload>

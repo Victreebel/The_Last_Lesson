@@ -13,6 +13,7 @@ import {
   type BattalionSpecialization,
   type BattalionState,
   type BuildingState,
+  type CaravanState,
   type DoctrineRule,
   type HeirState,
   type Position,
@@ -96,6 +97,8 @@ export class Simulation {
       this.updateEconomy(nextTick);
       this.updateConstruction(nextTick);
       this.updateBattalionMovement(nextTick);
+      this.updateCaravanMovement(nextTick);
+      this.updateCaravanDeliveries(nextTick);
       this.updateBattalionSupply(nextTick);
       this.updateCombat(nextTick);
       this.updateReligion(nextTick);
@@ -335,6 +338,56 @@ export class Simulation {
       return;
     }
 
+    if (command.type === "create-caravan") {
+      const settlement = this.state.settlements[command.payload.settlementId];
+      const hasTownSquare = settlement?.buildingIds.some((id) => {
+        const building = this.state.buildings[id];
+        return building?.kind === "town-square" && building.complete;
+      });
+      const empire = settlement ? this.state.empires[settlement.ownerEmpireId] : undefined;
+      const foodLoad = settlement ? Math.min(24, settlement.localFood) : 0;
+      if (!settlement || !empire || !hasTownSquare || empire.resources.wood < 8 || foodLoad < 12) {
+        this.eventWriter.emit(tick, "command-rejected", { commandId: command.id });
+        return;
+      }
+      const castle = this.state.buildings[settlement.centralBuildingId];
+      const caravanId = `caravan-${tick}-${settlement.caravanIds.length + 1}`;
+      const caravan: CaravanState = {
+        id: caravanId,
+        ownerEmpireId: settlement.ownerEmpireId,
+        settlementId: settlement.id,
+        kind: "caravan",
+        position: { x: castle.position.x + 90, y: castle.position.y + 20 },
+        cargoFood: foodLoad,
+        capacity: 24,
+        defense: 60,
+        maxDefense: 60,
+        speed: 48
+      };
+      this.state = {
+        ...this.state,
+        caravans: { ...this.state.caravans, [caravanId]: caravan },
+        empires: {
+          ...this.state.empires,
+          [empire.id]: {
+            ...empire,
+            resources: { ...empire.resources, wood: empire.resources.wood - 8 }
+          }
+        },
+        settlements: {
+          ...this.state.settlements,
+          [settlement.id]: {
+            ...settlement,
+            caravanIds: [...settlement.caravanIds, caravanId],
+            localFood: settlement.localFood - foodLoad
+          }
+        }
+      };
+      this.eventWriter.emit(tick, "caravan-created", { commandId: command.id, caravanId, foodLoad });
+      this.observePlayerCommand(command, tick);
+      return;
+    }
+
     if (command.type === "move-battalion") {
       const battalion = this.state.battalions[command.payload.battalionId];
       if (!battalion) {
@@ -351,6 +404,25 @@ export class Simulation {
             destination: command.payload.destination,
             targetId: undefined
           }
+        }
+      };
+      this.eventWriter.emit(tick, "command-applied", { commandId: command.id });
+      this.observePlayerCommand(command, tick);
+      return;
+    }
+
+    if (command.type === "move-caravan") {
+      const caravan = this.state.caravans[command.payload.caravanId];
+      const terrain = terrainAtPosition(this.state, command.payload.destination);
+      if (!caravan || terrain === "water") {
+        this.eventWriter.emit(tick, "command-rejected", { commandId: command.id });
+        return;
+      }
+      this.state = {
+        ...this.state,
+        caravans: {
+          ...this.state.caravans,
+          [caravan.id]: { ...caravan, destination: command.payload.destination }
         }
       };
       this.eventWriter.emit(tick, "command-applied", { commandId: command.id });
@@ -1156,13 +1228,82 @@ export class Simulation {
     };
   }
 
-  private roadMovementMultiplier(battalion: BattalionState): number {
+  private updateCaravanMovement(tick: number): void {
+    const nextCaravans: Record<string, CaravanState> = {};
+    for (const caravan of Object.values(this.state.caravans).sort((left, right) =>
+      left.id.localeCompare(right.id)
+    )) {
+      if (!caravan.destination) {
+        nextCaravans[caravan.id] = caravan;
+        continue;
+      }
+      const terrain = terrainAtPosition(this.state, caravan.position);
+      const speed = caravan.speed * terrainMovementMultiplier(terrain) * this.roadMovementMultiplier(caravan);
+      if (speed === 0) {
+        nextCaravans[caravan.id] = caravan;
+        continue;
+      }
+      const nextPosition = moveToward(caravan.position, caravan.destination, speed);
+      const arrived = distance(nextPosition, caravan.destination) < 1;
+      nextCaravans[caravan.id] = {
+        ...caravan,
+        position: nextPosition,
+        destination: arrived ? undefined : caravan.destination
+      };
+      this.eventWriter.emit(tick, "caravan-moved", {
+        caravanId: caravan.id,
+        x: Math.round(nextPosition.x),
+        y: Math.round(nextPosition.y)
+      });
+    }
+    this.state = { ...this.state, caravans: nextCaravans };
+  }
+
+  private updateCaravanDeliveries(tick: number): void {
+    let caravans = this.state.caravans;
+    let battalions = this.state.battalions;
+    for (const caravan of Object.values(caravans).sort((left, right) => left.id.localeCompare(right.id))) {
+      if (caravan.cargoFood === 0) {
+        continue;
+      }
+      const recipient = Object.values(battalions)
+        .filter(
+          (battalion) =>
+            battalion.ownerEmpireId === caravan.ownerEmpireId &&
+            battalion.supply < 100 &&
+            distance(battalion.position, caravan.position) <= 72
+        )
+        .sort((left, right) => left.supply - right.supply || left.id.localeCompare(right.id))[0];
+      if (!recipient) {
+        continue;
+      }
+      const foodUsed = Math.min(caravan.cargoFood, Math.ceil((100 - recipient.supply) / 2));
+      const supplyRestored = Math.min(100 - recipient.supply, foodUsed * 2);
+      caravans = {
+        ...caravans,
+        [caravan.id]: { ...caravan, cargoFood: caravan.cargoFood - foodUsed }
+      };
+      battalions = {
+        ...battalions,
+        [recipient.id]: { ...recipient, supply: recipient.supply + supplyRestored }
+      };
+      this.eventWriter.emit(tick, "supply-delivered", {
+        caravanId: caravan.id,
+        battalionId: recipient.id,
+        foodUsed,
+        supplyRestored
+      });
+    }
+    this.state = { ...this.state, caravans, battalions };
+  }
+
+  private roadMovementMultiplier(unit: BattalionState | CaravanState): number {
     const onRoad = Object.values(this.state.buildings).some(
       (building) =>
-        building.ownerEmpireId === battalion.ownerEmpireId &&
+        building.ownerEmpireId === unit.ownerEmpireId &&
         building.kind === "road" &&
         building.complete &&
-        distance(building.position, battalion.position) <= 28
+        distance(building.position, unit.position) <= 28
     );
     return onRoad ? 1.3 : 1;
   }
@@ -1200,9 +1341,11 @@ export class Simulation {
   private updateCombat(tick: number): void {
     let buildings = this.state.buildings;
     let battalions = this.state.battalions;
+    let caravans = this.state.caravans;
     const capturedCastleIds: Array<{ readonly castleId: string; readonly attackerId: string }> = [];
     const defeatedBattalions: Array<{ readonly attackerId: string; readonly defender: BattalionState }> = [];
     const destroyedBuildingIds: string[] = [];
+    const destroyedCaravanIds: string[] = [];
 
     for (const candidate of Object.values(battalions).sort((a, b) => a.id.localeCompare(b.id))) {
       const battalion = battalions[candidate.id];
@@ -1226,7 +1369,8 @@ export class Simulation {
 
       const targetBattalion = battalions[battalion.targetId];
       const targetBuilding = buildings[battalion.targetId];
-      if (!targetBattalion && !targetBuilding) {
+      const targetCaravan = caravans[battalion.targetId];
+      if (!targetBattalion && !targetBuilding && !targetCaravan) {
         battalions = {
           ...battalions,
           [battalion.id]: { ...battalion, targetId: undefined }
@@ -1234,7 +1378,7 @@ export class Simulation {
         continue;
       }
 
-      const target = targetBattalion ?? targetBuilding;
+      const target = targetBattalion ?? targetBuilding ?? targetCaravan;
       if (distance(battalion.position, target.position) > battalion.range) {
         continue;
       }
@@ -1282,6 +1426,23 @@ export class Simulation {
             destroyedBuildingIds.push(targetBuilding.id);
           }
         }
+      } else if (targetCaravan) {
+        const nextDefense = Math.max(0, targetCaravan.defense - damage);
+        if (nextDefense === 0) {
+          const { [targetCaravan.id]: _destroyed, ...remainingCaravans } = caravans;
+          caravans = remainingCaravans;
+          destroyedCaravanIds.push(targetCaravan.id);
+          this.eventWriter.emit(tick, "entity-destroyed", { entityId: targetCaravan.id });
+          this.eventWriter.emit(tick, "caravan-destroyed", {
+            caravanId: targetCaravan.id,
+            cargoFoodLost: targetCaravan.cargoFood
+          });
+        } else {
+          caravans = {
+            ...caravans,
+            [targetCaravan.id]: { ...targetCaravan, defense: nextDefense }
+          };
+        }
       }
 
       const attackingBattalion = battalions[battalion.id];
@@ -1306,10 +1467,12 @@ export class Simulation {
     this.state = {
       ...this.state,
       buildings,
-      battalions
+      battalions,
+      caravans
     };
 
     this.removeDestroyedBuildings(destroyedBuildingIds);
+    this.removeDestroyedCaravans(destroyedCaravanIds);
     for (const defeated of defeatedBattalions) {
       const attacker = this.state.battalions[defeated.attackerId];
       if (attacker) {
@@ -1344,6 +1507,23 @@ export class Simulation {
       ])
     ) as WorldState["settlements"];
     this.state = { ...this.state, buildings: nextBuildings, settlements: nextSettlements };
+  }
+
+  private removeDestroyedCaravans(caravanIds: string[]): void {
+    if (caravanIds.length === 0) {
+      return;
+    }
+    const destroyed = new Set(caravanIds);
+    const nextSettlements = Object.fromEntries(
+      Object.entries(this.state.settlements).map(([id, settlement]) => [
+        id,
+        {
+          ...settlement,
+          caravanIds: settlement.caravanIds.filter((caravanId) => !destroyed.has(caravanId))
+        }
+      ])
+    ) as WorldState["settlements"];
+    this.state = { ...this.state, settlements: nextSettlements };
   }
 
   private captureDefeatedBattalion(
@@ -1488,8 +1668,8 @@ export class Simulation {
     }
   }
 
-  private findTarget(targetId: string): BattalionState | BuildingState | undefined {
-    return this.state.battalions[targetId] ?? this.state.buildings[targetId];
+  private findTarget(targetId: string): BattalionState | BuildingState | CaravanState | undefined {
+    return this.state.battalions[targetId] ?? this.state.buildings[targetId] ?? this.state.caravans[targetId];
   }
 }
 
@@ -1649,6 +1829,14 @@ function getDoctrineObservation(command: GameCommand, state: WorldState): Doctri
         preferredAction: "Raise a battalion",
         goal: "Secure the settlement"
       };
+    case "create-caravan":
+      return {
+        domain: "economy",
+        key: "create-caravan",
+        condition: "Food reserves and a Town Square are available",
+        preferredAction: "Establish supply caravans",
+        goal: "Sustain distant forces"
+      };
     case "move-battalion":
       return {
         domain: "military",
@@ -1656,6 +1844,14 @@ function getDoctrineObservation(command: GameCommand, state: WorldState): Doctri
         condition: "A battalion receives a destination",
         preferredAction: "Reposition battalions",
         goal: "Control the battlefield"
+      };
+    case "move-caravan":
+      return {
+        domain: "economy",
+        key: "reposition-caravan",
+        condition: "A supply caravan receives a destination",
+        preferredAction: "Route supply caravans",
+        goal: "Sustain distant forces"
       };
     case "attack-target":
       return {
