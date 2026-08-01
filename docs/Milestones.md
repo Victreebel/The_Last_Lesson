@@ -75,6 +75,7 @@ Implemented:
 - Town Square-built land caravans that load food, use roads, deliver battalion supply, and can be raided.
 - Battalion embarkation, transport movement, and player-controlled disembarkation.
 - Local food consumption, Villa-limited citizen capacity, surplus-driven population growth, and starvation consequences.
+- Garrisonable castles, walls, gates, and outposts, including breach consequences and visual command controls.
 
 ## Milestone 4: Persistence Foundation
 

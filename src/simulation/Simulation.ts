@@ -397,17 +397,39 @@ export class Simulation {
         return;
       }
 
+      const garrison = battalion.garrisonedInBuildingId
+        ? this.state.buildings[battalion.garrisonedInBuildingId]
+        : undefined;
+      const nextBuildings = garrison
+        ? {
+            ...this.state.buildings,
+            [garrison.id]: {
+              ...garrison,
+              garrisonBattalionIds: (garrison.garrisonBattalionIds ?? []).filter((id) => id !== battalion.id)
+            }
+          }
+        : this.state.buildings;
+
       this.state = {
         ...this.state,
+        buildings: nextBuildings,
         battalions: {
           ...this.state.battalions,
           [battalion.id]: {
             ...battalion,
+            garrisonedInBuildingId: undefined,
             destination: command.payload.destination,
             targetId: undefined
           }
         }
       };
+      if (garrison) {
+        this.eventWriter.emit(tick, "battalion-ungarrisoned", {
+          battalionId: battalion.id,
+          buildingId: garrison.id,
+          reason: "move-order"
+        });
+      }
       this.eventWriter.emit(tick, "command-applied", { commandId: command.id });
       this.observePlayerCommand(command, tick);
       return;
@@ -439,6 +461,7 @@ export class Simulation {
         !battalion ||
         !caravan ||
         battalion.embarkedInCaravanId ||
+        battalion.garrisonedInBuildingId ||
         battalion.ownerEmpireId !== caravan.ownerEmpireId ||
         distance(battalion.position, caravan.position) > 72 ||
         this.getCaravanUsedCapacity(caravan) + battalion.size > caravan.capacity
@@ -502,6 +525,50 @@ export class Simulation {
       this.eventWriter.emit(tick, "battalion-disembarked", {
         commandId: command.id,
         caravanId: caravan.id
+      });
+      this.observePlayerCommand(command, tick);
+      return;
+    }
+
+    if (command.type === "garrison-battalion") {
+      const battalion = this.state.battalions[command.payload.battalionId];
+      const building = this.state.buildings[command.payload.buildingId];
+      const garrisonIds = building?.garrisonBattalionIds ?? [];
+      if (
+        !battalion ||
+        !building ||
+        battalion.embarkedInCaravanId ||
+        battalion.garrisonedInBuildingId ||
+        battalion.ownerEmpireId !== building.ownerEmpireId ||
+        !building.complete ||
+        !this.isGarrisonable(building.kind) ||
+        distance(battalion.position, building.position) > 84 ||
+        garrisonIds.length >= this.getGarrisonCapacity(building.kind)
+      ) {
+        this.eventWriter.emit(tick, "command-rejected", { commandId: command.id });
+        return;
+      }
+
+      this.state = {
+        ...this.state,
+        buildings: {
+          ...this.state.buildings,
+          [building.id]: { ...building, garrisonBattalionIds: [...garrisonIds, battalion.id] }
+        },
+        battalions: {
+          ...this.state.battalions,
+          [battalion.id]: {
+            ...battalion,
+            garrisonedInBuildingId: building.id,
+            position: building.position,
+            destination: undefined
+          }
+        }
+      };
+      this.eventWriter.emit(tick, "battalion-garrisoned", {
+        commandId: command.id,
+        battalionId: battalion.id,
+        buildingId: building.id
       });
       this.observePlayerCommand(command, tick);
       return;
@@ -1370,6 +1437,14 @@ export class Simulation {
         continue;
       }
 
+      if (battalion.garrisonedInBuildingId) {
+        const building = this.state.buildings[battalion.garrisonedInBuildingId];
+        updatedBattalions[battalion.id] = building
+          ? { ...battalion, position: building.position, destination: undefined }
+          : { ...battalion, garrisonedInBuildingId: undefined, destination: undefined };
+        continue;
+      }
+
       if (!battalion.destination) {
         updatedBattalions[battalion.id] = battalion;
         continue;
@@ -1670,6 +1745,11 @@ export class Simulation {
       caravans
     };
 
+    const breachedBuildingIds = [
+      ...destroyedBuildingIds,
+      ...capturedCastleIds.map((capture) => capture.castleId)
+    ];
+    this.destroyGarrisonsInBreachedStructures(breachedBuildingIds, tick);
     this.removeDestroyedBuildings(destroyedBuildingIds);
     this.removeDestroyedCaravans(destroyedCaravans.map((caravan) => caravan.id));
     this.ejectPassengersFromDestroyedCaravans(destroyedCaravans, tick);
@@ -1685,6 +1765,79 @@ export class Simulation {
       if (attacker) {
         this.captureSettlement(attacker, capture.castleId, tick);
       }
+    }
+  }
+
+  private isGarrisonable(kind: BuildingState["kind"]): boolean {
+    return kind === "castle" || kind === "wall" || kind === "gate" || kind === "outpost";
+  }
+
+  private getGarrisonCapacity(kind: BuildingState["kind"]): number {
+    switch (kind) {
+      case "castle":
+        return 2;
+      case "wall":
+      case "gate":
+      case "outpost":
+        return 1;
+      default:
+        return 0;
+    }
+  }
+
+  private destroyGarrisonsInBreachedStructures(buildingIds: string[], tick: number): void {
+    const breached = new Set(buildingIds);
+    if (breached.size === 0) {
+      return;
+    }
+    const garrisonedBattalionIds = new Set<string>();
+    const nextBuildings: Record<string, BuildingState> = { ...this.state.buildings };
+    for (const buildingId of breached) {
+      const building = nextBuildings[buildingId];
+      if (!building) {
+        continue;
+      }
+      for (const battalionId of building.garrisonBattalionIds ?? []) {
+        garrisonedBattalionIds.add(battalionId);
+      }
+      nextBuildings[buildingId] = { ...building, garrisonBattalionIds: [] };
+    }
+    if (garrisonedBattalionIds.size === 0) {
+      this.state = { ...this.state, buildings: nextBuildings };
+      return;
+    }
+    const nextBattalions = Object.fromEntries(
+      Object.entries(this.state.battalions).filter(([id]) => !garrisonedBattalionIds.has(id))
+    ) as Record<string, BattalionState>;
+    const nextSettlements = Object.fromEntries(
+      Object.entries(this.state.settlements).map(([id, settlement]) => [
+        id,
+        {
+          ...settlement,
+          battalionIds: settlement.battalionIds.filter((battalionId) => !garrisonedBattalionIds.has(battalionId)),
+          population: {
+            ...settlement.population,
+            militarizedCitizens: Math.max(
+              0,
+              settlement.population.militarizedCitizens -
+                Object.values(this.state.battalions)
+                  .filter((battalion) =>
+                    battalion.settlementId === settlement.id && garrisonedBattalionIds.has(battalion.id)
+                  )
+                  .reduce((total, battalion) => total + battalion.size, 0)
+            )
+          }
+        }
+      ])
+    ) as WorldState["settlements"];
+    this.state = {
+      ...this.state,
+      buildings: nextBuildings,
+      battalions: nextBattalions,
+      settlements: nextSettlements
+    };
+    for (const battalionId of [...garrisonedBattalionIds].sort()) {
+      this.eventWriter.emit(tick, "entity-destroyed", { entityId: battalionId, reason: "garrison-breached" });
     }
   }
 
@@ -2080,6 +2233,14 @@ function getDoctrineObservation(command: GameCommand, state: WorldState): Doctri
         condition: "A supply caravan receives a destination",
         preferredAction: "Route supply caravans",
         goal: "Sustain distant forces"
+      };
+    case "garrison-battalion":
+      return {
+        domain: "military",
+        key: "garrison-defense-works",
+        condition: "A defensive structure is within reach",
+        preferredAction: "Garrison defensive works",
+        goal: "Hold strategic ground"
       };
     case "attack-target":
       return {

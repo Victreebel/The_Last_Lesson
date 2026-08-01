@@ -476,7 +476,7 @@ export class MilestoneOneScene extends Phaser.Scene {
   }
 
   private createCommandDock(): void {
-    const background = this.add.rectangle(0, 0, 410, 326, UI_COLORS.panel, 0.96).setOrigin(0);
+    const background = this.add.rectangle(0, 0, 410, 380, UI_COLORS.panel, 0.96).setOrigin(0);
     background.setStrokeStyle(1, UI_COLORS.trim);
     background.setInteractive({ useHandCursor: false });
     background.on("pointerdown", (pointer: Phaser.Input.Pointer) => pointer.event.stopPropagation());
@@ -515,6 +515,11 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.addWideCommandButton(210, 204, "INSPIRE ARMY", "16 FAITH", () => this.castInspireBattalions());
     this.addWideCommandButton(14, 258, "ASSIMILATE", "4 CAPTIVES / TOWN SQUARE", () => this.assimilateCaptives());
     this.addWideCommandButton(210, 258, "DISEMBARK", "SELECTED CARAVAN", () => this.disembarkCaravan());
+    this.addWideCommandButton(14, 312, "GARRISON", "NEAREST DEFENSE WORKS", () => this.garrisonSelectedBattalions());
+    this.addWideCommandButton(210, 312, "RELEASE", "MOVE ORDER RELEASES", () => {
+      this.mode = "move";
+      this.updateUi(["Select garrisoned troops, then designate a destination to release them."]);
+    });
   }
 
   private addCommandButton(
@@ -794,7 +799,7 @@ export class MilestoneOneScene extends Phaser.Scene {
       Math.max(topHeight + 18, Math.round((height - 410) / 2))
     );
     this.intelPanel.setPosition(16, topHeight + 14);
-    this.commandDock.setPosition(16, Math.max(topHeight + 348, height - 342));
+    this.commandDock.setPosition(16, Math.max(topHeight + 348, height - 396));
     if (this.heirPanel) {
       this.heirPanel.setScale(scale);
       this.heirPanel.setPosition(Math.max(16, heirPanelX), topHeight + 14);
@@ -1308,6 +1313,56 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.updateUi(["Caravan disembarkation ordered."]);
   }
 
+  private garrisonSelectedBattalions(): void {
+    const state = this.simulation.getState();
+    const selected = [...this.selectedBattalionIds]
+      .map((id) => state.battalions[id])
+      .filter((battalion): battalion is BattalionState => Boolean(battalion));
+    if (selected.length === 0) {
+      this.updateUi(["Select Crown battalions near a castle, wall, gate, or outpost."]);
+      return;
+    }
+
+    let orders = 0;
+    for (const battalion of selected) {
+      const building = Object.values(state.buildings)
+        .filter(
+          (candidate) =>
+            candidate.ownerEmpireId === "empire-player" &&
+            candidate.complete &&
+            this.getGarrisonCapacity(candidate.kind) > (candidate.garrisonBattalionIds?.length ?? 0) &&
+            Phaser.Math.Distance.Between(
+              battalion.position.x,
+              battalion.position.y,
+              candidate.position.x,
+              candidate.position.y
+            ) <= 84
+        )
+        .sort(
+          (left, right) =>
+            Phaser.Math.Distance.Between(battalion.position.x, battalion.position.y, left.position.x, left.position.y) -
+            Phaser.Math.Distance.Between(battalion.position.x, battalion.position.y, right.position.x, right.position.y)
+        )[0];
+      if (!building) {
+        continue;
+      }
+      this.issueCommand({ type: "garrison-battalion", payload: { battalionId: battalion.id, buildingId: building.id } });
+      orders += 1;
+    }
+    this.updateUi(
+      orders > 0
+        ? [`Garrison orders issued for ${orders} battalion(s).`]
+        : ["No available defense work is within garrison range."]
+    );
+  }
+
+  private getGarrisonCapacity(kind: BuildingKind): number {
+    if (kind === "castle") {
+      return 2;
+    }
+    return kind === "wall" || kind === "gate" || kind === "outpost" ? 1 : 0;
+  }
+
   private getCaptiveCapacity(settlementId: string): number {
     const state = this.simulation.getState();
     const settlement = state.settlements[settlementId];
@@ -1565,7 +1620,12 @@ export class MilestoneOneScene extends Phaser.Scene {
 
   private getBuildingWorldLabel(building: BuildingState): string {
     const owner = building.ownerEmpireId === "empire-player" ? "CROWN" : "RIVAL";
-    return `${owner} ${BUILDING_DISPLAY_LABELS[building.kind]}`;
+    const garrisonCapacity = this.getGarrisonCapacity(building.kind);
+    const garrison =
+      garrisonCapacity > 0
+        ? `\nGARRISON ${building.garrisonBattalionIds?.length ?? 0}/${garrisonCapacity}`
+        : "";
+    return `${owner} ${BUILDING_DISPLAY_LABELS[building.kind]}${garrison}`;
   }
 
   private updateUi(events: string[]): void {

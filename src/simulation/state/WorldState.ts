@@ -123,6 +123,7 @@ export interface BuildingState {
   readonly defense: number;
   readonly complete: boolean;
   readonly remainingBuildTicks: number;
+  readonly garrisonBattalionIds?: BattalionId[];
 }
 
 export type BattalionSpecialization = "militia" | "spears" | "archers" | "raiders";
@@ -152,6 +153,7 @@ export interface BattalionState {
   readonly destination?: Position;
   readonly targetId?: BattalionId | BuildingId | CaravanId;
   readonly embarkedInCaravanId?: CaravanId;
+  readonly garrisonedInBuildingId?: BuildingId;
   readonly specialization: BattalionSpecialization;
   readonly size: number;
   readonly attack: number;

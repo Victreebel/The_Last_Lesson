@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.6.0 - 2026-08-01
+
+- Added garrison commands for Castles, Walls, Gates, and Outposts.
+- Garrisoned battalions now hold position while retaining their outward attack capability; movement orders release them.
+- Breaching a defensive work destroys its garrison, with deterministic regression coverage for garrison, release, and breach behavior.
+
 ## 1.5.0 - 2026-08-01
 
 - Added a local population lifecycle: food consumption, Villa-based citizen capacity, surplus-driven growth, and starvation losses.

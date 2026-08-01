@@ -18,6 +18,8 @@ export type EventType =
   | "caravan-moved"
   | "battalion-embarked"
   | "battalion-disembarked"
+  | "battalion-garrisoned"
+  | "battalion-ungarrisoned"
   | "supply-delivered"
   | "caravan-destroyed"
   | "battalion-moved"
