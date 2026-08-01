@@ -1,8 +1,47 @@
 # The Last Lesson
 
-**The Last Lesson** is a real-time strategy and empire simulation game where the player's greatest weapon is not an army, but the leaders they teach.
+**The Last Lesson** is a real-time strategy and empire simulation where a God-King's greatest weapon is the leaders they teach. Every order, miracle, reward, and punishment becomes a lesson that shapes how heirs govern newly conquered settlements.
 
-This repository begins with Milestone 0: a deterministic simulation kernel that future rendering, AI, replay, save, and multiplayer systems can build on.
+The current browser prototype is a playable single-player campaign: establish the Crown, build on terrain-bound resources, train and supply battalions, capture rival thrones, and govern every settlement you take.
+
+## Playable Systems
+
+- Deterministic five-second simulation ticks, save/load, command logs, and replay-safe state.
+- Real-time battlefield camera, selection, movement, attack orders, garrisons, land caravans, and Warships.
+- Terrain-bound construction and harvesting: fertile farms, forest lumber mills, iron mines, roads, walls, gates, outposts, and housing.
+- Population, food, local growth, starvation, captives, rebellion, faith, religion, and miracles.
+- Battalion specializations, supply, morale, visibility, enemy scouting, combat feedback, and empire-scoped victory.
+- Heirs with inspectable doctrine, utility decisions, concerns, rewards, punishments, and live lesson feedback.
+- Multi-settlement Crown management through castle selection and the compact `REALM` navigator.
+
+## Run Locally
+
+```sh
+pnpm install
+pnpm dev
+```
+
+Open the URL printed by Vite, normally `http://127.0.0.1:5173/`.
+
+## Core Controls
+
+- Arrow keys: pan the tactical camera.
+- Click or drag: select Crown forces.
+- Right-click or use the command dock: issue movement, attack, embarkation, and supply orders.
+- `BUILD`: choose a structure, then click terrain; drag to lay roads and walls.
+- Click a Crown Castle or choose a seat in `REALM`: change the active governor and settlement command context.
+- `HEIR`: inspect doctrine and reward or punish the current governor's last lesson.
+- `BOOK`: inspect recent history and create or restore a local deterministic save.
+- Space or `PAUSE`: pause/resume the live simulation.
+
+## Quality Gates
+
+```sh
+pnpm build
+pnpm test
+```
+
+The test suite covers deterministic simulation, saves, captures, doctrine learning, faith/religion, population, terrain, combat specialization, logistics, naval transport, garrisons, captive policy, visibility, and campaign scale.
 
 ## Stack
 
@@ -11,15 +50,8 @@ This repository begins with Milestone 0: a deterministic simulation kernel that 
 - Phaser 3
 - Vitest
 
-## Milestone 0 Goal
+## Project Documents
 
-Given the same initial world, random seed, and command log, the simulation must produce the same final state hash and event log every time.
-
-## Scripts
-
-```sh
-pnpm install
-pnpm test
-pnpm dev
-```
-
+- [Technical Design Specification](docs/TDS.md)
+- [Milestone History](docs/Milestones.md)
+- [Changelog](docs/Changelog.md)
