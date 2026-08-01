@@ -168,6 +168,9 @@ export class MilestoneOneScene extends Phaser.Scene {
   private bookPanel!: Phaser.GameObjects.Container;
   private bookPanelBody!: Phaser.GameObjects.Text;
   private bookPanelExpanded = false;
+  private victoryPanel!: Phaser.GameObjects.Container;
+  private victoryTitle!: Phaser.GameObjects.Text;
+  private victoryDetail!: Phaser.GameObjects.Text;
   private statusText!: Phaser.GameObjects.Text;
   private eventText!: Phaser.GameObjects.Text;
   private resourceText!: Phaser.GameObjects.Text;
@@ -319,6 +322,7 @@ export class MilestoneOneScene extends Phaser.Scene {
   private createUi(): void {
     this.createTopHud();
     this.createBookOfLessons();
+    this.createVictoryPanel();
     this.createIntelPanel();
     this.createCommandDock();
     this.createMinimap();
@@ -341,14 +345,14 @@ export class MilestoneOneScene extends Phaser.Scene {
     });
     this.gameTitleText.setScrollFactor(0).setDepth(41);
 
-    this.pauseControlButton = this.add.rectangle(302, 14, 64, 30, UI_COLORS.command, 1).setOrigin(0);
+    this.pauseControlButton = this.add.rectangle(318, 14, 64, 30, UI_COLORS.command, 1).setOrigin(0);
     this.pauseControlButton.setStrokeStyle(1, UI_COLORS.trim);
     this.pauseControlButton.setInteractive({ useHandCursor: true });
     this.pauseControlButton.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
       pointer.event.stopPropagation();
       this.togglePause();
     });
-    this.pauseControlLabel = this.add.text(312, 23, "PAUSE", {
+    this.pauseControlLabel = this.add.text(328, 23, "PAUSE", {
       fontFamily: "Arial Black, Arial",
       fontSize: "10px",
       color: UI_COLORS.text
@@ -356,7 +360,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.pauseControl = this.add.container(0, 0, [this.pauseControlButton, this.pauseControlLabel]);
     this.pauseControl.setScrollFactor(0).setDepth(41);
 
-    this.resourceText = this.add.text(382, 18, "", {
+    this.resourceText = this.add.text(398, 18, "", {
       fontFamily: "Arial, sans-serif",
       fontSize: "13px",
       color: UI_COLORS.text
@@ -371,7 +375,7 @@ export class MilestoneOneScene extends Phaser.Scene {
   }
 
   private createBookOfLessons(): void {
-    const control = this.add.rectangle(174, 14, 118, 30, UI_COLORS.command, 1).setOrigin(0);
+    const control = this.add.rectangle(190, 14, 118, 30, UI_COLORS.command, 1).setOrigin(0);
     control.setStrokeStyle(1, UI_COLORS.trim);
     control.setInteractive({ useHandCursor: true });
     control.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
@@ -379,7 +383,7 @@ export class MilestoneOneScene extends Phaser.Scene {
       this.bookPanelExpanded = !this.bookPanelExpanded;
       this.updateBookOfLessons();
     });
-    this.bookControlLabel = this.add.text(184, 23, "BOOK [+]", {
+    this.bookControlLabel = this.add.text(200, 23, "BOOK [+]", {
       fontFamily: "Arial Black, Arial",
       fontSize: "10px",
       color: UI_COLORS.text
@@ -438,6 +442,76 @@ export class MilestoneOneScene extends Phaser.Scene {
     ]);
     this.bookPanel.setScrollFactor(0).setDepth(70).setVisible(false);
     this.updateBookOfLessons();
+  }
+
+  private createVictoryPanel(): void {
+    const background = this.add.rectangle(0, 0, 420, 206, UI_COLORS.panelDeep, 0.98).setOrigin(0);
+    background.setStrokeStyle(2, UI_COLORS.accent);
+    background.setInteractive({ useHandCursor: false });
+    background.on("pointerdown", (pointer: Phaser.Input.Pointer) => pointer.event.stopPropagation());
+    this.victoryTitle = this.add.text(22, 26, "", {
+      fontFamily: "Arial Black, Arial",
+      fontSize: "22px",
+      color: "#f2d77f",
+      align: "center",
+      wordWrap: { width: 376 }
+    });
+    this.victoryTitle.setOrigin(0.5, 0).setPosition(210, 26);
+    this.victoryDetail = this.add.text(22, 86, "", {
+      fontFamily: "Arial, sans-serif",
+      fontSize: "12px",
+      color: UI_COLORS.text,
+      align: "center",
+      wordWrap: { width: 376 }
+    });
+    this.victoryDetail.setOrigin(0.5, 0).setPosition(210, 86);
+    const restartButton = this.add.rectangle(110, 150, 200, 34, UI_COLORS.commandActive, 1).setOrigin(0);
+    restartButton.setStrokeStyle(1, UI_COLORS.trim);
+    restartButton.setInteractive({ useHandCursor: true });
+    restartButton.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+      pointer.event.stopPropagation();
+      this.restartCampaign();
+    });
+    const restartLabel = this.add.text(132, 161, "BEGIN ANOTHER REIGN", {
+      fontFamily: "Arial Black, Arial",
+      fontSize: "10px",
+      color: UI_COLORS.text
+    });
+    this.victoryPanel = this.add.container(0, 0, [background, this.victoryTitle, this.victoryDetail, restartButton, restartLabel]);
+    this.victoryPanel.setScrollFactor(0).setDepth(90).setVisible(false);
+  }
+
+  private restartCampaign(): void {
+    this.simulation = new Simulation(createInitialWorld(777));
+    this.commandSequence = 0;
+    this.paused = false;
+    this.pauseControlLabel.setText("PAUSE");
+    this.clearSelection();
+    this.selectedBuildingKind = null;
+    this.mode = "select";
+    this.clearPlacementPreview();
+    this.issueCommand({
+      type: "assign-labor",
+      payload: { settlementId: "settlement-capital", farmers: 8, builders: 4, lumberjacks: 6, miners: 0 }
+    });
+    this.renderWorld();
+    this.updateUi(["A new reign begins."]);
+  }
+
+  private updateVictoryPanel(): void {
+    const winner = this.simulation.getState().victory.winnerEmpireId;
+    if (!winner) {
+      this.victoryPanel.setVisible(false);
+      return;
+    }
+    const playerWon = winner === "empire-player";
+    this.victoryTitle.setText(playerWon ? "THE CROWN ASCENDS" : "THE CROWN HAS FALLEN");
+    this.victoryDetail.setText(
+      playerWon
+        ? "Every rival throne has fallen. Your lessons now govern the realm."
+        : "The rival crown holds every throne. A different doctrine must rise."
+    );
+    this.victoryPanel.setVisible(true);
   }
 
   private updateBookOfLessons(): void {
@@ -915,6 +989,10 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.bookPanel.setPosition(
       Math.max(16, Math.round((width - 470) / 2)),
       Math.max(topHeight + 18, Math.round((height - 410) / 2))
+    );
+    this.victoryPanel.setPosition(
+      Math.max(16, Math.round((width - 420) / 2)),
+      Math.max(topHeight + 18, Math.round((height - 206) / 2))
     );
     this.intelPanel.setPosition(16, topHeight + 14);
     this.commandDock.setPosition(16, Math.max(topHeight + 220, height - 396));
@@ -1864,6 +1942,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.updateHeirPanel();
     this.updateBuildingsPanel();
     this.updateBookOfLessons();
+    this.updateVictoryPanel();
     this.updateMinimap();
   }
 

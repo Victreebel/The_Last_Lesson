@@ -83,6 +83,7 @@ Implemented:
 - Accessible pause/resume controls and verified responsive command-dock layout.
 - Interactive minimap for continuous strategic navigation and camera awareness.
 - Event-driven combat feedback for battle readability and tactical impact.
+- A victory/defeat resolution screen that explains the crown outcome and starts a fresh deterministic reign without leaving the battlefield.
 
 ## Milestone 4: Persistence Foundation
 
