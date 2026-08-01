@@ -1,4 +1,4 @@
-import type { BuildingKind, Position } from "../state/WorldState";
+import type { BattalionSpecialization, BuildingKind, Position } from "../state/WorldState";
 import type { BattalionId, BuildingId, CommandId, HeirId, PlayerId, SettlementId } from "../state/Ids";
 
 export type CommandType =
@@ -8,6 +8,7 @@ export type CommandType =
   | "create-battalion"
   | "move-battalion"
   | "attack-target"
+  | "assimilate-captives"
   | "reward-heir"
   | "punish-heir"
   | "cast-miracle";
@@ -44,6 +45,7 @@ export interface GenerateFaithPayload {
 export interface CreateBattalionPayload {
   readonly settlementId: SettlementId;
   readonly size: number;
+  readonly specialization?: BattalionSpecialization;
 }
 
 export interface MoveBattalionPayload {
@@ -54,6 +56,11 @@ export interface MoveBattalionPayload {
 export interface AttackTargetPayload {
   readonly battalionId: BattalionId;
   readonly targetId: BattalionId | BuildingId;
+}
+
+export interface AssimilateCaptivesPayload {
+  readonly settlementId: SettlementId;
+  readonly count: number;
 }
 
 export interface HeirFeedbackPayload {
@@ -74,6 +81,7 @@ export type GameCommand =
   | GameCommandBase<"create-battalion", CreateBattalionPayload>
   | GameCommandBase<"move-battalion", MoveBattalionPayload>
   | GameCommandBase<"attack-target", AttackTargetPayload>
+  | GameCommandBase<"assimilate-captives", AssimilateCaptivesPayload>
   | GameCommandBase<"reward-heir", HeirFeedbackPayload>
   | GameCommandBase<"punish-heir", HeirFeedbackPayload>
   | GameCommandBase<"cast-miracle", CastMiraclePayload>;

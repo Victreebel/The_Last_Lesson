@@ -7,6 +7,7 @@ import {
   isBuildingTerrainCompatible,
   terrainAtPosition,
   type BattalionState,
+  type BattalionSpecialization,
   type BuildingKind,
   type BuildingState,
   type DoctrineRule,
@@ -306,7 +307,7 @@ export class MilestoneOneScene extends Phaser.Scene {
   }
 
   private createIntelPanel(): void {
-    const background = this.add.rectangle(0, 0, 332, 184, UI_COLORS.panel, 0.95).setOrigin(0);
+    const background = this.add.rectangle(0, 0, 332, 204, UI_COLORS.panel, 0.95).setOrigin(0);
     background.setStrokeStyle(1, UI_COLORS.trim);
     background.setInteractive({ useHandCursor: false });
     background.on("pointerdown", (pointer: Phaser.Input.Pointer) => pointer.event.stopPropagation());
@@ -322,7 +323,7 @@ export class MilestoneOneScene extends Phaser.Scene {
       color: UI_COLORS.text,
       lineSpacing: 4
     });
-    this.eventText = this.add.text(14, 122, "", {
+    this.eventText = this.add.text(14, 144, "", {
       fontFamily: "Arial, sans-serif",
       fontSize: "11px",
       color: UI_COLORS.muted,
@@ -334,7 +335,7 @@ export class MilestoneOneScene extends Phaser.Scene {
   }
 
   private createCommandDock(): void {
-    const background = this.add.rectangle(0, 0, 410, 214, UI_COLORS.panel, 0.96).setOrigin(0);
+    const background = this.add.rectangle(0, 0, 410, 326, UI_COLORS.panel, 0.96).setOrigin(0);
     background.setStrokeStyle(1, UI_COLORS.trim);
     background.setInteractive({ useHandCursor: false });
     background.on("pointerdown", (pointer: Phaser.Input.Pointer) => pointer.event.stopPropagation());
@@ -365,8 +366,14 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.addCommandButton(110, 96, "LABOR", "WOOD", () => this.setLaborFocus("lumberjacks"));
     this.addCommandButton(206, 96, "LABOR", "IRON", () => this.setLaborFocus("miners"));
     this.addCommandButton(302, 96, "LABOR", "BUILD", () => this.setLaborFocus("builders"));
-    this.addWideCommandButton(14, 150, "BLESS HARVEST", "12 FAITH", () => this.castBlessHarvest());
-    this.addWideCommandButton(210, 150, "INSPIRE ARMY", "16 FAITH", () => this.castInspireBattalions());
+    this.addCommandButton(14, 150, "MILITIA", "FOOD 8", () => this.createBattalion("militia"));
+    this.addCommandButton(110, 150, "SPEARS", "IRON 8", () => this.createBattalion("spears"));
+    this.addCommandButton(206, 150, "ARCHERS", "WOOD 8", () => this.createBattalion("archers"));
+    this.addCommandButton(302, 150, "RAIDERS", "8W 8I", () => this.createBattalion("raiders"));
+    this.addWideCommandButton(14, 204, "BLESS HARVEST", "12 FAITH", () => this.castBlessHarvest());
+    this.addWideCommandButton(210, 204, "INSPIRE ARMY", "16 FAITH", () => this.castInspireBattalions());
+    this.addWideCommandButton(14, 258, "ASSIMILATE", "4 CAPTIVES / TOWN SQUARE", () => this.assimilateCaptives());
+    this.addWideCommandButton(210, 258, "CAPTIVE STATUS", "CAPACITY / REBELLION", () => this.showCaptiveStatus());
   }
 
   private addCommandButton(
@@ -641,7 +648,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.gameTitleText.setPosition(18, 10);
     this.resourceText.setPosition(compact ? 18 : 312, compact ? 47 : 19);
     this.intelPanel.setPosition(16, topHeight + 14);
-    this.commandDock.setPosition(16, Math.max(topHeight + 236, height - 230));
+    this.commandDock.setPosition(16, Math.max(topHeight + 348, height - 342));
     if (this.heirPanel) {
       this.heirPanel.setScale(scale);
       this.heirPanel.setPosition(Math.max(16, heirPanelX), topHeight + 14);
@@ -1037,14 +1044,26 @@ export class MilestoneOneScene extends Phaser.Scene {
     return Boolean((pointer.event as MouseEvent | undefined)?.shiftKey);
   }
 
-  private createBattalion(): void {
+  private createBattalion(specialization: BattalionSpecialization = "militia"): void {
+    const hasMilitaryQuarters = Object.values(this.simulation.getState().buildings).some(
+      (building) =>
+        building.ownerEmpireId === "empire-player" &&
+        building.kind === "military-quarters" &&
+        building.complete
+    );
+    if (specialization !== "militia" && !hasMilitaryQuarters) {
+      this.updateUi(["Construct Military Quarters before training specialized battalions."]);
+      return;
+    }
     this.issueCommand({
       type: "create-battalion",
       payload: {
         settlementId: "settlement-capital",
-        size: 10
+        size: specialization === "militia" ? 10 : 8,
+        specialization
       }
     });
+    this.updateUi([`${specialization.toUpperCase()} battalion queued for training.`]);
   }
 
   private setLaborFocus(focus: "farmers" | "builders" | "lumberjacks" | "miners"): void {
@@ -1092,6 +1111,36 @@ export class MilestoneOneScene extends Phaser.Scene {
       });
     }
     this.updateUi([`Inspire Army petitioned for ${this.selectedBattalionIds.size} battalion(s).`]);
+  }
+
+  private assimilateCaptives(): void {
+    const settlement = this.simulation.getState().settlements["settlement-capital"];
+    const count = Math.min(4, settlement.population.captives);
+    if (count === 0) {
+      this.updateUi(["No captives are housed in the capital."]);
+      return;
+    }
+    this.issueCommand({
+      type: "assimilate-captives",
+      payload: { settlementId: settlement.id, count }
+    });
+    this.updateUi([`Assimilation ordered for ${count} captive(s).`]);
+  }
+
+  private showCaptiveStatus(): void {
+    const settlement = this.simulation.getState().settlements["settlement-capital"];
+    this.updateUi([
+      `Captives ${settlement.population.captives}/${this.getCaptiveCapacity(settlement.id)} // rebellion ${settlement.pressures.rebellion}%.`
+    ]);
+  }
+
+  private getCaptiveCapacity(settlementId: string): number {
+    const state = this.simulation.getState();
+    const settlement = state.settlements[settlementId];
+    return settlement.buildingIds.reduce((capacity, buildingId) => {
+      const building = state.buildings[buildingId];
+      return capacity + (building?.kind === "hovel" && building.complete ? 12 : 0);
+    }, 0);
   }
 
   private issueCommand(command: Omit<GameCommand, "id" | "issuedBy" | "tick">): void {
@@ -1238,7 +1287,7 @@ export class MilestoneOneScene extends Phaser.Scene {
 
   private getBattalionLabel(battalion: BattalionState): string {
     const suffix = battalion.id.split("-").at(-1) ?? "1";
-    return `${battalion.ownerEmpireId === "empire-player" ? "CROWN" : "RIVAL"} ${suffix}\n${battalion.size} TROOPS`;
+    return `${battalion.specialization.toUpperCase()} ${suffix}\n${battalion.size} TROOPS`;
   }
 
   private getBuildingWorldLabel(building: BuildingState): string {
@@ -1258,7 +1307,8 @@ export class MilestoneOneScene extends Phaser.Scene {
         `ORDER: ${this.getModeLabel()}`,
         `SELECTION: ${this.selectedBattalionIds.size ? `${this.selectedBattalionIds.size} BATTALION(S)` : "NO UNIT SELECTED"}`,
         `POPULATION: ${settlement.population.citizens}  //  MILITARY: ${settlement.population.militarizedCitizens}`,
-        `LABOR: FARM ${settlement.population.farmers}  BUILD ${settlement.population.builders}  LUMBER ${settlement.population.lumberjacks}  MINE ${settlement.population.miners}`
+        `LABOR: FARM ${settlement.population.farmers}  BUILD ${settlement.population.builders}  LUMBER ${settlement.population.lumberjacks}  MINE ${settlement.population.miners}`,
+        `CAPTIVES: ${settlement.population.captives}/${this.getCaptiveCapacity(settlement.id)}  //  REBELLION: ${settlement.pressures.rebellion}%`
       ].join("\n")
     );
     const victory = state.victory.winnerEmpireId;

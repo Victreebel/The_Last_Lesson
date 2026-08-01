@@ -10,6 +10,7 @@ import {
   terrainAtPosition,
   terrainDefenseMultiplier,
   terrainMovementMultiplier,
+  type BattalionSpecialization,
   type BattalionState,
   type BuildingState,
   type DoctrineRule,
@@ -98,6 +99,7 @@ export class Simulation {
       this.updateBattalionSupply(nextTick);
       this.updateCombat(nextTick);
       this.updateReligion(nextTick);
+      this.updateCaptives(nextTick);
       this.updateFaith(nextTick);
     }
 
@@ -254,7 +256,20 @@ export class Simulation {
 
       const available = settlement.population.citizens - settlement.population.militarizedCitizens;
       const size = Math.max(1, Math.floor(command.payload.size));
-      if (size > available) {
+      const specialization = command.payload.specialization ?? "militia";
+      const profile = getBattalionProfile(specialization);
+      const hasMilitaryQuarters = settlement.buildingIds.some((id) => {
+        const building = this.state.buildings[id];
+        return building?.kind === "military-quarters" && building.complete;
+      });
+      const empire = this.state.empires[settlement.ownerEmpireId];
+      if (
+        size > available ||
+        settlement.localFood < size * profile.foodPerUnit ||
+        empire.resources.wood < size * profile.woodPerUnit ||
+        empire.resources.iron < size * profile.ironPerUnit ||
+        (specialization !== "militia" && !hasMilitaryQuarters)
+      ) {
         this.eventWriter.emit(tick, "command-rejected", { commandId: command.id });
         return;
       }
@@ -266,12 +281,15 @@ export class Simulation {
         ownerEmpireId: settlement.ownerEmpireId,
         settlementId: settlement.id,
         position: { x: castle.position.x + 70, y: castle.position.y + 10 },
+        specialization,
         size,
-        attack: Math.max(4, Math.floor(size * 1.4)),
-        defense: size * 10,
-        maxDefense: size * 10,
-        range: 42,
-        speed: 44,
+        attack: size * profile.attackPerUnit,
+        defense: size * profile.defensePerUnit,
+        maxDefense: size * profile.defensePerUnit,
+        range: profile.range,
+        speed: profile.speed,
+        attackCooldownTicks: profile.attackCooldownTicks,
+        attackCooldownRemaining: 0,
         morale: 70,
         devotion: 55,
         supply: 100
@@ -283,6 +301,17 @@ export class Simulation {
           ...this.state.battalions,
           [battalionId]: battalion
         },
+        empires: {
+          ...this.state.empires,
+          [empire.id]: {
+            ...empire,
+            resources: {
+              ...empire.resources,
+              wood: empire.resources.wood - size * profile.woodPerUnit,
+              iron: empire.resources.iron - size * profile.ironPerUnit
+            }
+          }
+        },
         settlements: {
           ...this.state.settlements,
           [settlement.id]: {
@@ -291,11 +320,17 @@ export class Simulation {
             population: {
               ...settlement.population,
               militarizedCitizens: settlement.population.militarizedCitizens + size
-            }
+            },
+            localFood: settlement.localFood - size * profile.foodPerUnit
           }
         }
       };
-      this.eventWriter.emit(tick, "battalion-created", { commandId: command.id, battalionId, size });
+      this.eventWriter.emit(tick, "battalion-created", {
+        commandId: command.id,
+        battalionId,
+        size,
+        specialization
+      });
       this.observePlayerCommand(command, tick);
       return;
     }
@@ -326,7 +361,7 @@ export class Simulation {
     if (command.type === "attack-target") {
       const battalion = this.state.battalions[command.payload.battalionId];
       const target = this.findTarget(command.payload.targetId);
-      if (!battalion || !target) {
+      if (!battalion || !target || battalion.ownerEmpireId === target.ownerEmpireId) {
         this.eventWriter.emit(tick, "command-rejected", { commandId: command.id });
         return;
       }
@@ -346,6 +381,42 @@ export class Simulation {
         commandId: command.id,
         battalionId: battalion.id,
         targetId: command.payload.targetId
+      });
+      this.observePlayerCommand(command, tick);
+      return;
+    }
+
+    if (command.type === "assimilate-captives") {
+      const settlement = this.state.settlements[command.payload.settlementId];
+      const hasTownSquare = settlement?.buildingIds.some((id) => {
+        const building = this.state.buildings[id];
+        return building?.kind === "town-square" && building.complete;
+      });
+      const count = Math.max(1, Math.floor(command.payload.count));
+      if (!settlement || !hasTownSquare || settlement.population.captives < count) {
+        this.eventWriter.emit(tick, "command-rejected", { commandId: command.id });
+        return;
+      }
+      this.state = {
+        ...this.state,
+        settlements: {
+          ...this.state.settlements,
+          [settlement.id]: {
+            ...settlement,
+            population: {
+              ...settlement.population,
+              captives: settlement.population.captives - count,
+              citizens: settlement.population.citizens + count,
+              loyalty: Math.min(100, settlement.population.loyalty + 2),
+              devotion: Math.min(100, settlement.population.devotion + 1)
+            }
+          }
+        }
+      };
+      this.eventWriter.emit(tick, "captives-assimilated", {
+        commandId: command.id,
+        settlementId: settlement.id,
+        count
       });
       this.observePlayerCommand(command, tick);
       return;
@@ -648,18 +719,22 @@ export class Simulation {
 
       if (recruitUtility >= defendUtility && recruitUtility >= 30 && castle) {
         const size = Math.min(8, availableCitizens);
+        const profile = getBattalionProfile("militia");
         const battalionId = `battalion-governed-${tick}-${settlement.battalionIds.length + 1}`;
         const battalion: BattalionState = {
           id: battalionId,
           ownerEmpireId: settlement.ownerEmpireId,
           settlementId: settlement.id,
           position: { x: castle.position.x + 70, y: castle.position.y + 10 },
+          specialization: "militia",
           size,
-          attack: Math.max(4, Math.floor(size * 1.4)),
-          defense: size * 10,
-          maxDefense: size * 10,
-          range: 42,
-          speed: 44,
+          attack: size * profile.attackPerUnit,
+          defense: size * profile.defensePerUnit,
+          maxDefense: size * profile.defensePerUnit,
+          range: profile.range,
+          speed: profile.speed,
+          attackCooldownTicks: profile.attackCooldownTicks,
+          attackCooldownRemaining: 0,
           morale: 70,
           devotion: 55,
           supply: 100
@@ -894,6 +969,8 @@ export class Simulation {
         .reduce((total, battalion) => total + battalion.size, 0);
       const totalPopulation = settlement.population.citizens + settlement.population.captives;
       const captiveRatio = totalPopulation === 0 ? 0 : (settlement.population.captives / totalPopulation) * 100;
+      const captiveCapacity = this.getCaptiveCapacity(settlement.id);
+      const overcrowding = Math.max(0, settlement.population.captives - captiveCapacity);
       const rebellionPressure = Math.max(
         0,
         Math.min(
@@ -903,7 +980,8 @@ export class Simulation {
               externalPressure -
               settlement.internalFaith * 0.3 -
               settlement.population.loyalty * 0.25 -
-              garrisonStrength * 1.5
+              garrisonStrength * 1.5 +
+              overcrowding * 4
           )
         )
       );
@@ -914,7 +992,8 @@ export class Simulation {
         pressures: {
           ...settlement.pressures,
           rebellion: rebellionPressure,
-          religion: religiousPressure
+          religion: religiousPressure,
+          housing: overcrowding
         }
       };
       nextSettlements[settlement.id] = nextSettlement;
@@ -928,6 +1007,59 @@ export class Simulation {
     }
 
     this.state = { ...this.state, settlements: nextSettlements };
+  }
+
+  private updateCaptives(tick: number): void {
+    for (const settlement of Object.values(this.state.settlements).sort((left, right) =>
+      left.id.localeCompare(right.id)
+    )) {
+      const captives = settlement.population.captives;
+      if (captives === 0) {
+        continue;
+      }
+      const capacity = this.getCaptiveCapacity(settlement.id);
+      const overflow = Math.max(0, captives - capacity);
+      const escapeCount =
+        overflow > 0
+          ? overflow
+          : settlement.pressures.rebellion >= 70
+            ? Math.max(1, Math.floor((captives * (settlement.pressures.rebellion - 65)) / 100))
+            : 0;
+      if (escapeCount === 0) {
+        continue;
+      }
+      const nextCaptives = Math.max(0, captives - escapeCount);
+      this.state = {
+        ...this.state,
+        settlements: {
+          ...this.state.settlements,
+          [settlement.id]: {
+            ...settlement,
+            population: {
+              ...settlement.population,
+              captives: nextCaptives,
+              loyalty: Math.max(0, settlement.population.loyalty - (overflow > 0 ? 2 : 1))
+            }
+          }
+        }
+      };
+      this.eventWriter.emit(tick, overflow > 0 ? "captives-liberated" : "captive-escape", {
+        settlementId: settlement.id,
+        count: escapeCount,
+        reason: overflow > 0 ? "hovel-capacity" : "rebellion"
+      });
+    }
+  }
+
+  private getCaptiveCapacity(settlementId: string): number {
+    const settlement = this.state.settlements[settlementId];
+    if (!settlement) {
+      return 0;
+    }
+    return settlement.buildingIds.reduce((capacity, buildingId) => {
+      const building = this.state.buildings[buildingId];
+      return capacity + (building?.kind === "hovel" && building.complete ? 12 : 0);
+    }, 0);
   }
 
   private updateFaith(tick: number): void {
@@ -1069,9 +1201,26 @@ export class Simulation {
     let buildings = this.state.buildings;
     let battalions = this.state.battalions;
     const capturedCastleIds: Array<{ readonly castleId: string; readonly attackerId: string }> = [];
+    const defeatedBattalions: Array<{ readonly attackerId: string; readonly defender: BattalionState }> = [];
+    const destroyedBuildingIds: string[] = [];
 
-    for (const battalion of Object.values(battalions).sort((a, b) => a.id.localeCompare(b.id))) {
+    for (const candidate of Object.values(battalions).sort((a, b) => a.id.localeCompare(b.id))) {
+      const battalion = battalions[candidate.id];
+      if (!battalion) {
+        continue;
+      }
       if (!battalion.targetId) {
+        continue;
+      }
+
+      if (battalion.attackCooldownRemaining > 0) {
+        battalions = {
+          ...battalions,
+          [battalion.id]: {
+            ...battalion,
+            attackCooldownRemaining: battalion.attackCooldownRemaining - 1
+          }
+        };
         continue;
       }
 
@@ -1091,10 +1240,18 @@ export class Simulation {
       }
 
       const defenderTerrain = terrainAtPosition(this.state, target.position);
+      const specializationMultiplier = targetBattalion
+        ? getSpecializationAdvantage(battalion.specialization, targetBattalion.specialization)
+        : 1;
+      const supplyMultiplier = battalion.supply === 0 ? 0.65 : 0.8 + battalion.supply / 500;
       const damage = Math.max(
         1,
         Math.floor(
-          (battalion.attack * (battalion.morale / 100)) / terrainDefenseMultiplier(defenderTerrain)
+          (battalion.attack *
+            (battalion.morale / 100) *
+            specializationMultiplier *
+            supplyMultiplier) /
+            terrainDefenseMultiplier(defenderTerrain)
         )
       );
 
@@ -1103,6 +1260,7 @@ export class Simulation {
         if (nextDefense === 0) {
           const { [targetBattalion.id]: _destroyed, ...remainingBattalions } = battalions;
           battalions = remainingBattalions;
+          defeatedBattalions.push({ attackerId: battalion.id, defender: targetBattalion });
           this.eventWriter.emit(tick, "entity-destroyed", { entityId: targetBattalion.id });
         } else {
           battalions = {
@@ -1120,14 +1278,28 @@ export class Simulation {
           this.eventWriter.emit(tick, "entity-destroyed", { entityId: targetBuilding.id });
           if (targetBuilding.kind === "castle" && targetBuilding.ownerEmpireId !== battalion.ownerEmpireId) {
             capturedCastleIds.push({ castleId: targetBuilding.id, attackerId: battalion.id });
+          } else {
+            destroyedBuildingIds.push(targetBuilding.id);
           }
         }
+      }
+
+      const attackingBattalion = battalions[battalion.id];
+      if (attackingBattalion) {
+        battalions = {
+          ...battalions,
+          [battalion.id]: {
+            ...attackingBattalion,
+            attackCooldownRemaining: battalion.attackCooldownTicks
+          }
+        };
       }
 
       this.eventWriter.emit(tick, "damage-dealt", {
         attackerId: battalion.id,
         targetId: target.id,
-        damage
+        damage,
+        specialization: battalion.specialization
       });
     }
 
@@ -1137,11 +1309,85 @@ export class Simulation {
       battalions
     };
 
+    this.removeDestroyedBuildings(destroyedBuildingIds);
+    for (const defeated of defeatedBattalions) {
+      const attacker = this.state.battalions[defeated.attackerId];
+      if (attacker) {
+        this.captureDefeatedBattalion(attacker, defeated.defender, tick);
+      }
+    }
+
     for (const capture of capturedCastleIds) {
       const attacker = this.state.battalions[capture.attackerId];
       if (attacker) {
         this.captureSettlement(attacker, capture.castleId, tick);
       }
+    }
+  }
+
+  private removeDestroyedBuildings(buildingIds: string[]): void {
+    if (buildingIds.length === 0) {
+      return;
+    }
+    const destroyed = new Set(buildingIds);
+    const nextBuildings: Record<string, BuildingState> = { ...this.state.buildings };
+    for (const id of destroyed) {
+      delete nextBuildings[id];
+    }
+    const nextSettlements = Object.fromEntries(
+      Object.entries(this.state.settlements).map(([id, settlement]) => [
+        id,
+        {
+          ...settlement,
+          buildingIds: settlement.buildingIds.filter((buildingId) => !destroyed.has(buildingId))
+        }
+      ])
+    ) as WorldState["settlements"];
+    this.state = { ...this.state, buildings: nextBuildings, settlements: nextSettlements };
+  }
+
+  private captureDefeatedBattalion(
+    attacker: BattalionState,
+    defeated: BattalionState,
+    tick: number
+  ): void {
+    const defenderSettlement = this.state.settlements[defeated.settlementId];
+    const captorSettlement = this.state.settlements[attacker.settlementId];
+    if (!defenderSettlement || !captorSettlement) {
+      return;
+    }
+    const capacity = this.getCaptiveCapacity(captorSettlement.id);
+    const availableHousing = Math.max(0, capacity - captorSettlement.population.captives);
+    const capturedCount = Math.min(availableHousing, Math.max(1, Math.floor(defeated.size / 2)));
+    const nextDefenderSettlement = {
+      ...defenderSettlement,
+      battalionIds: defenderSettlement.battalionIds.filter((id) => id !== defeated.id),
+      population: {
+        ...defenderSettlement.population,
+        militarizedCitizens: Math.max(0, defenderSettlement.population.militarizedCitizens - defeated.size)
+      }
+    };
+    const nextCaptorSettlement = {
+      ...captorSettlement,
+      population: {
+        ...captorSettlement.population,
+        captives: captorSettlement.population.captives + capturedCount
+      }
+    };
+    this.state = {
+      ...this.state,
+      settlements: {
+        ...this.state.settlements,
+        [defenderSettlement.id]: nextDefenderSettlement,
+        [captorSettlement.id]: nextCaptorSettlement
+      }
+    };
+    if (capturedCount > 0) {
+      this.eventWriter.emit(tick, "captives-taken", {
+        attackerId: attacker.id,
+        settlementId: captorSettlement.id,
+        count: capturedCount
+      });
     }
   }
 
@@ -1288,6 +1534,80 @@ function getBuildingStats(kind: BuildingState["kind"]): { defense: number; build
   }
 }
 
+interface BattalionProfile {
+  readonly attackPerUnit: number;
+  readonly defensePerUnit: number;
+  readonly range: number;
+  readonly speed: number;
+  readonly attackCooldownTicks: number;
+  readonly foodPerUnit: number;
+  readonly woodPerUnit: number;
+  readonly ironPerUnit: number;
+}
+
+function getBattalionProfile(specialization: BattalionSpecialization): BattalionProfile {
+  switch (specialization) {
+    case "spears":
+      return {
+        attackPerUnit: 2,
+        defensePerUnit: 12,
+        range: 42,
+        speed: 38,
+        attackCooldownTicks: 1,
+        foodPerUnit: 1,
+        woodPerUnit: 0,
+        ironPerUnit: 1
+      };
+    case "archers":
+      return {
+        attackPerUnit: 2,
+        defensePerUnit: 7,
+        range: 120,
+        speed: 38,
+        attackCooldownTicks: 2,
+        foodPerUnit: 1,
+        woodPerUnit: 1,
+        ironPerUnit: 0
+      };
+    case "raiders":
+      return {
+        attackPerUnit: 2,
+        defensePerUnit: 8,
+        range: 36,
+        speed: 56,
+        attackCooldownTicks: 1,
+        foodPerUnit: 1,
+        woodPerUnit: 1,
+        ironPerUnit: 1
+      };
+    case "militia":
+      return {
+        attackPerUnit: 1,
+        defensePerUnit: 10,
+        range: 42,
+        speed: 44,
+        attackCooldownTicks: 1,
+        foodPerUnit: 1,
+        woodPerUnit: 0,
+        ironPerUnit: 0
+      };
+  }
+}
+
+function getSpecializationAdvantage(
+  attacker: BattalionSpecialization,
+  defender: BattalionSpecialization
+): number {
+  if (
+    (attacker === "spears" && defender === "raiders") ||
+    (attacker === "raiders" && defender === "archers") ||
+    (attacker === "archers" && defender === "spears")
+  ) {
+    return 1.3;
+  }
+  return 1;
+}
+
 function getMiracleCost(kind: "bless-harvest" | "inspire-battalion"): number {
   return kind === "bless-harvest" ? 12 : 16;
 }
@@ -1344,6 +1664,14 @@ function getDoctrineObservation(command: GameCommand, state: WorldState): Doctri
         condition: "An enemy target is designated",
         preferredAction: "Attack designated targets",
         goal: "Break enemy resistance"
+      };
+    case "assimilate-captives":
+      return {
+        domain: "society",
+        key: "assimilate-captives",
+        condition: "Captives are housed and a Town Square is available",
+        preferredAction: "Assimilate captives",
+        goal: "Grow the citizen population"
       };
     case "generate-faith":
       return {

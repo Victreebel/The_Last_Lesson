@@ -17,7 +17,17 @@ describe("milestone one rts loop", () => {
   });
 
   it("creates a battalion, moves it, and damages a target deterministically", () => {
-    const initialWorld = createInitialWorld(98765);
+    const baseWorld = createInitialWorld(98765);
+    const initialWorld = {
+      ...baseWorld,
+      buildings: {
+        ...baseWorld.buildings,
+        "building-rival-castle": {
+          ...baseWorld.buildings["building-rival-castle"],
+          position: { x: 520, y: 360 }
+        }
+      }
+    };
     const commands: GameCommand[] = [
       {
         id: "assign-labor",
@@ -70,7 +80,7 @@ describe("milestone one rts loop", () => {
         type: "attack-target",
         payload: {
           battalionId: "battalion-2-1",
-          targetId: "building-town-square-1-2"
+          targetId: "building-rival-castle"
         }
       }
     ];
@@ -88,6 +98,6 @@ describe("milestone one rts loop", () => {
     expect(first.finalState.settlements["settlement-capital"].population.militarizedCitizens).toBe(
       10
     );
-    expect(first.finalState.buildings["building-town-square-1-2"].defense).toBeLessThan(150);
+    expect(first.finalState.buildings["building-rival-castle"].defense).toBeLessThan(500);
   });
 });

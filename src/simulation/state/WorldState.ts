@@ -122,6 +122,8 @@ export interface BuildingState {
   readonly remainingBuildTicks: number;
 }
 
+export type BattalionSpecialization = "militia" | "spears" | "archers" | "raiders";
+
 export interface BattalionState {
   readonly id: BattalionId;
   readonly ownerEmpireId: EmpireId;
@@ -129,12 +131,15 @@ export interface BattalionState {
   readonly position: Position;
   readonly destination?: Position;
   readonly targetId?: BattalionId | BuildingId;
+  readonly specialization: BattalionSpecialization;
   readonly size: number;
   readonly attack: number;
   readonly defense: number;
   readonly maxDefense: number;
   readonly range: number;
   readonly speed: number;
+  readonly attackCooldownTicks: number;
+  readonly attackCooldownRemaining: number;
   readonly morale: number;
   readonly devotion: number;
   readonly supply: number;
@@ -359,12 +364,15 @@ export function createInitialWorld(seed: number): WorldState {
         ownerEmpireId: "empire-rival",
         settlementId: "settlement-rival",
         position: { x: 1040, y: 420 },
+        specialization: "spears",
         size: 8,
         attack: 11,
         defense: 80,
         maxDefense: 80,
         range: 42,
         speed: 40,
+        attackCooldownTicks: 1,
+        attackCooldownRemaining: 0,
         morale: 70,
         devotion: 55,
         supply: 100

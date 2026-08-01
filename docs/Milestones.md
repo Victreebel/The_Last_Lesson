@@ -70,6 +70,8 @@ Implemented:
 - Road movement and supply effects.
 - Faith generation, external religious pressure, and rebellion pressure.
 - Bless Harvest and Inspire Army miracles.
+- Militia, spears, archers, and raiders with resource-gated specialist training, range, counters, and attack cadence.
+- Captive capture, hovel capacity, hovel liberation, rebellion escape, and Town Square assimilation.
 
 ## Milestone 4: Persistence Foundation
 

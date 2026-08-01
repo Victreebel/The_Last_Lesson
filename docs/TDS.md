@@ -1369,5 +1369,7 @@ The following compatible systems are now implemented in the prototype and are th
 - Faith is generated from citizen happiness, loyalty, devotion, internal faith, military morale, and military devotion. Rival castles generate external religious pressure, which feeds rebellion pressure for captive-heavy settlements.
 - Bless Harvest and Inspire Army are deterministic faith-spending miracles.
 - Save files are versioned JSON. They preserve world state, pending commands, command history, event history, and event sequence so loaded games retain deterministic event IDs.
+- Battalions are specialized as militia, spears, archers, or raiders. Military Quarters gate specialist training; doctrine-relevant counterplay, range, supply, and attack cadence all resolve inside the deterministic combat loop.
+- Defeated battalions can create captives when the victor has hovel capacity. Hovel destruction liberates its excess population, rebellion produces escapes, and Town Squares assimilate captives into the citizen population.
 
 Implementation remains deliberately gray-box. Art, audio, campaign content, advanced diplomacy, transport vehicles, full captive gameplay, and multiplayer authority are planned production milestones rather than implied completed features.
