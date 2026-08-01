@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.20.0 - 2026-08-01
+
+- Crown castles are now inspectable governor seats: selecting one focuses the Heir panel, Book of Lessons, and reward/punishment controls on that settlement's live heir.
+- The heir console identifies the selected settlement and governor, so conquered frontier settlements are actionable rather than opaque campaign objects.
+
 ## 1.19.0 - 2026-08-01
 
 - Expanded the opening campaign to three settlements: the Rival Crown now begins with `Grovewatch`, a second independently governed throne in the luxury grove.

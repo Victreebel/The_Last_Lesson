@@ -88,6 +88,7 @@ Implemented:
 - Deterministic visibility for both the Crown and autonomous heirs, with hostile entities hidden until they are observed by a structure, battalion, or caravan.
 - A state-driven Imperial Mandate that gives the first campaign a clear progression from economy to reconnaissance to conquest.
 - A third opening settlement, Grovewatch, so conquering the first rival throne produces a governed frontier rather than ending the campaign.
+- Inspectable Crown castles that focus the heir console and Book of Lessons on the selected settlement's governor.
 
 ## Milestone 4: Persistence Foundation
 

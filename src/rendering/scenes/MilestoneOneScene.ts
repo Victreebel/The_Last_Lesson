@@ -22,6 +22,7 @@ import {
   type BuildingState,
   type DoctrineRule,
   type HeirState,
+  type SettlementState,
   type TerrainKind,
   type TerrainZone
 } from "../../simulation/state/WorldState";
@@ -157,6 +158,7 @@ export class MilestoneOneScene extends Phaser.Scene {
   private readonly audio = new AudioDirector();
   private commandSequence = 0;
   private paused = false;
+  private inspectedSettlementId = "settlement-capital";
   private selectedBattalionId: string | null = null;
   private selectedCaravanId: string | null = null;
   private readonly selectedBattalionIds = new Set<string>();
@@ -488,6 +490,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.simulation = new Simulation(createInitialWorld(777));
     this.commandSequence = 0;
     this.paused = false;
+    this.inspectedSettlementId = "settlement-capital";
     this.pauseControlLabel.setText("PAUSE");
     this.clearSelection();
     this.selectedBuildingKind = null;
@@ -524,6 +527,7 @@ export class MilestoneOneScene extends Phaser.Scene {
       return;
     }
     const state = this.simulation.getState();
+    const settlement = this.getActiveSettlement();
     const heir = this.getActiveHeir();
     const doctrines = this.getHeirDoctrines(heir).slice(0, 4);
     const recentEvents = this.simulation
@@ -532,6 +536,7 @@ export class MilestoneOneScene extends Phaser.Scene {
       .map((event) => `${event.tick}: ${event.type.replaceAll("-", " ").toUpperCase()}`);
     this.bookPanelBody.setText(
       [
+        `CURRENT SEAT: ${this.getSettlementDisplayName(settlement?.id)}`,
         `CURRENT HEIR: ${heir?.name.toUpperCase() ?? "UNASSIGNED"}`,
         `STATE: ${heir?.mode.toUpperCase() ?? "NONE"}  //  TRUST: ${heir?.trust ?? 0}`,
         "",
@@ -563,6 +568,7 @@ export class MilestoneOneScene extends Phaser.Scene {
         return;
       }
       this.simulation = restoreSaveGame(deserializeSaveGame(serialized));
+      this.inspectedSettlementId = "settlement-capital";
       this.clearSelection();
       this.renderWorld();
       this.updateUi(["Local save restored."]);
@@ -834,6 +840,7 @@ export class MilestoneOneScene extends Phaser.Scene {
   }
 
   private updateHeirPanel(): void {
+    const settlement = this.getActiveSettlement();
     const heir = this.getActiveHeir();
     const doctrines = this.getHeirDoctrines(heir);
     const lastDoctrine = heir?.lastDoctrineId ? this.simulation.getState().doctrines[heir.lastDoctrineId] : undefined;
@@ -842,7 +849,9 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.heirPanelBg.setSize(HEIR_PANEL_WIDTH, height);
     this.heirPanel.setSize(HEIR_PANEL_WIDTH, height);
     this.heirPanelTitle.setText(
-      this.heirPanelExpanded ? `HEIR // ${heir?.name.toUpperCase() ?? "UNASSIGNED"} [-]` : `HEIR // ${heir?.name.toUpperCase() ?? "UNASSIGNED"} [+]`
+      this.heirPanelExpanded
+        ? `HEIR // ${this.getSettlementDisplayName(settlement?.id)} [-]`
+        : `HEIR // ${this.getSettlementDisplayName(settlement?.id)} [+]`
     );
     this.heirPanelBody.setVisible(this.heirPanelExpanded);
     this.heirFeedbackControls.forEach((control) => {
@@ -860,6 +869,7 @@ export class MilestoneOneScene extends Phaser.Scene {
         : ["- No observed doctrine yet."];
       this.heirPanelBody.setText(
         [
+          `GOVERNOR: ${heir?.name.toUpperCase() ?? "UNASSIGNED"}`,
           `STATE: ${heir?.mode.toUpperCase() ?? "UNASSIGNED"}  //  TRUST: ${heir?.trust ?? 0}`,
           heir?.concern
             ? `CONCERN: ${heir.concern.category.toUpperCase()} // ${heir.concern.message.toUpperCase()}`
@@ -886,8 +896,26 @@ export class MilestoneOneScene extends Phaser.Scene {
 
   private getActiveHeir(): HeirState | undefined {
     const state = this.simulation.getState();
-    const settlement = state.settlements["settlement-capital"];
+    const settlement = this.getActiveSettlement();
     return settlement ? state.heirs[settlement.heirId] : undefined;
+  }
+
+  private getActiveSettlement(): SettlementState | undefined {
+    const state = this.simulation.getState();
+    return state.settlements[this.inspectedSettlementId] ?? state.settlements["settlement-capital"];
+  }
+
+  private getSettlementDisplayName(settlementId: string | undefined): string {
+    if (!settlementId) {
+      return "UNASSIGNED";
+    }
+
+    const names: Record<string, string> = {
+      "settlement-capital": "CROWNKEEP",
+      "settlement-rival": "RIVERMARCH",
+      "settlement-rival-grove": "GROVEWATCH"
+    };
+    return names[settlementId] ?? settlementId.replace("settlement-", "").replaceAll("-", " ").toUpperCase();
   }
 
   private getHeirDoctrines(heir: HeirState | undefined): DoctrineRule[] {
@@ -904,6 +932,10 @@ export class MilestoneOneScene extends Phaser.Scene {
 
   private sendHeirFeedback(commandType: "reward-heir" | "punish-heir"): void {
     const heir = this.getActiveHeir();
+    if (heir?.ownerEmpireId !== "empire-player") {
+      this.updateUi(["Only Crown governors can receive a lesson."]);
+      return;
+    }
     if (!heir?.lastDoctrineId) {
       this.updateUi(["The heir has no lesson to reward or punish yet."]);
       return;
@@ -1742,12 +1774,28 @@ export class MilestoneOneScene extends Phaser.Scene {
       sprite.setInteractive({ useHandCursor: true });
       sprite.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
         pointer.event.stopPropagation();
-        if (building.ownerEmpireId !== "empire-player" && (this.isRightClick(pointer) || this.mode === "attack")) {
-          this.issueAttackOrder(building.id);
+        const currentBuilding = this.simulation.getState().buildings[building.id];
+        if (!currentBuilding) {
           return;
         }
 
-        if (building.ownerEmpireId === "empire-player" && this.mode === "attack") {
+        if (
+          currentBuilding.kind === "castle" &&
+          currentBuilding.ownerEmpireId === "empire-player" &&
+          !this.isRightClick(pointer) &&
+          this.mode !== "attack"
+        ) {
+          this.inspectedSettlementId = currentBuilding.settlementId;
+          this.updateUi([`Heir panel focused on ${this.getSettlementDisplayName(currentBuilding.settlementId)}.`]);
+          return;
+        }
+
+        if (currentBuilding.ownerEmpireId !== "empire-player" && (this.isRightClick(pointer) || this.mode === "attack")) {
+          this.issueAttackOrder(currentBuilding.id);
+          return;
+        }
+
+        if (currentBuilding.ownerEmpireId === "empire-player" && this.mode === "attack") {
           this.updateUi(["Cannot target a structure held by the Crown."]);
           return;
         }
