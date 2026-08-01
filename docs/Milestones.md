@@ -86,6 +86,7 @@ Implemented:
 - A victory/defeat resolution screen that explains the crown outcome and starts a fresh deterministic reign without leaving the battlefield.
 - A rival governor that transitions from a protected opening into an explainable offensive expedition, providing a real strategic clock for every match.
 - Deterministic visibility for both the Crown and autonomous heirs, with hostile entities hidden until they are observed by a structure, battalion, or caravan.
+- A state-driven Imperial Mandate that gives the first campaign a clear progression from economy to reconnaissance to conquest.
 
 ## Milestone 4: Persistence Foundation
 

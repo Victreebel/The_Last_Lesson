@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.17.0 - 2026-08-01
+
+- Added an Imperial Mandate to the tactical uplink. It advances from farm establishment through military readiness, scouting, and castle capture using live simulation state.
+
 ## 1.16.0 - 2026-08-01
 
 - Added deterministic per-empire visibility from completed structures, battalions, and caravans; unseen rival entities are now hidden from the world view and minimap.
