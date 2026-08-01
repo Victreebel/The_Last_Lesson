@@ -289,7 +289,7 @@ export function createInitialWorld(seed: number): WorldState {
         id: "empire-rival",
         name: "The Rival Crown",
         resources: { food: 20, wood: 40, iron: 0, luxury: 0, faith: 0 },
-        settlementIds: ["settlement-rival"]
+        settlementIds: ["settlement-rival", "settlement-rival-grove"]
       }
     },
     settlements: {
@@ -372,6 +372,46 @@ export function createInitialWorld(seed: number): WorldState {
           housing: 0,
           defense: 25
         }
+      },
+      "settlement-rival-grove": {
+        id: "settlement-rival-grove",
+        ownerEmpireId: "empire-rival",
+        heirId: "heir-rival-grove",
+        centralBuildingId: "building-rival-grove-castle",
+        buildingIds: ["building-rival-grove-castle"],
+        battalionIds: [],
+        caravanIds: [],
+        population: {
+          citizens: 20,
+          captives: 0,
+          militarizedCitizens: 0,
+          farmers: 6,
+          builders: 2,
+          lumberjacks: 4,
+          miners: 0,
+          happiness: 62,
+          loyalty: 72,
+          devotion: 50,
+          health: 88,
+          growthProgress: 0
+        },
+        localFood: 54,
+        internalFaith: 42,
+        externalReligiousPressure: 0,
+        pressures: {
+          food: 24,
+          supply: 0,
+          faith: 28,
+          construction: 14,
+          expansion: 5,
+          military: 16,
+          rebellion: 0,
+          loyalty: 18,
+          devotion: 28,
+          religion: 18,
+          housing: 0,
+          defense: 28
+        }
       }
     },
     buildings: {
@@ -391,6 +431,16 @@ export function createInitialWorld(seed: number): WorldState {
         settlementId: "settlement-rival",
         kind: "castle",
         position: { x: 1120, y: 390 },
+        defense: 500,
+        complete: true,
+        remainingBuildTicks: 0
+      },
+      "building-rival-grove-castle": {
+        id: "building-rival-grove-castle",
+        ownerEmpireId: "empire-rival",
+        settlementId: "settlement-rival-grove",
+        kind: "castle",
+        position: { x: 1160, y: 700 },
         defense: 500,
         complete: true,
         remainingBuildTicks: 0
@@ -434,6 +484,15 @@ export function createInitialWorld(seed: number): WorldState {
         mode: "governance",
         alive: true,
         trust: 50,
+        doctrineIds: []
+      },
+      "heir-rival-grove": {
+        id: "heir-rival-grove",
+        ownerEmpireId: "empire-rival",
+        name: "Grove Heir",
+        mode: "governance",
+        alive: true,
+        trust: 45,
         doctrineIds: []
       }
     },

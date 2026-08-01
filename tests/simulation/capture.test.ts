@@ -26,6 +26,10 @@ describe("castle capture", () => {
     };
     const simulation = new Simulation({
       ...initial,
+      empires: {
+        ...initial.empires,
+        "empire-rival": { ...initial.empires["empire-rival"], settlementIds: ["settlement-rival"] }
+      },
       buildings: {
         ...initial.buildings,
         "building-rival-castle": { ...initial.buildings["building-rival-castle"], defense: 1 }

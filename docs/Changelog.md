@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.19.0 - 2026-08-01
+
+- Expanded the opening campaign to three settlements: the Rival Crown now begins with `Grovewatch`, a second independently governed throne in the luxury grove.
+- Victory now correctly requires every rival throne to fall; capturing one settlement creates a Crown governor and leaves the remaining rival settlement in play.
+
 ## 1.18.0 - 2026-08-01
 
 - Added an optional presentation-only Web Audio layer for command confirmation and throttled land/naval combat impacts; no simulation state, save data, replay data, or deterministic outcome depends on audio.
