@@ -137,6 +137,8 @@ export interface CaravanState {
   readonly kind: CaravanKind;
   readonly position: Position;
   readonly destination?: Position;
+  readonly targetId?: CaravanId;
+  readonly attackCooldownRemaining?: number;
   readonly cargoFood: number;
   readonly capacity: number;
   readonly passengerBattalionIds: BattalionId[];

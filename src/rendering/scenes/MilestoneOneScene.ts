@@ -1212,6 +1212,17 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.updateUi([`Attack order issued to ${this.selectedBattalionIds.size} battalion(s).`]);
   }
 
+  private issueShipAttackOrder(targetId: CaravanState["id"]): void {
+    const ship = this.selectedCaravanId ? this.simulation.getState().caravans[this.selectedCaravanId] : undefined;
+    if (!ship || ship.kind !== "ship") {
+      this.updateUi(["Select a Crown Warship before designating a naval target."]);
+      return;
+    }
+    this.issueCommand({ type: "attack-with-ship", payload: { shipId: ship.id, targetId } });
+    this.mode = "select";
+    this.updateUi(["Warship attack order issued."]);
+  }
+
   private isRightClick(pointer: Phaser.Input.Pointer): boolean {
     return pointer.rightButtonDown() || (pointer.event as MouseEvent | undefined)?.button === 2;
   }
@@ -1595,10 +1606,18 @@ export class MilestoneOneScene extends Phaser.Scene {
         }
         if (
           caravan.ownerEmpireId !== "empire-player" &&
-          (this.isRightClick(pointer) || this.mode === "attack") &&
-          this.selectedBattalionIds.size > 0
+          (this.isRightClick(pointer) || this.mode === "attack")
         ) {
-          this.issueAttackOrder(caravan.id);
+          if (
+            this.selectedCaravanId &&
+            this.simulation.getState().caravans[this.selectedCaravanId]?.kind === "ship"
+          ) {
+            this.issueShipAttackOrder(caravan.id);
+          } else if (this.selectedBattalionIds.size > 0) {
+            this.issueAttackOrder(caravan.id);
+          } else {
+            this.updateUi(["Select a Crown battalion or Warship before designating a convoy target."]);
+          }
           return;
         }
         if (caravan.ownerEmpireId !== "empire-player") {
@@ -1607,7 +1626,7 @@ export class MilestoneOneScene extends Phaser.Scene {
         }
         this.clearSelection();
         this.selectedCaravanId = caravan.id;
-        this.updateUi(["Supply caravan selected. Right-click terrain to route it."]);
+        this.updateUi([`${caravan.kind === "ship" ? "Warship" : "Supply caravan"} selected. Right-click valid terrain to route it.`]);
       });
       this.worldLayer.add(container);
       this.caravanSprites.set(caravan.id, container);

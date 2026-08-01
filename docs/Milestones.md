@@ -79,6 +79,7 @@ Implemented:
 - Expanded governor utility decisions with concerns, captive integration, defensive garrisoning, and autonomous morale intervention.
 - Water-only Warship launch and movement from Town Squares, with transport capacity and embarked-fire restrictions.
 - Painterly battlefield art direction integrated beneath deterministic terrain overlays and tactical controls.
+- Direct Warship targeting, cooldown-driven naval fire, and deterministic sinking behavior.
 
 ## Milestone 4: Persistence Foundation
 

@@ -102,6 +102,7 @@ export class Simulation {
       this.updateCaravanDeliveries(nextTick);
       this.updateBattalionSupply(nextTick);
       this.updateCombat(nextTick);
+      this.updateShipCombat(nextTick);
       this.updateReligion(nextTick);
       this.updateCaptives(nextTick);
       this.updateFaith(nextTick);
@@ -602,6 +603,34 @@ export class Simulation {
         commandId: command.id,
         battalionId: battalion.id,
         buildingId: building.id
+      });
+      this.observePlayerCommand(command, tick);
+      return;
+    }
+
+    if (command.type === "attack-with-ship") {
+      const ship = this.state.caravans[command.payload.shipId];
+      const target = this.state.caravans[command.payload.targetId];
+      if (
+        !ship ||
+        !target ||
+        ship.kind !== "ship" ||
+        target.ownerEmpireId === ship.ownerEmpireId
+      ) {
+        this.eventWriter.emit(tick, "command-rejected", { commandId: command.id });
+        return;
+      }
+      this.state = {
+        ...this.state,
+        caravans: {
+          ...this.state.caravans,
+          [ship.id]: { ...ship, targetId: target.id, destination: target.position }
+        }
+      };
+      this.eventWriter.emit(tick, "attack-ordered", {
+        commandId: command.id,
+        shipId: ship.id,
+        targetId: target.id
       });
       this.observePlayerCommand(command, tick);
       return;
@@ -1875,6 +1904,51 @@ export class Simulation {
     this.state = { ...this.state, battalions: nextBattalions };
   }
 
+  private updateShipCombat(tick: number): void {
+    let caravans: Record<string, CaravanState> = { ...this.state.caravans };
+    const destroyed: CaravanState[] = [];
+    for (const candidate of Object.values(caravans).sort((left, right) => left.id.localeCompare(right.id))) {
+      const ship = caravans[candidate.id];
+      if (!ship || ship.kind !== "ship" || !ship.targetId) {
+        continue;
+      }
+      const target = caravans[ship.targetId];
+      if (!target || target.ownerEmpireId === ship.ownerEmpireId) {
+        caravans = { ...caravans, [ship.id]: { ...ship, targetId: undefined } };
+        continue;
+      }
+      if ((ship.attackCooldownRemaining ?? 0) > 0) {
+        caravans = {
+          ...caravans,
+          [ship.id]: { ...ship, attackCooldownRemaining: (ship.attackCooldownRemaining ?? 0) - 1 }
+        };
+        continue;
+      }
+      if (distance(ship.position, target.position) > 150) {
+        continue;
+      }
+      const damage = 22;
+      const nextDefense = Math.max(0, target.defense - damage);
+      if (nextDefense === 0) {
+        const { [target.id]: _destroyed, ...remaining } = caravans;
+        caravans = remaining;
+        destroyed.push(target);
+        this.eventWriter.emit(tick, "entity-destroyed", { entityId: target.id, reason: "ship-fire" });
+        this.eventWriter.emit(tick, "caravan-destroyed", { caravanId: target.id, cargoFoodLost: target.cargoFood, reason: "ship-fire" });
+      } else {
+        caravans = { ...caravans, [target.id]: { ...target, defense: nextDefense } };
+      }
+      const survivingShip = caravans[ship.id];
+      if (survivingShip) {
+        caravans = { ...caravans, [ship.id]: { ...survivingShip, attackCooldownRemaining: 2 } };
+      }
+      this.eventWriter.emit(tick, "ship-fired", { shipId: ship.id, targetId: target.id, damage });
+    }
+    this.state = { ...this.state, caravans };
+    this.removeDestroyedCaravans(destroyed.map((caravan) => caravan.id));
+    this.ejectPassengersFromDestroyedCaravans(destroyed, tick);
+  }
+
   private updateCombat(tick: number): void {
     let buildings = this.state.buildings;
     let battalions = this.state.battalions;
@@ -2522,6 +2596,14 @@ function getDoctrineObservation(command: GameCommand, state: WorldState): Doctri
         key: "attack-designated-target",
         condition: "An enemy target is designated",
         preferredAction: "Attack designated targets",
+        goal: "Break enemy resistance"
+      };
+    case "attack-with-ship":
+      return {
+        domain: "military",
+        key: "ship-fire",
+        condition: "An enemy vessel is designated",
+        preferredAction: "Control waterways",
         goal: "Break enemy resistance"
       };
     case "assimilate-captives":

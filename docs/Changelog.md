@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.10.0 - 2026-08-01
+
+- Added direct Warship attack orders against hostile vessels, deterministic naval fire, cooldowns, sinking events, and route-aware UI targeting.
+- Added naval-combat regression coverage, including the restriction that embarked battalions cannot attack from Warships.
+
 ## 1.9.0 - 2026-08-01
 
 - Added the first painterly battlefield art layer beneath the explicit, simulation-labelled terrain overlays.

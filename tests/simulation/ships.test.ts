@@ -51,4 +51,62 @@ describe("ships", () => {
     const rejected = simulation.tick();
     expect(rejected.events.some((event) => event.type === "command-rejected")).toBe(true);
   });
+
+  it("lets warships fire on hostile vessels while embarked troops remain silent", () => {
+    const initial = createInitialWorld(9494);
+    const playerShip = {
+      id: "ship-player-test",
+      ownerEmpireId: "empire-player" as const,
+      settlementId: "settlement-capital",
+      kind: "ship" as const,
+      position: { x: 650, y: 530 },
+      cargoFood: 0,
+      capacity: 52,
+      passengerBattalionIds: ["battalion-ship-passenger"],
+      defense: 110,
+      maxDefense: 110,
+      speed: 56
+    };
+    const rivalShip = {
+      id: "ship-rival-test",
+      ownerEmpireId: "empire-rival" as const,
+      settlementId: "settlement-rival",
+      kind: "ship" as const,
+      position: { x: 700, y: 530 },
+      cargoFood: 0,
+      capacity: 52,
+      passengerBattalionIds: [],
+      defense: 110,
+      maxDefense: 110,
+      speed: 56
+    };
+    const passenger = {
+      ...initial.battalions["battalion-rival-1"],
+      id: "battalion-ship-passenger",
+      ownerEmpireId: "empire-player" as const,
+      settlementId: "settlement-capital",
+      position: playerShip.position,
+      embarkedInCaravanId: playerShip.id,
+      targetId: rivalShip.id,
+      attack: 200,
+      range: 120
+    };
+    const simulation = new Simulation({
+      ...initial,
+      caravans: { [playerShip.id]: playerShip, [rivalShip.id]: rivalShip },
+      battalions: { ...initial.battalions, [passenger.id]: passenger }
+    });
+    simulation.enqueueCommand({
+      id: "ship-fire",
+      issuedBy: "player-1",
+      tick: 1,
+      type: "attack-with-ship",
+      payload: { shipId: playerShip.id, targetId: rivalShip.id }
+    });
+
+    const result = simulation.tick();
+
+    expect(simulation.getState().caravans[rivalShip.id].defense).toBe(88);
+    expect(result.events.some((event) => event.type === "ship-fired")).toBe(true);
+  });
 });
