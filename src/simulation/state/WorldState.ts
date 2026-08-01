@@ -189,6 +189,7 @@ export interface HeirState {
   readonly trust: number;
   readonly lastDoctrineId?: DoctrineId;
   readonly lastDecision?: HeirDecision;
+  readonly concern?: HeirConcern;
   readonly doctrineIds: DoctrineId[];
 }
 
@@ -197,6 +198,13 @@ export interface HeirDecision {
   readonly action: string;
   readonly rationale: string;
   readonly utility: number;
+}
+
+export interface HeirConcern {
+  readonly category: "starvation" | "rebellion" | "military" | "faith";
+  readonly message: string;
+  readonly severity: number;
+  readonly raisedAtTick: number;
 }
 
 export interface WorldState {

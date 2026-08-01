@@ -76,6 +76,7 @@ Implemented:
 - Battalion embarkation, transport movement, and player-controlled disembarkation.
 - Local food consumption, Villa-limited citizen capacity, surplus-driven population growth, and starvation consequences.
 - Garrisonable castles, walls, gates, and outposts, including breach consequences and visual command controls.
+- Expanded governor utility decisions with concerns, captive integration, defensive garrisoning, and autonomous morale intervention.
 
 ## Milestone 4: Persistence Foundation
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.7.0 - 2026-08-01
+
+- Expanded governor AI with explainable concerns for scarcity, rebellion, military danger, and insufficient faith.
+- Governors can now assimilate captives, garrison defensive works, and spend faith to inspire a weakened field force when those actions carry the highest utility.
+- Added deterministic coverage for autonomous captive integration and heir concerns.
+
 ## 1.6.0 - 2026-08-01
 
 - Added garrison commands for Castles, Walls, Gates, and Outposts.

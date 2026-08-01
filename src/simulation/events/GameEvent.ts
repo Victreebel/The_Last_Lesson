@@ -33,6 +33,7 @@ export type EventType =
   | "doctrine-reinforced"
   | "doctrine-disciplined"
   | "heir-decision"
+  | "heir-concern"
   | "damage-dealt"
   | "entity-destroyed"
   | "settlement-captured"

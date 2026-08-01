@@ -881,21 +881,68 @@ export class Simulation {
             )[0]
         : undefined;
       const enemyDistance = nearestEnemy && castle ? distance(nearestEnemy.position, castle.position) : Infinity;
+      this.recordHeirConcern(heir, settlement, ownBattalions, enemyDistance, tick);
+      const currentHeir = this.state.heirs[heir.id] ?? heir;
+      const currentSettlement = this.state.settlements[settlement.id] ?? settlement;
+      const currentEmpire = this.state.empires[currentSettlement.ownerEmpireId];
+      const hasTownSquare = currentSettlement.buildingIds.some((buildingId) => {
+        const building = this.state.buildings[buildingId];
+        return building?.kind === "town-square" && building.complete;
+      });
+      const weakestBattalion = [...ownBattalions].sort(
+        (left, right) => left.morale - right.morale || left.id.localeCompare(right.id)
+      )[0];
+      const garrisonTarget = Object.values(this.state.buildings)
+        .filter(
+          (building) =>
+            building.ownerEmpireId === currentSettlement.ownerEmpireId &&
+            building.settlementId === currentSettlement.id &&
+            building.complete &&
+            this.isGarrisonable(building.kind) &&
+            (building.garrisonBattalionIds?.length ?? 0) < this.getGarrisonCapacity(building.kind)
+        )
+        .sort((left, right) => left.id.localeCompare(right.id))[0];
+      const garrisonCandidate = ownBattalions.find((battalion) => !battalion.garrisonedInBuildingId);
 
       const farmUtility =
-        Math.max(0, 56 - settlement.localFood) * 2 +
-        Math.max(0, 8 - settlement.population.farmers) * 10 +
-        this.getDoctrineUtility(heir, "Prioritize farm labor");
+        Math.max(0, 56 - currentSettlement.localFood) * 2 +
+        Math.max(0, 8 - currentSettlement.population.farmers) * 10 +
+        this.getDoctrineUtility(currentHeir, "Prioritize farm labor");
       const recruitUtility =
         availableCitizens >= 6 && ownBattalions.length === 0
-          ? 48 + Math.max(0, 260 - enemyDistance) / 5 + this.getDoctrineUtility(heir, "Raise a battalion")
+          ? 48 + Math.max(0, 260 - enemyDistance) / 5 + this.getDoctrineUtility(currentHeir, "Raise a battalion")
           : 0;
       const defendUtility =
         nearestEnemy && ownBattalions.length > 0 && enemyDistance < 240
-          ? 42 + (240 - enemyDistance) / 4 + this.getDoctrineUtility(heir, "Attack designated targets")
+          ? 42 + (240 - enemyDistance) / 4 + this.getDoctrineUtility(currentHeir, "Attack designated targets")
+          : 0;
+      const assimilationUtility =
+        hasTownSquare &&
+        currentSettlement.population.captives >= 4 &&
+        this.getCitizenCapacity(currentSettlement.id) > currentSettlement.population.citizens
+          ? currentSettlement.population.captives * 7 +
+            currentSettlement.pressures.rebellion * 1.5 +
+            this.getDoctrineUtility(currentHeir, "Assimilate captives")
+          : 0;
+      const inspireUtility =
+        weakestBattalion && weakestBattalion.morale < 65 && currentEmpire?.resources.faith >= 16
+          ? (65 - weakestBattalion.morale) * 3 +
+            currentSettlement.pressures.military +
+            this.getDoctrineUtility(currentHeir, "Inspire battalions")
+          : 0;
+      const garrisonUtility =
+        garrisonTarget && garrisonCandidate && enemyDistance < 300
+          ? 36 + (300 - enemyDistance) / 5 + this.getDoctrineUtility(currentHeir, "Garrison defensive works")
           : 0;
 
-      if (farmUtility >= recruitUtility && farmUtility >= defendUtility && farmUtility >= 30) {
+      if (
+        farmUtility >= recruitUtility &&
+        farmUtility >= defendUtility &&
+        farmUtility >= assimilationUtility &&
+        farmUtility >= inspireUtility &&
+        farmUtility >= garrisonUtility &&
+        farmUtility >= 30
+      ) {
         const nextFarmers = Math.min(availableCitizens, Math.max(8, settlement.population.farmers));
         const remainingWorkers = Math.max(0, availableCitizens - nextFarmers);
         this.state = {
@@ -933,7 +980,130 @@ export class Simulation {
         continue;
       }
 
-      if (recruitUtility >= defendUtility && recruitUtility >= 30 && castle) {
+      if (
+        assimilationUtility >= recruitUtility &&
+        assimilationUtility >= defendUtility &&
+        assimilationUtility >= inspireUtility &&
+        assimilationUtility >= garrisonUtility &&
+        assimilationUtility >= 30
+      ) {
+        const count = Math.min(4, currentSettlement.population.captives);
+        this.state = {
+          ...this.state,
+          settlements: {
+            ...this.state.settlements,
+            [currentSettlement.id]: {
+              ...currentSettlement,
+              population: {
+                ...currentSettlement.population,
+                captives: currentSettlement.population.captives - count,
+                citizens: currentSettlement.population.citizens + count,
+                loyalty: Math.min(100, currentSettlement.population.loyalty + 3),
+                devotion: Math.min(100, currentSettlement.population.devotion + 2)
+              }
+            }
+          }
+        };
+        this.eventWriter.emit(tick, "captives-assimilated", {
+          settlementId: currentSettlement.id,
+          count,
+          heirId: currentHeir.id
+        });
+        this.recordHeirDecision(
+          currentHeir.id,
+          "Assimilate captives",
+          "Rebellion pressure made captive integration more valuable than further labor extraction.",
+          assimilationUtility,
+          tick
+        );
+        continue;
+      }
+
+      if (
+        inspireUtility >= recruitUtility &&
+        inspireUtility >= defendUtility &&
+        inspireUtility >= garrisonUtility &&
+        inspireUtility >= 30 &&
+        weakestBattalion &&
+        currentEmpire
+      ) {
+        this.state = {
+          ...this.state,
+          empires: {
+            ...this.state.empires,
+            [currentEmpire.id]: {
+              ...currentEmpire,
+              resources: { ...currentEmpire.resources, faith: currentEmpire.resources.faith - 16 }
+            }
+          },
+          battalions: {
+            ...this.state.battalions,
+            [weakestBattalion.id]: {
+              ...weakestBattalion,
+              morale: Math.min(100, weakestBattalion.morale + 18),
+              devotion: Math.min(100, weakestBattalion.devotion + 8)
+            }
+          }
+        };
+        this.eventWriter.emit(tick, "miracle-cast", {
+          miracle: "inspire-battalion",
+          battalionId: weakestBattalion.id,
+          faithCost: 16,
+          heirId: currentHeir.id
+        });
+        this.recordHeirDecision(
+          currentHeir.id,
+          "Inspire battalions",
+          "A failing field force needed divine assurance before it could hold the line.",
+          inspireUtility,
+          tick
+        );
+        continue;
+      }
+
+      if (garrisonUtility >= defendUtility && garrisonUtility >= 30 && garrisonTarget && garrisonCandidate) {
+        this.state = {
+          ...this.state,
+          buildings: {
+            ...this.state.buildings,
+            [garrisonTarget.id]: {
+              ...garrisonTarget,
+              garrisonBattalionIds: [...(garrisonTarget.garrisonBattalionIds ?? []), garrisonCandidate.id]
+            }
+          },
+          battalions: {
+            ...this.state.battalions,
+            [garrisonCandidate.id]: {
+              ...garrisonCandidate,
+              garrisonedInBuildingId: garrisonTarget.id,
+              position: garrisonTarget.position,
+              destination: undefined
+            }
+          }
+        };
+        this.eventWriter.emit(tick, "battalion-garrisoned", {
+          battalionId: garrisonCandidate.id,
+          buildingId: garrisonTarget.id,
+          heirId: currentHeir.id
+        });
+        this.recordHeirDecision(
+          currentHeir.id,
+          "Garrison defensive works",
+          "An enemy force approached within the settlement's defensive perimeter.",
+          garrisonUtility,
+          tick
+        );
+        continue;
+      }
+
+      if (
+        recruitUtility >= defendUtility &&
+        recruitUtility >= assimilationUtility &&
+        recruitUtility >= inspireUtility &&
+        recruitUtility >= garrisonUtility &&
+        recruitUtility >= 30 &&
+        castle
+      ) {
         const size = Math.min(8, availableCitizens);
         const profile = getBattalionProfile("militia");
         const battalionId = `battalion-governed-${tick}-${settlement.battalionIds.length + 1}`;
@@ -1010,6 +1180,40 @@ export class Simulation {
     }
   }
 
+  private recordHeirConcern(
+    heir: HeirState,
+    settlement: WorldState["settlements"][string],
+    battalions: BattalionState[],
+    enemyDistance: number,
+    tick: number
+  ): void {
+    const empire = this.state.empires[settlement.ownerEmpireId];
+    const concern =
+      settlement.localFood < 12
+        ? { category: "starvation" as const, message: "Food stores are near exhaustion.", severity: 90 }
+        : settlement.pressures.rebellion >= 50
+          ? { category: "rebellion" as const, message: "Captive unrest threatens the settlement.", severity: settlement.pressures.rebellion }
+          : enemyDistance < 260
+            ? { category: "military" as const, message: "Enemy forces are inside the defensive perimeter.", severity: Math.round(260 - enemyDistance) }
+            : (empire?.resources.faith ?? 0) < 12 && battalions.some((battalion) => battalion.morale < 60)
+              ? { category: "faith" as const, message: "Faith reserves cannot sustain the field force.", severity: 55 }
+              : undefined;
+    if (
+      !concern ||
+      (heir.concern?.category === concern.category && heir.concern.message === concern.message)
+    ) {
+      return;
+    }
+    this.state = {
+      ...this.state,
+      heirs: {
+        ...this.state.heirs,
+        [heir.id]: { ...heir, concern: { ...concern, raisedAtTick: tick } }
+      }
+    };
+    this.eventWriter.emit(tick, "heir-concern", { heirId: heir.id, ...concern });
+  }
+
   private getDoctrineUtility(heir: HeirState, preferredAction: string): number {
     const doctrine = heir.doctrineIds
       .map((id) => this.state.doctrines[id])
@@ -1032,15 +1236,29 @@ export class Simulation {
     }
     const doctrineId = `doctrine-${heir.id}-govern-${action.toLowerCase().replaceAll(" ", "-")}`;
     const existingDoctrine = this.state.doctrines[doctrineId];
+    const domain =
+      action === "Prioritize farm labor"
+        ? "economy"
+        : action === "Assimilate captives"
+          ? "society"
+          : action === "Inspire battalions"
+            ? "faith"
+            : "military";
+    const goal =
+      action === "Assimilate captives"
+        ? "Stabilize the settlement"
+        : action === "Inspire battalions"
+          ? "Restore military morale"
+          : "Secure the settlement";
     const doctrine: DoctrineRule = existingDoctrine
       ? { ...existingDoctrine, updatedAtTick: tick }
       : {
           id: doctrineId,
           ownerId: heir.id,
-          domain: action === "Prioritize farm labor" ? "economy" : "military",
+          domain,
           condition: "Governance pressure requires action",
           preferredAction: action,
-          goal: "Secure the settlement",
+          goal,
           confidence: 20,
           createdAtTick: tick,
           updatedAtTick: tick

@@ -666,6 +666,9 @@ export class MilestoneOneScene extends Phaser.Scene {
       this.heirPanelBody.setText(
         [
           `STATE: ${heir?.mode.toUpperCase() ?? "UNASSIGNED"}  //  TRUST: ${heir?.trust ?? 0}`,
+          heir?.concern
+            ? `CONCERN: ${heir.concern.category.toUpperCase()} // ${heir.concern.message.toUpperCase()}`
+            : "CONCERN: NO URGENT GOVERNANCE ALERT.",
           "",
           "LAST LESSON:",
           lastDoctrine

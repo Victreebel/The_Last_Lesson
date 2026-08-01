@@ -27,4 +27,94 @@ describe("heir governance", () => {
     expect(settlement.population.farmers).toBe(8);
     expect(result.events.some((event) => event.type === "heir-decision")).toBe(true);
   });
+
+  it("integrates captives when unrest makes assimilation the highest-value settlement action", () => {
+    const initial = createInitialWorld(112359);
+    const simulation = new Simulation({
+      ...initial,
+      buildings: {
+        ...initial.buildings,
+        "building-rival-town-square": {
+          id: "building-rival-town-square",
+          ownerEmpireId: "empire-rival",
+          settlementId: "settlement-rival",
+          kind: "town-square",
+          position: { x: 1030, y: 350 },
+          defense: 150,
+          complete: true,
+          remainingBuildTicks: 0
+        },
+        "building-rival-villa": {
+          id: "building-rival-villa",
+          ownerEmpireId: "empire-rival",
+          settlementId: "settlement-rival",
+          kind: "villa",
+          position: { x: 1100, y: 350 },
+          defense: 75,
+          complete: true,
+          remainingBuildTicks: 0
+        },
+        "building-rival-hovel": {
+          id: "building-rival-hovel",
+          ownerEmpireId: "empire-rival",
+          settlementId: "settlement-rival",
+          kind: "hovel",
+          position: { x: 1160, y: 350 },
+          defense: 50,
+          complete: true,
+          remainingBuildTicks: 0
+        }
+      },
+      settlements: {
+        ...initial.settlements,
+        "settlement-rival": {
+          ...initial.settlements["settlement-rival"],
+          buildingIds: [
+            ...initial.settlements["settlement-rival"].buildingIds,
+            "building-rival-town-square",
+            "building-rival-villa",
+            "building-rival-hovel"
+          ],
+          localFood: 100,
+          population: {
+            ...initial.settlements["settlement-rival"].population,
+            captives: 8
+          },
+          pressures: {
+            ...initial.settlements["settlement-rival"].pressures,
+            rebellion: 60
+          }
+        }
+      }
+    });
+
+    const result = simulation.tick();
+    const heir = simulation.getState().heirs["heir-rival"];
+    const settlement = simulation.getState().settlements["settlement-rival"];
+
+    expect(heir.lastDecision?.action).toBe("Assimilate captives");
+    expect(settlement.population.captives).toBe(4);
+    expect(settlement.population.citizens).toBe(28);
+    expect(result.events.some((event) => event.type === "captives-assimilated")).toBe(true);
+  });
+
+  it("records a governor concern before scarcity becomes starvation", () => {
+    const initial = createInitialWorld(112360);
+    const simulation = new Simulation({
+      ...initial,
+      settlements: {
+        ...initial.settlements,
+        "settlement-rival": {
+          ...initial.settlements["settlement-rival"],
+          localFood: 10
+        }
+      }
+    });
+
+    const result = simulation.tick();
+    const heir = simulation.getState().heirs["heir-rival"];
+
+    expect(heir.concern?.category).toBe("starvation");
+    expect(result.events.some((event) => event.type === "heir-concern")).toBe(true);
+  });
 });
