@@ -4,6 +4,18 @@ import { runReplay } from "../../src/simulation/replay/replay";
 import { createInitialWorld } from "../../src/simulation/state/WorldState";
 
 describe("milestone one rts loop", () => {
+  it("starts every empire with a settlement governed from a castle", () => {
+    const initialWorld = createInitialWorld(12345);
+
+    for (const empire of Object.values(initialWorld.empires)) {
+      expect(empire.settlementIds.length).toBeGreaterThan(0);
+      for (const settlementId of empire.settlementIds) {
+        const settlement = initialWorld.settlements[settlementId];
+        expect(initialWorld.buildings[settlement.centralBuildingId].kind).toBe("castle");
+      }
+    }
+  });
+
   it("creates a battalion, moves it, and damages a target deterministically", () => {
     const initialWorld = createInitialWorld(98765);
     const commands: GameCommand[] = [
@@ -16,7 +28,8 @@ describe("milestone one rts loop", () => {
           settlementId: "settlement-capital",
           farmers: 8,
           builders: 4,
-          lumberjacks: 6
+          lumberjacks: 6,
+          miners: 0
         }
       },
       {
@@ -27,6 +40,17 @@ describe("milestone one rts loop", () => {
         payload: {
           settlementId: "settlement-capital",
           size: 10
+        }
+      },
+      {
+        id: "place-town-square",
+        issuedBy: "player-1",
+        tick: 1,
+        type: "place-building",
+        payload: {
+          settlementId: "settlement-capital",
+          kind: "town-square",
+          position: { x: 520, y: 360 }
         }
       },
       {
@@ -46,7 +70,7 @@ describe("milestone one rts loop", () => {
         type: "attack-target",
         payload: {
           battalionId: "battalion-2-1",
-          targetId: "building-town-square"
+          targetId: "building-town-square-1-2"
         }
       }
     ];
@@ -56,10 +80,14 @@ describe("milestone one rts loop", () => {
 
     expect(first.finalStateHash).toEqual(second.finalStateHash);
     expect(first.eventLogHash).toEqual(second.eventLogHash);
-    expect(Object.values(first.finalState.battalions)).toHaveLength(1);
+    expect(
+      Object.values(first.finalState.battalions).filter(
+        (battalion) => battalion.ownerEmpireId === "empire-player"
+      )
+    ).toHaveLength(1);
     expect(first.finalState.settlements["settlement-capital"].population.militarizedCitizens).toBe(
       10
     );
-    expect(first.finalState.buildings["building-town-square"].defense).toBeLessThan(150);
+    expect(first.finalState.buildings["building-town-square-1-2"].defense).toBeLessThan(150);
   });
 });

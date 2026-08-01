@@ -2,9 +2,9 @@
 
 ## Technical Design Specification
 
-**Version:** 1.0  
-**Status:** Frozen Design / Ready for Implementation  
-**Date:** 2026-07-31  
+**Version:** 1.1
+**Status:** Active Implementation Blueprint
+**Date:** 2026-08-01
 **Working Title:** The Last Lesson  
 **Repository Identity:** `the-last-lesson`  
 **Internal Codename:** `TLL`  
@@ -1354,3 +1354,20 @@ The next action is to scaffold the TypeScript/Vite/Phaser repository and impleme
 
 The Last Lesson should not add new core mechanics before Milestone 2 proves whether teaching AI is fun.
 
+---
+
+## 31. Implemented Amendment 1.1
+
+The following compatible systems are now implemented in the prototype and are the current reference behavior:
+
+- Two empires begin with one castle each; every non-castle structure is deployed from the building console.
+- Capturing a castle kills its incumbent heir, transfers the settlement and civic structures, creates a replacement governor, and awards victory when the defeated empire owns no settlement.
+- Terrain is explicit data. Farms require fertile ground, lumber mills require forest, mines require iron veins, and movement/combat use terrain modifiers.
+- Completed farms, mills, and mines cap food, wood, and iron production from assigned labor. Construction costs are deducted from global resources.
+- Roads grant a movement multiplier and supply nearby friendly battalions. Unsupplied battalions lose supply and eventually morale.
+- Heirs in governance mode score food, recruitment, and defensive responses using pressure plus doctrine confidence. Each choice records action, rationale, utility, and a rewardable conviction.
+- Faith is generated from citizen happiness, loyalty, devotion, internal faith, military morale, and military devotion. Rival castles generate external religious pressure, which feeds rebellion pressure for captive-heavy settlements.
+- Bless Harvest and Inspire Army are deterministic faith-spending miracles.
+- Save files are versioned JSON. They preserve world state, pending commands, command history, event history, and event sequence so loaded games retain deterministic event IDs.
+
+Implementation remains deliberately gray-box. Art, audio, campaign content, advanced diplomacy, transport vehicles, full captive gameplay, and multiplayer authority are planned production milestones rather than implied completed features.

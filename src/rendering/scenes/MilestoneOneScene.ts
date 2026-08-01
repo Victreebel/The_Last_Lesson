@@ -1,26 +1,178 @@
 import Phaser from "phaser";
 import { Simulation } from "../../simulation/Simulation";
 import type { GameCommand } from "../../simulation/commands/GameCommand";
-import { createInitialWorld, type BattalionState, type BuildingState } from "../../simulation/state/WorldState";
+import {
+  createInitialWorld,
+  getBuildingCost,
+  isBuildingTerrainCompatible,
+  terrainAtPosition,
+  type BattalionState,
+  type BuildingKind,
+  type BuildingState,
+  type DoctrineRule,
+  type HeirState,
+  type TerrainKind,
+  type TerrainZone
+} from "../../simulation/state/WorldState";
 
-type ToolMode = "select" | "farm" | "move" | "attack";
+type ToolMode = "select" | "building" | "move" | "attack";
+
+const BUILDING_OPTIONS: ReadonlyArray<{ readonly kind: BuildingKind; readonly label: string }> = [
+  { kind: "villa", label: "Villa" },
+  { kind: "hovel", label: "Hovel" },
+  { kind: "town-square", label: "Town Square" },
+  { kind: "farm", label: "Farm" },
+  { kind: "road", label: "Road" },
+  { kind: "military-quarters", label: "Military Quarters" },
+  { kind: "mine", label: "Mine" },
+  { kind: "lumber-mill", label: "Lumber Mill" },
+  { kind: "wall", label: "Wall" },
+  { kind: "gate", label: "Gate" },
+  { kind: "outpost", label: "Outpost" }
+];
+
+const BUILDING_COLORS: Record<BuildingKind, number> = {
+  castle: 0x8f8366,
+  "military-quarters": 0x9d4640,
+  "town-square": 0x66705a,
+  farm: 0x8f9f4d,
+  villa: 0xb9a780,
+  hovel: 0x7e6852,
+  road: 0x866f55,
+  mine: 0x6d7480,
+  "lumber-mill": 0x735e40,
+  wall: 0x9a9788,
+  gate: 0x566a74,
+  outpost: 0xb2693f
+};
+
+const BUILDING_SIZES: Record<BuildingKind, number> = {
+  castle: 72,
+  "military-quarters": 60,
+  "town-square": 56,
+  farm: 48,
+  villa: 48,
+  hovel: 42,
+  road: 34,
+  mine: 50,
+  "lumber-mill": 50,
+  wall: 54,
+  gate: 54,
+  outpost: 44
+};
+
+const BUILDING_DISPLAY_LABELS: Record<BuildingKind, string> = {
+  castle: "CASTLE",
+  "military-quarters": "MILITARY\nQUARTERS",
+  "town-square": "TOWN\nSQUARE",
+  farm: "FARM",
+  villa: "VILLA",
+  hovel: "HOVEL",
+  road: "ROAD",
+  mine: "MINE",
+  "lumber-mill": "LUMBER\nMILL",
+  wall: "WALL",
+  gate: "GATE",
+  outpost: "OUTPOST"
+};
+
+const TERRAIN_COLORS: Record<TerrainKind, number> = {
+  grassland: 0x4b623a,
+  fertile: 0x758e3c,
+  forest: 0x28513a,
+  "iron-vein": 0x5c6670,
+  "luxury-grove": 0x987e45,
+  hills: 0x746b4f,
+  water: 0x2f667c,
+  marsh: 0x4a624f
+};
+
+const TERRAIN_SYMBOLS: Record<TerrainKind, string> = {
+  grassland: "G",
+  fertile: "F",
+  forest: "W",
+  "iron-vein": "I",
+  "luxury-grove": "L",
+  hills: "H",
+  water: "~",
+  marsh: "M"
+};
+
+const TERRAIN_DETAILS: Record<TerrainKind, string> = {
+  grassland: "OPEN BUILD GROUND",
+  fertile: "FARMS / FOOD",
+  forest: "LUMBER MILLS / WOOD",
+  "iron-vein": "MINES / IRON",
+  "luxury-grove": "VILLAS / LUXURY",
+  hills: "SLOW / DEFENSE +",
+  water: "BLOCKS LAND UNITS",
+  marsh: "SLOW / UNBUILDABLE"
+};
+
+const BUILD_PANEL_WIDTH = 306;
+const HEIR_PANEL_WIDTH = 286;
+const PLACEMENT_GRID_SIZE = 32;
+const DRAG_THRESHOLD = 10;
+const UI_COLORS = {
+  panel: 0x12191a,
+  panelDeep: 0x0b1011,
+  trim: 0x5a6b63,
+  accent: 0xe2bd61,
+  text: "#e9e4cf",
+  muted: "#9eaea8",
+  command: 0x273536,
+  commandActive: 0x4c5f53,
+  danger: 0x783c37
+};
+
+interface BuildingTile {
+  readonly button: Phaser.GameObjects.Rectangle;
+  readonly icon: Phaser.GameObjects.Rectangle;
+  readonly label: Phaser.GameObjects.Text;
+  readonly count: Phaser.GameObjects.Text;
+}
+
+interface HeirFeedbackControl {
+  readonly button: Phaser.GameObjects.Rectangle;
+  readonly label: Phaser.GameObjects.Text;
+}
 
 export class MilestoneOneScene extends Phaser.Scene {
   private simulation = new Simulation(createInitialWorld(777));
   private commandSequence = 0;
   private selectedBattalionId: string | null = null;
+  private readonly selectedBattalionIds = new Set<string>();
   private mode: ToolMode = "select";
+  private topHud!: Phaser.GameObjects.Rectangle;
+  private gameTitleText!: Phaser.GameObjects.Text;
   private statusText!: Phaser.GameObjects.Text;
   private eventText!: Phaser.GameObjects.Text;
   private resourceText!: Phaser.GameObjects.Text;
+  private intelPanel!: Phaser.GameObjects.Container;
+  private commandDock!: Phaser.GameObjects.Container;
+  private heirPanel!: Phaser.GameObjects.Container;
+  private heirPanelBg!: Phaser.GameObjects.Rectangle;
+  private heirPanelHeader!: Phaser.GameObjects.Rectangle;
+  private heirPanelTitle!: Phaser.GameObjects.Text;
+  private heirPanelBody!: Phaser.GameObjects.Text;
+  private heirPanelExpanded = false;
+  private readonly heirFeedbackControls: HeirFeedbackControl[] = [];
   private buildingsPanel!: Phaser.GameObjects.Container;
   private buildingsPanelBg!: Phaser.GameObjects.Rectangle;
+  private buildingsPanelHeader!: Phaser.GameObjects.Rectangle;
   private buildingsPanelTitle!: Phaser.GameObjects.Text;
   private buildingsPanelBody!: Phaser.GameObjects.Text;
   private buildingsPanelExpanded = false;
+  private selectedBuildingKind: BuildingKind | null = null;
+  private readonly buildingTiles = new Map<BuildingKind, BuildingTile>();
   private worldLayer!: Phaser.GameObjects.Container;
   private readonly buildingSprites = new Map<string, Phaser.GameObjects.Rectangle>();
+  private readonly buildingLabelSprites = new Map<string, Phaser.GameObjects.Text>();
   private readonly battalionSprites = new Map<string, Phaser.GameObjects.Container>();
+  private placementPreview?: Phaser.GameObjects.Rectangle;
+  private selectionBox?: Phaser.GameObjects.Rectangle;
+  private pointerDownWorld?: Phaser.Math.Vector2;
+  private selectionDragActive = false;
   private cursors?: Phaser.Types.Input.Keyboard.CursorKeys;
 
   constructor() {
@@ -34,8 +186,10 @@ export class MilestoneOneScene extends Phaser.Scene {
 
     this.drawTerrain();
     this.createUi();
-    this.scale.on("resize", () => this.layoutBuildingsPanel());
-    this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => this.handleWorldClick(pointer));
+    this.scale.on("resize", () => this.layoutUi());
+    this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => this.handlePointerDown(pointer));
+    this.input.on("pointermove", (pointer: Phaser.Input.Pointer) => this.handlePointerMove(pointer));
+    this.input.on("pointerup", (pointer: Phaser.Input.Pointer) => this.handlePointerUp(pointer));
 
     this.time.addEvent({
       delay: 1000,
@@ -53,7 +207,8 @@ export class MilestoneOneScene extends Phaser.Scene {
         settlementId: "settlement-capital",
         farmers: 8,
         builders: 4,
-        lumberjacks: 6
+        lumberjacks: 6,
+        miners: 0
       }
     });
     this.renderWorld();
@@ -72,163 +227,467 @@ export class MilestoneOneScene extends Phaser.Scene {
 
   private drawTerrain(): void {
     const graphics = this.add.graphics();
-    graphics.fillStyle(0x26301f, 1);
+    graphics.fillStyle(TERRAIN_COLORS.grassland, 1);
     graphics.fillRect(0, 0, 1400, 900);
 
     for (let x = 0; x <= 1400; x += 80) {
-      graphics.lineStyle(1, 0x394431, 0.55);
+      graphics.lineStyle(1, 0x293a2b, 0.42);
       graphics.lineBetween(x, 0, x, 900);
     }
 
     for (let y = 0; y <= 900; y += 80) {
-      graphics.lineStyle(1, 0x394431, 0.55);
+      graphics.lineStyle(1, 0x293a2b, 0.42);
       graphics.lineBetween(0, y, 1400, y);
     }
 
-    graphics.fillStyle(0x3a492d, 1);
-    graphics.fillEllipse(780, 260, 260, 150);
-    graphics.fillStyle(0x425437, 1);
-    graphics.fillEllipse(290, 640, 360, 190);
+    for (const zone of this.simulation.getState().terrainZones) {
+      this.drawTerrainZone(graphics, zone);
+    }
+
     this.worldLayer.add(graphics);
   }
 
-  private createUi(): void {
-    const panel = this.add.rectangle(0, 0, 360, 190, 0x11150f, 0.92).setOrigin(0);
-    panel.setScrollFactor(0);
-    this.resourceText = this.add.text(18, 16, "", {
-      fontFamily: "Inter, Arial",
-      fontSize: "14px",
-      color: "#efe8d1"
-    });
-    this.resourceText.setScrollFactor(0);
+  private drawTerrainZone(graphics: Phaser.GameObjects.Graphics, zone: TerrainZone): void {
+    const { bounds } = zone;
+    graphics.fillStyle(TERRAIN_COLORS[zone.kind], 0.92);
+    graphics.fillRoundedRect(bounds.x, bounds.y, bounds.width, bounds.height, 12);
+    graphics.lineStyle(2, 0xd6d1af, 0.35);
+    graphics.strokeRoundedRect(bounds.x, bounds.y, bounds.width, bounds.height, 12);
 
-    this.statusText = this.add.text(18, 82, "", {
-      fontFamily: "Inter, Arial",
-      fontSize: "13px",
-      color: "#d8b15f"
-    });
-    this.statusText.setScrollFactor(0);
-
-    this.eventText = this.add.text(18, 112, "", {
-      fontFamily: "Inter, Arial",
-      fontSize: "12px",
-      color: "#bfc8a8"
-    });
-    this.eventText.setScrollFactor(0);
-
-    this.addButton(18, 206, "Place Farm", () => {
-      this.mode = "farm";
-      this.updateUi(["Click the map to place a farm"]);
-    });
-    this.addButton(138, 206, "Raise Battalion", () => this.createBattalion());
-    this.addButton(18, 250, "Move", () => {
-      this.mode = "move";
-      this.updateUi(["Select a battalion, then click destination"]);
-    });
-    this.addButton(138, 250, "Attack", () => {
-      this.mode = "attack";
-      this.updateUi(["Select a battalion, then click a target"]);
-    });
-    this.addButton(258, 250, "Tick", () => {
-      const result = this.simulation.tick();
-      this.renderWorld();
-      this.updateUi(result.events.map((event) => event.type).slice(-5));
-    });
-    this.createBuildingsPanel();
-  }
-
-  private addButton(x: number, y: number, label: string, onClick: () => void): void {
-    const button = this.add.rectangle(x, y, 108, 34, 0x2f3a28, 1).setOrigin(0);
-    button.setStrokeStyle(1, 0x6f7c55);
-    button.setScrollFactor(0);
-    button.setInteractive({ useHandCursor: true });
-    button.on("pointerdown", onClick);
-    const text = this.add.text(x + 10, y + 9, label, {
-      fontFamily: "Inter, Arial",
-      fontSize: "12px",
-      color: "#efe8d1"
-    });
-    text.setScrollFactor(0);
-  }
-
-  private createBuildingsPanel(): void {
-    this.buildingsPanelBg = this.add.rectangle(0, 0, 194, 48, 0x11150f, 0.94).setOrigin(0);
-    this.buildingsPanelBg.setStrokeStyle(1, 0x6f7c55);
-    this.buildingsPanelTitle = this.add.text(14, 10, "", {
-      fontFamily: "Inter, Arial",
-      fontSize: "13px",
-      color: "#efe8d1"
-    });
-    this.buildingsPanelBody = this.add.text(14, 34, "", {
-      fontFamily: "Inter, Arial",
-      fontSize: "12px",
-      color: "#bfc8a8",
-      lineSpacing: 6
-    });
-    this.buildingsPanel = this.add.container(0, 0, [
-      this.buildingsPanelBg,
-      this.buildingsPanelTitle,
-      this.buildingsPanelBody
-    ]);
-    this.buildingsPanel.setScrollFactor(0);
-    this.buildingsPanel.setDepth(20);
-    this.buildingsPanel.setSize(194, 48);
-    this.buildingsPanel.setInteractive(
-      new Phaser.Geom.Rectangle(0, 0, 194, 48),
-      Phaser.Geom.Rectangle.Contains
-    );
-    this.buildingsPanel.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
-      pointer.event.stopPropagation();
-      this.buildingsPanelExpanded = !this.buildingsPanelExpanded;
-      this.updateBuildingsPanel();
-    });
-    this.layoutBuildingsPanel();
-    this.updateBuildingsPanel();
-  }
-
-  private layoutBuildingsPanel(): void {
-    if (!this.buildingsPanel) {
-      return;
+    if (zone.kind === "water") {
+      graphics.lineStyle(2, 0x9cc8d5, 0.32);
+      for (let x = bounds.x + 20; x < bounds.x + bounds.width - 12; x += 38) {
+        graphics.lineBetween(x, bounds.y + 32, x + 22, bounds.y + 32);
+        graphics.lineBetween(x + 8, bounds.y + 78, x + 30, bounds.y + 78);
+      }
     }
 
-    const width = this.scale.width;
-    const panelWidth = this.buildingsPanelExpanded ? 248 : 194;
-    this.buildingsPanel.setPosition(Math.max(380, width - panelWidth - 18), 18);
+    const label = this.add.text(bounds.x + bounds.width / 2, bounds.y + 14, `[${TERRAIN_SYMBOLS[zone.kind]}] ${zone.label}\n${TERRAIN_DETAILS[zone.kind]}`, {
+      fontFamily: "Arial Black, Arial",
+      fontSize: "11px",
+      color: "#f4f0d5",
+      align: "center",
+      lineSpacing: 3,
+      backgroundColor: "#111818"
+    });
+    label.setOrigin(0.5, 0);
+    this.worldLayer.add(label);
   }
 
-  private updateBuildingsPanel(): void {
-    const counts = this.getBuildingCounts();
-    const total = Object.values(counts).reduce((sum, count) => sum + count, 0);
-    const width = this.buildingsPanelExpanded ? 248 : 194;
-    const height = this.buildingsPanelExpanded ? 190 : 48;
+  private createUi(): void {
+    this.createTopHud();
+    this.createIntelPanel();
+    this.createCommandDock();
+    this.createHeirPanel();
+    this.createBuildingsPanel();
+    this.layoutUi();
+  }
 
-    this.buildingsPanelBg.setSize(width, height);
-    this.buildingsPanel.setSize(width, height);
-    this.buildingsPanel.input?.hitArea.setTo(0, 0, width, height);
-    this.buildingsPanelTitle.setText(
-      this.buildingsPanelExpanded ? `Buildings (${total})  ▲` : `Buildings: ${total}  ▼`
+  private createTopHud(): void {
+    this.topHud = this.add.rectangle(0, 0, 1, 58, UI_COLORS.panelDeep, 0.96).setOrigin(0);
+    this.topHud.setScrollFactor(0);
+    this.topHud.setInteractive({ useHandCursor: false });
+    this.topHud.on("pointerdown", (pointer: Phaser.Input.Pointer) => pointer.event.stopPropagation());
+    this.topHud.setDepth(40);
+
+    this.gameTitleText = this.add.text(18, 10, "THE LAST LESSON", {
+      fontFamily: "Arial Black, Arial",
+      fontSize: "16px",
+      color: "#f2d77f"
+    });
+    this.gameTitleText.setScrollFactor(0).setDepth(41);
+
+    this.resourceText = this.add.text(312, 18, "", {
+      fontFamily: "Arial, sans-serif",
+      fontSize: "13px",
+      color: UI_COLORS.text
+    });
+    this.resourceText.setScrollFactor(0).setDepth(41);
+  }
+
+  private createIntelPanel(): void {
+    const background = this.add.rectangle(0, 0, 332, 184, UI_COLORS.panel, 0.95).setOrigin(0);
+    background.setStrokeStyle(1, UI_COLORS.trim);
+    background.setInteractive({ useHandCursor: false });
+    background.on("pointerdown", (pointer: Phaser.Input.Pointer) => pointer.event.stopPropagation());
+    const title = this.add.text(14, 10, "TACTICAL UPLINK", {
+      fontFamily: "Arial Black, Arial",
+      fontSize: "11px",
+      color: "#f2d77f"
+    });
+    const divider = this.add.rectangle(14, 30, 304, 1, UI_COLORS.trim, 1).setOrigin(0);
+    this.statusText = this.add.text(14, 42, "", {
+      fontFamily: "Arial, sans-serif",
+      fontSize: "11px",
+      color: UI_COLORS.text,
+      lineSpacing: 4
+    });
+    this.eventText = this.add.text(14, 122, "", {
+      fontFamily: "Arial, sans-serif",
+      fontSize: "11px",
+      color: UI_COLORS.muted,
+      lineSpacing: 3,
+      wordWrap: { width: 302 }
+    });
+    this.intelPanel = this.add.container(0, 0, [background, title, divider, this.statusText, this.eventText]);
+    this.intelPanel.setScrollFactor(0).setDepth(40);
+  }
+
+  private createCommandDock(): void {
+    const background = this.add.rectangle(0, 0, 410, 214, UI_COLORS.panel, 0.96).setOrigin(0);
+    background.setStrokeStyle(1, UI_COLORS.trim);
+    background.setInteractive({ useHandCursor: false });
+    background.on("pointerdown", (pointer: Phaser.Input.Pointer) => pointer.event.stopPropagation());
+    const title = this.add.text(14, 9, "COMMAND ORDERS", {
+      fontFamily: "Arial Black, Arial",
+      fontSize: "11px",
+      color: "#f2d77f"
+    });
+    const divider = this.add.rectangle(14, 29, 382, 1, UI_COLORS.trim, 1).setOrigin(0);
+    this.commandDock = this.add.container(0, 0, [background, title, divider]);
+    this.commandDock.setScrollFactor(0).setDepth(40);
+
+    this.addCommandButton(14, 42, "MOBILIZE", "BATTALION", () => this.createBattalion());
+    this.addCommandButton(110, 42, "MOVE", "UNIT", () => {
+      this.mode = "move";
+      this.updateUi(["Select a battalion, then designate a destination."]);
+    });
+    this.addCommandButton(206, 42, "ATTACK", "TARGET", () => {
+      this.mode = "attack";
+      this.updateUi(["Select a battalion, then designate a target."]);
+    }, UI_COLORS.danger);
+    this.addCommandButton(302, 42, "ADVANCE", "TICK", () => {
+      const result = this.simulation.tick();
+      this.renderWorld();
+      this.updateUi(result.events.map((event) => event.type).slice(-4));
+    });
+    this.addCommandButton(14, 96, "LABOR", "FOOD", () => this.setLaborFocus("farmers"));
+    this.addCommandButton(110, 96, "LABOR", "WOOD", () => this.setLaborFocus("lumberjacks"));
+    this.addCommandButton(206, 96, "LABOR", "IRON", () => this.setLaborFocus("miners"));
+    this.addCommandButton(302, 96, "LABOR", "BUILD", () => this.setLaborFocus("builders"));
+    this.addWideCommandButton(14, 150, "BLESS HARVEST", "12 FAITH", () => this.castBlessHarvest());
+    this.addWideCommandButton(210, 150, "INSPIRE ARMY", "16 FAITH", () => this.castInspireBattalions());
+  }
+
+  private addCommandButton(
+    x: number,
+    y: number,
+    label: string,
+    detail: string,
+    onClick: () => void,
+    fill = UI_COLORS.command
+  ): void {
+    const button = this.add.rectangle(x, y, 82, 46, fill, 1).setOrigin(0);
+    button.setStrokeStyle(1, UI_COLORS.trim);
+    button.setInteractive({ useHandCursor: true });
+    button.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+      pointer.event.stopPropagation();
+      onClick();
+    });
+    const primary = this.add.text(x + 8, y + 8, label, {
+      fontFamily: "Arial Black, Arial",
+      fontSize: "10px",
+      color: UI_COLORS.text
+    });
+    const secondary = this.add.text(x + 8, y + 25, detail, {
+      fontFamily: "Arial, sans-serif",
+      fontSize: "9px",
+      color: "#b6c5bb"
+    });
+    this.commandDock.add([button, primary, secondary]);
+  }
+
+  private addWideCommandButton(
+    x: number,
+    y: number,
+    label: string,
+    detail: string,
+    onClick: () => void
+  ): void {
+    const button = this.add.rectangle(x, y, 182, 46, UI_COLORS.commandActive, 1).setOrigin(0);
+    button.setStrokeStyle(1, UI_COLORS.trim);
+    button.setInteractive({ useHandCursor: true });
+    button.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+      pointer.event.stopPropagation();
+      onClick();
+    });
+    const primary = this.add.text(x + 10, y + 8, label, {
+      fontFamily: "Arial Black, Arial",
+      fontSize: "10px",
+      color: UI_COLORS.text
+    });
+    const secondary = this.add.text(x + 10, y + 25, detail, {
+      fontFamily: "Arial, sans-serif",
+      fontSize: "9px",
+      color: "#b6c5bb"
+    });
+    this.commandDock.add([button, primary, secondary]);
+  }
+
+  private createHeirPanel(): void {
+    this.heirPanelBg = this.add.rectangle(0, 0, HEIR_PANEL_WIDTH, 48, UI_COLORS.panel, 0.96).setOrigin(0);
+    this.heirPanelBg.setStrokeStyle(1, UI_COLORS.trim);
+    this.heirPanelBg.setInteractive({ useHandCursor: false });
+    this.heirPanelBg.on("pointerdown", (pointer: Phaser.Input.Pointer) => pointer.event.stopPropagation());
+
+    this.heirPanelHeader = this.add.rectangle(0, 0, HEIR_PANEL_WIDTH, 48, UI_COLORS.panelDeep, 0.98).setOrigin(0);
+    this.heirPanelHeader.setInteractive({ useHandCursor: true });
+    this.heirPanelHeader.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+      pointer.event.stopPropagation();
+      this.heirPanelExpanded = !this.heirPanelExpanded;
+      this.updateHeirPanel();
+    });
+
+    this.heirPanelTitle = this.add.text(14, 9, "", {
+      fontFamily: "Arial Black, Arial",
+      fontSize: "12px",
+      color: "#f2d77f"
+    });
+    this.heirPanelBody = this.add.text(14, 56, "", {
+      fontFamily: "Arial, sans-serif",
+      fontSize: "11px",
+      color: UI_COLORS.text,
+      lineSpacing: 4,
+      wordWrap: { width: HEIR_PANEL_WIDTH - 28 }
+    });
+    this.heirPanel = this.add.container(0, 0, [
+      this.heirPanelBg,
+      this.heirPanelHeader,
+      this.heirPanelTitle,
+      this.heirPanelBody
+    ]);
+    this.heirPanel.setScrollFactor(0).setDepth(40).setSize(HEIR_PANEL_WIDTH, 48);
+    this.addHeirFeedbackButton(14, 258, "REWARD", UI_COLORS.commandActive, "reward-heir");
+    this.addHeirFeedbackButton(146, 258, "PUNISH", UI_COLORS.danger, "punish-heir");
+    this.updateHeirPanel();
+  }
+
+  private addHeirFeedbackButton(
+    x: number,
+    y: number,
+    label: string,
+    fill: number,
+    commandType: "reward-heir" | "punish-heir"
+  ): void {
+    const button = this.add.rectangle(x, y, 126, 34, fill, 1).setOrigin(0);
+    button.setStrokeStyle(1, UI_COLORS.trim);
+    button.setInteractive({ useHandCursor: true });
+    button.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+      pointer.event.stopPropagation();
+      this.sendHeirFeedback(commandType);
+    });
+    const text = this.add.text(x + 12, y + 10, label, {
+      fontFamily: "Arial Black, Arial",
+      fontSize: "10px",
+      color: UI_COLORS.text
+    });
+    this.heirPanel.add([button, text]);
+    this.heirFeedbackControls.push({ button, label: text });
+  }
+
+  private updateHeirPanel(): void {
+    const heir = this.getActiveHeir();
+    const doctrines = this.getHeirDoctrines(heir);
+    const lastDoctrine = heir?.lastDoctrineId ? this.simulation.getState().doctrines[heir.lastDoctrineId] : undefined;
+    const height = this.heirPanelExpanded ? 350 : 48;
+
+    this.heirPanelBg.setSize(HEIR_PANEL_WIDTH, height);
+    this.heirPanel.setSize(HEIR_PANEL_WIDTH, height);
+    this.heirPanelTitle.setText(
+      this.heirPanelExpanded ? `HEIR // ${heir?.name.toUpperCase() ?? "UNASSIGNED"} [-]` : `HEIR // ${heir?.name.toUpperCase() ?? "UNASSIGNED"} [+]`
     );
-    this.buildingsPanelBody.setVisible(this.buildingsPanelExpanded);
+    this.heirPanelBody.setVisible(this.heirPanelExpanded);
+    this.heirFeedbackControls.forEach((control) => {
+      control.button.setVisible(this.heirPanelExpanded);
+      control.label.setVisible(this.heirPanelExpanded);
+      control.button.setAlpha(lastDoctrine ? 1 : 0.42);
+      control.label.setAlpha(lastDoctrine ? 1 : 0.42);
+    });
 
-    if (this.buildingsPanelExpanded) {
-      this.buildingsPanelBody.setText(
+    if (this.heirPanelExpanded) {
+      const convictionLines = doctrines.length
+        ? doctrines
+            .slice(0, 3)
+            .map((doctrine) => `- ${doctrine.preferredAction.toUpperCase()}  ${doctrine.confidence}%`)
+        : ["- No observed doctrine yet."];
+      this.heirPanelBody.setText(
         [
-          `Castle ${counts.castle ?? 0}`,
-          `Town Square ${counts["town-square"] ?? 0}`,
-          `Military Quarters ${counts["military-quarters"] ?? 0}`,
-          `Farms ${counts.farm ?? 0}`,
-          `Villas ${counts.villa ?? 0}`,
-          `Hovels ${counts.hovel ?? 0}`,
-          `Roads ${counts.road ?? 0}`
+          `STATE: ${heir?.mode.toUpperCase() ?? "UNASSIGNED"}  //  TRUST: ${heir?.trust ?? 0}`,
+          "",
+          "LAST LESSON:",
+          lastDoctrine
+            ? `${lastDoctrine.preferredAction.toUpperCase()}  //  ${lastDoctrine.confidence}%`
+            : "Awaiting the God-King's example.",
+          "",
+          "GOVERNANCE:",
+          heir?.lastDecision
+            ? `${heir.lastDecision.action.toUpperCase()}  //  UTILITY ${heir.lastDecision.utility}`
+            : "No autonomous decision recorded.",
+          "",
+          "CONVICTIONS:",
+          ...convictionLines
         ].join("\n")
       );
     }
 
-    this.layoutBuildingsPanel();
+    this.layoutUi();
   }
 
-  private getBuildingCounts(): Record<string, number> {
-    return Object.values(this.simulation.getState().buildings).reduce<Record<string, number>>(
+  private getActiveHeir(): HeirState | undefined {
+    const state = this.simulation.getState();
+    const settlement = state.settlements["settlement-capital"];
+    return settlement ? state.heirs[settlement.heirId] : undefined;
+  }
+
+  private getHeirDoctrines(heir: HeirState | undefined): DoctrineRule[] {
+    if (!heir) {
+      return [];
+    }
+
+    const doctrines = this.simulation.getState().doctrines;
+    return heir.doctrineIds
+      .map((id) => doctrines[id])
+      .filter((doctrine): doctrine is DoctrineRule => Boolean(doctrine))
+      .sort((left, right) => right.confidence - left.confidence || right.updatedAtTick - left.updatedAtTick);
+  }
+
+  private sendHeirFeedback(commandType: "reward-heir" | "punish-heir"): void {
+    const heir = this.getActiveHeir();
+    if (!heir?.lastDoctrineId) {
+      this.updateUi(["The heir has no lesson to reward or punish yet."]);
+      return;
+    }
+
+    this.issueCommand({ type: commandType, payload: { heirId: heir.id } });
+    this.updateUi([`${commandType === "reward-heir" ? "Reward" : "Punish"} issued to ${heir.name}.`]);
+  }
+
+  private createBuildingsPanel(): void {
+    this.buildingsPanelBg = this.add.rectangle(0, 0, BUILD_PANEL_WIDTH, 48, UI_COLORS.panel, 0.96).setOrigin(0);
+    this.buildingsPanelBg.setStrokeStyle(1, UI_COLORS.trim);
+    this.buildingsPanelBg.setInteractive({ useHandCursor: false });
+    this.buildingsPanelBg.on("pointerdown", (pointer: Phaser.Input.Pointer) => pointer.event.stopPropagation());
+    this.buildingsPanelHeader = this.add.rectangle(0, 0, BUILD_PANEL_WIDTH, 48, UI_COLORS.panelDeep, 0.98).setOrigin(0);
+    this.buildingsPanelHeader.setInteractive({ useHandCursor: true });
+    this.buildingsPanelHeader.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+      pointer.event.stopPropagation();
+      this.buildingsPanelExpanded = !this.buildingsPanelExpanded;
+      this.updateBuildingsPanel();
+    });
+    this.buildingsPanelTitle = this.add.text(14, 9, "", {
+      fontFamily: "Arial Black, Arial",
+      fontSize: "12px",
+      color: "#f2d77f"
+    });
+    this.buildingsPanelBody = this.add.text(14, 54, "", {
+      fontFamily: "Arial, sans-serif",
+      fontSize: "10px",
+      color: UI_COLORS.muted,
+      lineSpacing: 3
+    });
+    this.buildingsPanel = this.add.container(0, 0, [
+      this.buildingsPanelBg,
+      this.buildingsPanelHeader,
+      this.buildingsPanelTitle,
+      this.buildingsPanelBody
+    ]);
+    this.buildingsPanel.setScrollFactor(0);
+    this.buildingsPanel.setDepth(40);
+    this.buildingsPanel.setSize(BUILD_PANEL_WIDTH, 48);
+    this.createBuildingOptionControls();
+    this.updateBuildingsPanel();
+  }
+
+  private createBuildingOptionControls(): void {
+    for (const [index, option] of BUILDING_OPTIONS.entries()) {
+      const column = index % 3;
+      const row = Math.floor(index / 3);
+      const x = 12 + column * 94;
+      const y = 76 + row * 76;
+      const button = this.add.rectangle(x, y, 86, 68, UI_COLORS.command, 1).setOrigin(0);
+      button.setStrokeStyle(1, UI_COLORS.trim);
+      button.setInteractive({ useHandCursor: true });
+      button.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+        pointer.event.stopPropagation();
+        this.selectBuilding(option.kind);
+      });
+      const icon = this.add.rectangle(x + 10, y + 10, 18, 18, BUILDING_COLORS[option.kind], 1).setOrigin(0);
+      icon.setStrokeStyle(1, 0x0b1011);
+      const label = this.add.text(x + 34, y + 8, option.label, {
+        fontFamily: "Arial Black, Arial",
+        fontSize: "9px",
+        color: UI_COLORS.text,
+        wordWrap: { width: 46 }
+      });
+      const count = this.add.text(x + 10, y + 49, "", {
+        fontFamily: "Arial, sans-serif",
+        fontSize: "10px",
+        color: "#b6c5bb"
+      });
+      this.buildingsPanel.add([button, icon, label, count]);
+      this.buildingTiles.set(option.kind, { button, icon, label, count });
+    }
+  }
+
+  private layoutUi(): void {
+    const { width, height } = this.scale;
+    const compact = width < 900;
+    const topHeight = compact ? 94 : 58;
+    const scale = Math.min(1, Math.max(0.72, (width - 24) / BUILD_PANEL_WIDTH));
+    const buildPanelX = width - 16 - BUILD_PANEL_WIDTH * scale;
+    const heirPanelX = buildPanelX - 12 - HEIR_PANEL_WIDTH * scale;
+
+    this.topHud.setSize(width, topHeight);
+    this.gameTitleText.setPosition(18, 10);
+    this.resourceText.setPosition(compact ? 18 : 312, compact ? 47 : 19);
+    this.intelPanel.setPosition(16, topHeight + 14);
+    this.commandDock.setPosition(16, Math.max(topHeight + 236, height - 230));
+    if (this.heirPanel) {
+      this.heirPanel.setScale(scale);
+      this.heirPanel.setPosition(Math.max(16, heirPanelX), topHeight + 14);
+    }
+    if (this.buildingsPanel) {
+      this.buildingsPanel.setScale(scale);
+      this.buildingsPanel.setPosition(buildPanelX, topHeight + 14);
+    }
+  }
+
+  private updateBuildingsPanel(): void {
+    const counts = this.getBuildingCounts();
+    const buildRows = Math.ceil(BUILDING_OPTIONS.length / 3);
+    const height = this.buildingsPanelExpanded ? 76 + buildRows * 76 + 8 : 48;
+
+    this.buildingsPanelBg.setSize(BUILD_PANEL_WIDTH, height);
+    this.buildingsPanel.setSize(BUILD_PANEL_WIDTH, height);
+    this.buildingsPanelTitle.setText(
+      this.buildingsPanelExpanded ? "BUILD // STRUCTURES [-]" : "BUILD // STRUCTURES [+]"
+    );
+    this.buildingsPanelBody.setVisible(this.buildingsPanelExpanded);
+    for (const [kind, tile] of this.buildingTiles) {
+      const isSelected = kind === this.selectedBuildingKind;
+      tile.button.setVisible(this.buildingsPanelExpanded);
+      tile.icon.setVisible(this.buildingsPanelExpanded);
+      tile.label.setVisible(this.buildingsPanelExpanded);
+      tile.count.setVisible(this.buildingsPanelExpanded);
+      tile.button.setFillStyle(isSelected ? UI_COLORS.commandActive : UI_COLORS.command, 1);
+      tile.button.setStrokeStyle(isSelected ? 2 : 1, isSelected ? UI_COLORS.accent : UI_COLORS.trim);
+      const cost = getBuildingCost(kind);
+      tile.count.setText(`DEPLOYED: ${counts[kind] ?? 0}  //  ${cost.wood}W ${cost.iron}I`);
+    }
+
+    if (this.buildingsPanelExpanded) {
+      this.buildingsPanelBody.setText(
+        this.selectedBuildingKind
+          ? `READY: ${this.getBuildingLabel(this.selectedBuildingKind).toUpperCase()} // Select terrain to deploy.`
+          : "Select a structure, then select terrain to deploy."
+      );
+    }
+
+    this.layoutUi();
+  }
+
+  private getBuildingCounts(): Partial<Record<BuildingKind, number>> {
+    return Object.values(this.simulation.getState().buildings).reduce<Partial<Record<BuildingKind, number>>>(
       (counts, building) => {
         counts[building.kind] = (counts[building.kind] ?? 0) + 1;
         return counts;
@@ -237,36 +696,345 @@ export class MilestoneOneScene extends Phaser.Scene {
     );
   }
 
-  private handleWorldClick(pointer: Phaser.Input.Pointer): void {
-    if (pointer.y < 72) {
+  private selectBuilding(kind: BuildingKind): void {
+    this.selectedBuildingKind = kind;
+    this.mode = "building";
+    this.buildingsPanelExpanded = false;
+    this.ensurePlacementPreview();
+    this.updateUi([`Construction ready: ${this.getBuildingLabel(kind)}. Select terrain to deploy.`]);
+  }
+
+  private getBuildingLabel(kind: BuildingKind): string {
+    return BUILDING_OPTIONS.find((option) => option.kind === kind)?.label ?? kind;
+  }
+
+  private handlePointerDown(pointer: Phaser.Input.Pointer): void {
+    if (pointer.y < this.topHud.height) {
       return;
     }
 
     const worldPoint = pointer.positionToCamera(this.cameras.main) as Phaser.Math.Vector2;
 
-    if (this.mode === "farm") {
-      this.issueCommand({
-        type: "place-building",
-        payload: {
-          settlementId: "settlement-capital",
-          kind: "farm",
-          position: { x: Math.round(worldPoint.x), y: Math.round(worldPoint.y) }
-        }
-      });
+    if (this.isRightClick(pointer)) {
+      if (this.mode === "building") {
+        this.cancelPlacement();
+      } else {
+        this.mode = "select";
+        this.issueMoveOrder(worldPoint);
+      }
+      return;
+    }
+
+    if (!this.isPrimaryClick(pointer)) {
+      return;
+    }
+
+    this.pointerDownWorld = worldPoint.clone();
+
+    if (this.mode === "building") {
+      this.updatePlacementPreview(worldPoint);
+    }
+  }
+
+  private handlePointerMove(pointer: Phaser.Input.Pointer): void {
+    const worldPoint = pointer.positionToCamera(this.cameras.main) as Phaser.Math.Vector2;
+
+    if (this.mode === "building") {
+      this.updatePlacementPreview(worldPoint);
+    }
+
+    if (!this.pointerDownWorld || this.mode !== "select" || !pointer.isDown) {
+      return;
+    }
+
+    if (!this.selectionDragActive && Phaser.Math.Distance.BetweenPoints(this.pointerDownWorld, worldPoint) >= DRAG_THRESHOLD) {
+      this.selectionDragActive = true;
+      this.ensureSelectionBox();
+    }
+
+    if (this.selectionDragActive) {
+      this.updateSelectionBox(this.pointerDownWorld, worldPoint);
+    }
+  }
+
+  private handlePointerUp(pointer: Phaser.Input.Pointer): void {
+    if (this.isRightClick(pointer) || !this.pointerDownWorld) {
+      return;
+    }
+
+    const worldPoint = pointer.positionToCamera(this.cameras.main) as Phaser.Math.Vector2;
+    const start = this.pointerDownWorld;
+    this.pointerDownWorld = undefined;
+
+    if (this.mode === "building" && this.selectedBuildingKind) {
+      const kind = this.selectedBuildingKind;
+      if (this.isLinearBuilding(kind) && Phaser.Math.Distance.BetweenPoints(start, worldPoint) >= DRAG_THRESHOLD) {
+        this.placeLinearBuildings(kind, start, worldPoint);
+      } else {
+        this.placeBuildingAt(kind, worldPoint);
+      }
+      return;
+    }
+
+    if (this.mode === "move") {
+      this.issueMoveOrder(worldPoint);
       this.mode = "select";
       return;
     }
 
-    if (this.mode === "move" && this.selectedBattalionId) {
-      this.issueCommand({
-        type: "move-battalion",
-        payload: {
-          battalionId: this.selectedBattalionId,
-          destination: { x: Math.round(worldPoint.x), y: Math.round(worldPoint.y) }
-        }
-      });
+    if (this.selectionDragActive) {
+      this.finishBoxSelection(start, worldPoint, this.isShiftHeld(pointer));
       return;
     }
+
+    if (this.mode === "select" && !this.isShiftHeld(pointer)) {
+      this.clearSelection();
+      this.updateUi(["Selection cleared."]);
+    }
+  }
+
+  private ensurePlacementPreview(): void {
+    if (this.placementPreview || !this.selectedBuildingKind) {
+      return;
+    }
+
+    const size = BUILDING_SIZES[this.selectedBuildingKind];
+    this.placementPreview = this.add.rectangle(0, 0, size, size, 0x4e965c, 0.5);
+    this.placementPreview.setStrokeStyle(2, UI_COLORS.accent, 0.9);
+    this.worldLayer.add(this.placementPreview);
+  }
+
+  private updatePlacementPreview(point: Phaser.Math.Vector2): void {
+    if (!this.selectedBuildingKind) {
+      return;
+    }
+
+    this.ensurePlacementPreview();
+    const position = this.snapToGrid(point);
+    const valid = this.isValidBuildingPosition(this.selectedBuildingKind, position);
+    const size = BUILDING_SIZES[this.selectedBuildingKind];
+    this.placementPreview?.setSize(size, size);
+    this.placementPreview?.setPosition(position.x, position.y);
+    this.placementPreview?.setFillStyle(valid ? 0x4e965c : 0xa74c42, 0.48);
+    this.placementPreview?.setStrokeStyle(2, valid ? 0xb9df83 : 0xf0a38d, 0.95);
+  }
+
+  private clearPlacementPreview(): void {
+    this.placementPreview?.destroy();
+    this.placementPreview = undefined;
+  }
+
+  private cancelPlacement(): void {
+    const cancelled = this.selectedBuildingKind ? this.getBuildingLabel(this.selectedBuildingKind) : "construction";
+    this.selectedBuildingKind = null;
+    this.mode = "select";
+    this.clearPlacementPreview();
+    this.updateUi([`${cancelled} placement cancelled.`]);
+  }
+
+  private placeBuildingAt(kind: BuildingKind, point: Phaser.Math.Vector2): boolean {
+    const position = this.snapToGrid(point);
+    if (!this.isValidBuildingPosition(kind, position)) {
+      this.updateUi(["Construction site blocked. Choose open terrain."]);
+      return false;
+    }
+
+    this.issueCommand({
+      type: "place-building",
+      payload: {
+        settlementId: "settlement-capital",
+        kind,
+        position: { x: position.x, y: position.y }
+      }
+    });
+    this.selectedBuildingKind = null;
+    this.mode = "select";
+    this.clearPlacementPreview();
+    this.updateUi([`${this.getBuildingLabel(kind)} deployment authorized.`]);
+    return true;
+  }
+
+  private placeLinearBuildings(kind: BuildingKind, from: Phaser.Math.Vector2, to: Phaser.Math.Vector2): void {
+    const length = Phaser.Math.Distance.BetweenPoints(from, to);
+    const steps = Math.max(1, Math.ceil(length / PLACEMENT_GRID_SIZE));
+    const placedPositions = new Set<string>();
+    let placed = 0;
+
+    for (let step = 0; step <= steps; step += 1) {
+      const amount = step / steps;
+      const point = new Phaser.Math.Vector2(
+        Phaser.Math.Linear(from.x, to.x, amount),
+        Phaser.Math.Linear(from.y, to.y, amount)
+      );
+      const position = this.snapToGrid(point);
+      const key = `${position.x}:${position.y}`;
+      if (placedPositions.has(key) || !this.isValidBuildingPosition(kind, position)) {
+        continue;
+      }
+
+      placedPositions.add(key);
+      this.issueCommand({
+        type: "place-building",
+        payload: {
+          settlementId: "settlement-capital",
+          kind,
+          position: { x: position.x, y: position.y }
+        }
+      });
+      placed += 1;
+    }
+
+    if (placed === 0) {
+      this.updateUi(["No open terrain along placement line."]);
+      return;
+    }
+
+    this.selectedBuildingKind = null;
+    this.mode = "select";
+    this.clearPlacementPreview();
+    this.updateUi([`${placed} ${this.getBuildingLabel(kind).toLowerCase()} segments authorized.`]);
+  }
+
+  private isValidBuildingPosition(kind: BuildingKind, position: Phaser.Math.Vector2): boolean {
+    const size = BUILDING_SIZES[kind];
+    if (position.x < size || position.y < size || position.x > 1400 - size || position.y > 900 - size) {
+      return false;
+    }
+
+    if (!isBuildingTerrainCompatible(kind, terrainAtPosition(this.simulation.getState(), position))) {
+      return false;
+    }
+
+    const resources = this.simulation.getState().empires["empire-player"].resources;
+    const cost = getBuildingCost(kind);
+    if (resources.wood < cost.wood || resources.iron < cost.iron) {
+      return false;
+    }
+
+    return !Object.values(this.simulation.getState().buildings).some((building) => {
+      const minimumDistance = (size + BUILDING_SIZES[building.kind]) * 0.55;
+      return Phaser.Math.Distance.Between(position.x, position.y, building.position.x, building.position.y) < minimumDistance;
+    });
+  }
+
+  private isLinearBuilding(kind: BuildingKind): boolean {
+    return kind === "road" || kind === "wall";
+  }
+
+  private snapToGrid(point: Phaser.Math.Vector2): Phaser.Math.Vector2 {
+    return new Phaser.Math.Vector2(
+      Math.round(point.x / PLACEMENT_GRID_SIZE) * PLACEMENT_GRID_SIZE,
+      Math.round(point.y / PLACEMENT_GRID_SIZE) * PLACEMENT_GRID_SIZE
+    );
+  }
+
+  private ensureSelectionBox(): void {
+    if (this.selectionBox) {
+      return;
+    }
+
+    this.selectionBox = this.add.rectangle(0, 0, 1, 1, 0x8cb58b, 0.14).setOrigin(0);
+    this.selectionBox.setStrokeStyle(1, 0xd7e8af, 0.9);
+    this.worldLayer.add(this.selectionBox);
+  }
+
+  private updateSelectionBox(start: Phaser.Math.Vector2, current: Phaser.Math.Vector2): void {
+    if (!this.selectionBox) {
+      return;
+    }
+
+    const x = Math.min(start.x, current.x);
+    const y = Math.min(start.y, current.y);
+    this.selectionBox.setPosition(x, y);
+    this.selectionBox.setSize(Math.max(1, Math.abs(current.x - start.x)), Math.max(1, Math.abs(current.y - start.y)));
+  }
+
+  private finishBoxSelection(start: Phaser.Math.Vector2, end: Phaser.Math.Vector2, append: boolean): void {
+    const bounds = new Phaser.Geom.Rectangle(
+      Math.min(start.x, end.x),
+      Math.min(start.y, end.y),
+      Math.abs(end.x - start.x),
+      Math.abs(end.y - start.y)
+    );
+    const selectedIds = Object.values(this.simulation.getState().battalions)
+      .filter(
+        (battalion) =>
+          battalion.ownerEmpireId === "empire-player" &&
+          Phaser.Geom.Rectangle.Contains(bounds, battalion.position.x, battalion.position.y)
+      )
+      .map((battalion) => battalion.id);
+
+    if (!append) {
+      this.clearSelection();
+    }
+    selectedIds.forEach((id) => this.selectedBattalionIds.add(id));
+    this.selectedBattalionId = selectedIds[0] ?? (append ? this.selectedBattalionId : null);
+    this.selectionBox?.destroy();
+    this.selectionBox = undefined;
+    this.selectionDragActive = false;
+    this.updateUi([selectedIds.length ? `${selectedIds.length} battalion(s) selected.` : "No battalions in selection area."]);
+  }
+
+  private selectBattalion(id: string, append: boolean): void {
+    if (this.simulation.getState().battalions[id]?.ownerEmpireId !== "empire-player") {
+      this.updateUi(["Rival battalions cannot be selected. Designate them as a target."]);
+      return;
+    }
+    if (!append) {
+      this.clearSelection();
+    }
+    this.selectedBattalionIds.add(id);
+    this.selectedBattalionId = id;
+    this.updateUi([`Selected ${id}.`]);
+  }
+
+  private clearSelection(): void {
+    this.selectedBattalionIds.clear();
+    this.selectedBattalionId = null;
+  }
+
+  private issueMoveOrder(point: Phaser.Math.Vector2): void {
+    if (this.selectedBattalionIds.size === 0) {
+      this.updateUi(["Select a battalion before issuing an order."]);
+      return;
+    }
+
+    const destination = this.snapToGrid(point);
+    for (const battalionId of this.selectedBattalionIds) {
+      this.issueCommand({
+        type: "move-battalion",
+        payload: { battalionId, destination: { x: destination.x, y: destination.y } }
+      });
+    }
+    this.updateUi([`Move order issued to ${this.selectedBattalionIds.size} battalion(s).`]);
+  }
+
+  private issueAttackOrder(targetId: BattalionState["id"] | BuildingState["id"]): void {
+    if (this.selectedBattalionIds.size === 0) {
+      this.updateUi(["Select a battalion before designating a target."]);
+      return;
+    }
+
+    for (const battalionId of this.selectedBattalionIds) {
+      this.issueCommand({
+        type: "attack-target",
+        payload: { battalionId, targetId }
+      });
+    }
+    this.mode = "select";
+    this.updateUi([`Attack order issued to ${this.selectedBattalionIds.size} battalion(s).`]);
+  }
+
+  private isRightClick(pointer: Phaser.Input.Pointer): boolean {
+    return pointer.rightButtonDown() || (pointer.event as MouseEvent | undefined)?.button === 2;
+  }
+
+  private isPrimaryClick(pointer: Phaser.Input.Pointer): boolean {
+    return !this.isRightClick(pointer);
+  }
+
+  private isShiftHeld(pointer: Phaser.Input.Pointer): boolean {
+    return Boolean((pointer.event as MouseEvent | undefined)?.shiftKey);
   }
 
   private createBattalion(): void {
@@ -277,6 +1045,53 @@ export class MilestoneOneScene extends Phaser.Scene {
         size: 10
       }
     });
+  }
+
+  private setLaborFocus(focus: "farmers" | "builders" | "lumberjacks" | "miners"): void {
+    const settlement = this.simulation.getState().settlements["settlement-capital"];
+    const available = settlement.population.citizens - settlement.population.militarizedCitizens;
+    const roles: Array<"farmers" | "builders" | "lumberjacks" | "miners"> = [
+      focus,
+      ...(["farmers", "builders", "lumberjacks", "miners"] as const).filter((role) => role !== focus)
+    ];
+    const allocation = { farmers: 0, builders: 0, lumberjacks: 0, miners: 0 };
+    let remaining = available;
+    for (const role of roles) {
+      const assigned = Math.min(role === focus ? 12 : 4, remaining);
+      allocation[role] = assigned;
+      remaining -= assigned;
+    }
+    this.issueCommand({
+      type: "assign-labor",
+      payload: { settlementId: settlement.id, ...allocation }
+    });
+    this.updateUi([`Labor priority set: ${focus.toUpperCase()}.`]);
+  }
+
+  private castBlessHarvest(): void {
+    this.issueCommand({
+      type: "cast-miracle",
+      payload: {
+        empireId: "empire-player",
+        kind: "bless-harvest",
+        settlementId: "settlement-capital"
+      }
+    });
+    this.updateUi(["Bless Harvest petitioned. 12 Faith will be spent on confirmation."]);
+  }
+
+  private castInspireBattalions(): void {
+    if (this.selectedBattalionIds.size === 0) {
+      this.updateUi(["Select Crown battalions before invoking Inspire Army."]);
+      return;
+    }
+    for (const targetId of this.selectedBattalionIds) {
+      this.issueCommand({
+        type: "cast-miracle",
+        payload: { empireId: "empire-player", kind: "inspire-battalion", targetId }
+      });
+    }
+    this.updateUi([`Inspire Army petitioned for ${this.selectedBattalionIds.size} battalion(s).`]);
   }
 
   private issueCommand(command: Omit<GameCommand, "id" | "issuedBy" | "tick">): void {
@@ -303,57 +1118,111 @@ export class MilestoneOneScene extends Phaser.Scene {
       if (!state.battalions[id]) {
         sprite.destroy();
         this.battalionSprites.delete(id);
+        this.selectedBattalionIds.delete(id);
       }
+    }
+
+    for (const [id, sprite] of this.buildingSprites) {
+      if (!state.buildings[id]) {
+        sprite.destroy();
+        this.buildingSprites.delete(id);
+        this.buildingLabelSprites.get(id)?.destroy();
+        this.buildingLabelSprites.delete(id);
+      }
+    }
+
+    if (this.selectedBattalionId && !state.battalions[this.selectedBattalionId]) {
+      this.selectedBattalionId = this.selectedBattalionIds.values().next().value ?? null;
     }
   }
 
   private renderBuilding(building: BuildingState): void {
-    const color = building.kind === "farm" ? 0x8f9f4d : building.kind === "castle" ? 0x8f8366 : 0x66705a;
+    const color = building.ownerEmpireId === "empire-player" ? BUILDING_COLORS[building.kind] : 0x914946;
     let sprite = this.buildingSprites.get(building.id);
+    let label = this.buildingLabelSprites.get(building.id);
 
     if (!sprite) {
-      const size = building.kind === "castle" ? 72 : building.kind === "farm" ? 48 : 56;
+      const size = BUILDING_SIZES[building.kind];
       sprite = this.add.rectangle(building.position.x, building.position.y, size, size, color, 1);
       sprite.setStrokeStyle(2, 0x191c16);
       sprite.setInteractive({ useHandCursor: true });
       sprite.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
         pointer.event.stopPropagation();
-        if (this.mode === "attack" && this.selectedBattalionId) {
-          this.issueCommand({
-            type: "attack-target",
-            payload: {
-              battalionId: this.selectedBattalionId,
-              targetId: building.id
-            }
-          });
+        if (building.ownerEmpireId !== "empire-player" && (this.isRightClick(pointer) || this.mode === "attack")) {
+          this.issueAttackOrder(building.id);
+          return;
+        }
+
+        if (building.ownerEmpireId === "empire-player" && this.mode === "attack") {
+          this.updateUi(["Cannot target a structure held by the Crown."]);
+          return;
+        }
+
+        if (this.mode === "building") {
+          this.updateUi(["Construction site blocked. Choose open terrain."]);
         }
       });
       this.worldLayer.add(sprite);
       this.buildingSprites.set(building.id, sprite);
     }
 
+    if (!label) {
+      label = this.add.text(building.position.x, building.position.y, this.getBuildingWorldLabel(building), {
+        fontFamily: "Arial Black, Arial",
+        fontSize: "9px",
+        color: "#ffffff",
+        align: "center",
+        backgroundColor: "#12191a"
+      });
+      label.setOrigin(0.5, 1);
+      this.worldLayer.add(label);
+      this.buildingLabelSprites.set(building.id, label);
+    }
+
     sprite.setPosition(building.position.x, building.position.y);
     sprite.setFillStyle(building.complete ? color : 0x6a6041, 1);
+    label.setPosition(building.position.x, building.position.y - BUILDING_SIZES[building.kind] / 2 - 5);
+    label.setText(this.getBuildingWorldLabel(building));
   }
 
   private renderBattalion(battalion: BattalionState): void {
     let container = this.battalionSprites.get(battalion.id);
 
     if (!container) {
-      const base = this.add.rectangle(0, 0, 42, 28, 0x9d4640, 1);
+      const base = this.add.rectangle(
+        0,
+        0,
+        58,
+        36,
+        battalion.ownerEmpireId === "empire-player" ? 0x3d7391 : 0x9d4640,
+        1
+      );
       base.setStrokeStyle(2, 0x201614);
-      const label = this.add.text(-15, -7, `${battalion.size}`, {
-        fontFamily: "Inter, Arial",
-        fontSize: "12px",
+      const label = this.add.text(0, 0, this.getBattalionLabel(battalion), {
+        fontFamily: "Arial Black, Arial",
+        fontSize: "9px",
         color: "#ffffff"
       });
+      label.setOrigin(0.5);
+      label.setAlign("center");
       container = this.add.container(battalion.position.x, battalion.position.y, [base, label]);
-      container.setSize(42, 28);
+      container.setSize(58, 36);
       container.setInteractive({ useHandCursor: true });
       container.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
         pointer.event.stopPropagation();
-        this.selectedBattalionId = battalion.id;
-        this.updateUi([`Selected ${battalion.id}`]);
+        if (
+          battalion.ownerEmpireId !== "empire-player" &&
+          (this.isRightClick(pointer) || this.mode === "attack") &&
+          this.selectedBattalionIds.size > 0
+        ) {
+          this.issueAttackOrder(battalion.id);
+          return;
+        }
+        if (battalion.ownerEmpireId !== "empire-player") {
+          this.updateUi(["Rival battalion detected. Select Crown forces to attack."]);
+          return;
+        }
+        this.selectBattalion(battalion.id, this.isShiftHeld(pointer));
       });
       this.worldLayer.add(container);
       this.battalionSprites.set(battalion.id, container);
@@ -361,7 +1230,20 @@ export class MilestoneOneScene extends Phaser.Scene {
 
     container.setPosition(battalion.position.x, battalion.position.y);
     const base = container.getAt(0) as Phaser.GameObjects.Rectangle;
-    base.setStrokeStyle(this.selectedBattalionId === battalion.id ? 4 : 2, 0xf0d36f);
+    base.setFillStyle(battalion.ownerEmpireId === "empire-player" ? 0x3d7391 : 0x9d4640);
+    base.setStrokeStyle(this.selectedBattalionIds.has(battalion.id) ? 4 : 2, 0xf0d36f);
+    const label = container.getAt(1) as Phaser.GameObjects.Text;
+    label.setText(this.getBattalionLabel(battalion));
+  }
+
+  private getBattalionLabel(battalion: BattalionState): string {
+    const suffix = battalion.id.split("-").at(-1) ?? "1";
+    return `${battalion.ownerEmpireId === "empire-player" ? "CROWN" : "RIVAL"} ${suffix}\n${battalion.size} TROOPS`;
+  }
+
+  private getBuildingWorldLabel(building: BuildingState): string {
+    const owner = building.ownerEmpireId === "empire-player" ? "CROWN" : "RIVAL";
+    return `${owner} ${BUILDING_DISPLAY_LABELS[building.kind]}`;
   }
 
   private updateUi(events: string[]): void {
@@ -369,15 +1251,31 @@ export class MilestoneOneScene extends Phaser.Scene {
     const empire = state.empires["empire-player"];
     const settlement = state.settlements["settlement-capital"];
     this.resourceText.setText(
+      `FOOD ${settlement.localFood}    WOOD ${empire.resources.wood}    IRON ${empire.resources.iron}    FAITH ${empire.resources.faith}    TICK ${state.tick}`
+    );
+    this.statusText.setText(
       [
-        `Tick ${state.tick}`,
-        `Food ${settlement.localFood}  Wood ${empire.resources.wood}  Faith ${empire.resources.faith}`,
-        `Citizens ${settlement.population.citizens}  Military ${settlement.population.militarizedCitizens}`,
-        `Labor F${settlement.population.farmers} B${settlement.population.builders} L${settlement.population.lumberjacks}`
+        `ORDER: ${this.getModeLabel()}`,
+        `SELECTION: ${this.selectedBattalionIds.size ? `${this.selectedBattalionIds.size} BATTALION(S)` : "NO UNIT SELECTED"}`,
+        `POPULATION: ${settlement.population.citizens}  //  MILITARY: ${settlement.population.militarizedCitizens}`,
+        `LABOR: FARM ${settlement.population.farmers}  BUILD ${settlement.population.builders}  LUMBER ${settlement.population.lumberjacks}  MINE ${settlement.population.miners}`
       ].join("\n")
     );
-    this.statusText.setText(`Mode: ${this.mode}  Selected: ${this.selectedBattalionId ?? "none"}`);
-    this.eventText.setText(events.join("\n"));
+    const victory = state.victory.winnerEmpireId;
+    this.eventText.setText(
+      victory
+        ? `VICTORY // ${state.empires[victory]?.name.toUpperCase() ?? "THE WINNER"} HOLDS EVERY THRONE.`
+        : `LATEST INTEL: ${events.join(" // ")}`
+    );
+    this.updateHeirPanel();
     this.updateBuildingsPanel();
+  }
+
+  private getModeLabel(): string {
+    if (this.mode === "building" && this.selectedBuildingKind) {
+      return `DEPLOY ${this.getBuildingLabel(this.selectedBuildingKind).toUpperCase()}`;
+    }
+
+    return this.mode.toUpperCase();
   }
 }

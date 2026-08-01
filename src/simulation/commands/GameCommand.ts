@@ -1,5 +1,5 @@
 import type { BuildingKind, Position } from "../state/WorldState";
-import type { BattalionId, BuildingId, CommandId, PlayerId, SettlementId } from "../state/Ids";
+import type { BattalionId, BuildingId, CommandId, HeirId, PlayerId, SettlementId } from "../state/Ids";
 
 export type CommandType =
   | "assign-labor"
@@ -7,7 +7,12 @@ export type CommandType =
   | "generate-faith"
   | "create-battalion"
   | "move-battalion"
-  | "attack-target";
+  | "attack-target"
+  | "reward-heir"
+  | "punish-heir"
+  | "cast-miracle";
+
+export type MiracleKind = "bless-harvest" | "inspire-battalion";
 
 export interface GameCommandBase<TType extends CommandType, TPayload> {
   readonly id: CommandId;
@@ -22,6 +27,7 @@ export interface AssignLaborPayload {
   readonly farmers: number;
   readonly builders: number;
   readonly lumberjacks: number;
+  readonly miners: number;
 }
 
 export interface PlaceBuildingPayload {
@@ -50,10 +56,24 @@ export interface AttackTargetPayload {
   readonly targetId: BattalionId | BuildingId;
 }
 
+export interface HeirFeedbackPayload {
+  readonly heirId: HeirId;
+}
+
+export interface CastMiraclePayload {
+  readonly empireId: string;
+  readonly kind: MiracleKind;
+  readonly settlementId?: SettlementId;
+  readonly targetId?: BattalionId;
+}
+
 export type GameCommand =
   | GameCommandBase<"assign-labor", AssignLaborPayload>
   | GameCommandBase<"place-building", PlaceBuildingPayload>
   | GameCommandBase<"generate-faith", GenerateFaithPayload>
   | GameCommandBase<"create-battalion", CreateBattalionPayload>
   | GameCommandBase<"move-battalion", MoveBattalionPayload>
-  | GameCommandBase<"attack-target", AttackTargetPayload>;
+  | GameCommandBase<"attack-target", AttackTargetPayload>
+  | GameCommandBase<"reward-heir", HeirFeedbackPayload>
+  | GameCommandBase<"punish-heir", HeirFeedbackPayload>
+  | GameCommandBase<"cast-miracle", CastMiraclePayload>;

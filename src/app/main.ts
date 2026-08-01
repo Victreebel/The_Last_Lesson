@@ -12,8 +12,15 @@ const config: Phaser.Types.Core.GameConfig = {
     width: window.innerWidth,
     height: window.innerHeight
   },
+  input: {
+    mouse: {
+      preventDefaultDown: true,
+      preventDefaultMove: true,
+      preventDefaultUp: true
+    }
+  },
+  disableContextMenu: true,
   scene: [MilestoneOneScene]
 };
 
 new Phaser.Game(config);
-

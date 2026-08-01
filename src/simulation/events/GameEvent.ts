@@ -5,14 +5,24 @@ export type EventType =
   | "command-rejected"
   | "food-produced"
   | "wood-produced"
+  | "iron-produced"
   | "faith-produced"
+  | "miracle-cast"
+  | "religious-pressure-changed"
   | "building-placed"
   | "construction-progressed"
   | "battalion-created"
   | "battalion-moved"
+  | "supply-changed"
   | "attack-ordered"
+  | "doctrine-observed"
+  | "doctrine-reinforced"
+  | "doctrine-disciplined"
+  | "heir-decision"
   | "damage-dealt"
-  | "entity-destroyed";
+  | "entity-destroyed"
+  | "settlement-captured"
+  | "victory-achieved";
 
 export interface GameEvent {
   readonly id: EventId;

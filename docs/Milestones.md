@@ -19,15 +19,15 @@ Goal: prove basic play.
 
 Includes camera, selection, building placement, resource production, battalion creation, movement, and basic combat.
 
-Status: complete in gray-box form.
+Status: complete and expanded in gray-box form.
 
 Implemented:
 
 - Phaser world view with grid terrain and simple settlement structures.
 - Camera panning with arrow keys.
 - UI controls for farm placement, battalion creation, movement, attacking, and manual ticks.
-- Simulation-backed food, wood, and faith readouts.
-- Labor assignment bootstrap for farmers, builders, and lumberjacks.
+- Simulation-backed food, wood, iron, and faith readouts.
+- Player-facing labor priorities for food, wood, iron, and construction.
 - Deterministic farm placement.
 - Deterministic battalion creation.
 - Deterministic battalion movement.
@@ -45,5 +45,38 @@ Known limitations:
 
 - Art is intentionally gray-box.
 - Combat has no projectile or attack cadence presentation yet.
-- Enemy settlements are not implemented until the conquest slice.
-- Selection feedback is basic.
+- Art, audio, and production-ready combat feedback remain future work.
+- Selection feedback is intentionally functional rather than final.
+
+## Milestone 2: Heir and Conquest Foundation
+
+Status: complete in prototype form.
+
+Implemented:
+
+- Observable player doctrine learning and continuous confidence.
+- Reward/punishment controls and trust changes.
+- Governor utility scoring with visible rationale and utility.
+- Rival settlement, rival heir, castle capture, heir death, settlement transfer, and victory state.
+
+## Milestone 3: Economy, Faith, and Logistics Foundation
+
+Status: complete in prototype form.
+
+Implemented:
+
+- Terrain-bound farms, lumber mills, and mines.
+- Wood and iron construction costs.
+- Road movement and supply effects.
+- Faith generation, external religious pressure, and rebellion pressure.
+- Bless Harvest and Inspire Army miracles.
+
+## Milestone 4: Persistence Foundation
+
+Status: complete in prototype form.
+
+Implemented:
+
+- Versioned save serialization and validation.
+- Deterministic load/resume with pending commands and event-ID continuity.
+- Deterministic command-log replay.

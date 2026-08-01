@@ -16,7 +16,8 @@ describe("simulation determinism", () => {
           settlementId: "settlement-capital",
           farmers: 8,
           builders: 4,
-          lumberjacks: 6
+          lumberjacks: 6,
+          miners: 0
         }
       },
       {
@@ -49,4 +50,3 @@ describe("simulation determinism", () => {
     expect(first.finalState.tick).toBe(8);
   });
 });
-

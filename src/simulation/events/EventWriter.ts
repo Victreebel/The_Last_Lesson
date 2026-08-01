@@ -2,7 +2,15 @@ import type { GameEvent, EventType } from "./GameEvent";
 
 export class EventWriter {
   private events: GameEvent[] = [];
-  private sequence = 0;
+  private sequence: number;
+
+  constructor(initialSequence = 0) {
+    this.sequence = initialSequence;
+  }
+
+  getSequence(): number {
+    return this.sequence;
+  }
 
   emit(tick: number, type: EventType, payload: Record<string, unknown>): void {
     this.events.push({
@@ -19,4 +27,3 @@ export class EventWriter {
     return flushed;
   }
 }
-
