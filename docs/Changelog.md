@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.15.0 - 2026-08-01
+
+- Added a rival-governance opening: after a fair early-game grace window, the rival heir raises a second field battalion and launches an explainable expedition toward the opposing throne.
+- Added deterministic regression coverage for rival recruitment, expedition orders, doctrine recording, and opening isolation from other simulation tests.
+
 ## 1.13.0 - 2026-08-01
 
 - Added event-driven battlefield combat feedback: projectile traces and floating damage markers for battalion and Warship attacks.

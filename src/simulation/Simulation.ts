@@ -943,6 +943,20 @@ export class Simulation {
             )[0]
         : undefined;
       const enemyDistance = nearestEnemy && castle ? distance(nearestEnemy.position, castle.position) : Infinity;
+      const enemyCastle = castle
+        ? Object.values(this.state.buildings)
+            .filter(
+              (building) =>
+                building.kind === "castle" &&
+                building.ownerEmpireId !== settlement.ownerEmpireId &&
+                building.complete
+            )
+            .sort(
+              (left, right) =>
+                distance(left.position, castle.position) - distance(right.position, castle.position) ||
+                left.id.localeCompare(right.id)
+            )[0]
+        : undefined;
       this.recordHeirConcern(heir, settlement, ownBattalions, enemyDistance, tick);
       const currentHeir = this.state.heirs[heir.id] ?? heir;
       const currentSettlement = this.state.settlements[settlement.id] ?? settlement;
@@ -965,13 +979,18 @@ export class Simulation {
         )
         .sort((left, right) => left.id.localeCompare(right.id))[0];
       const garrisonCandidate = ownBattalions.find((battalion) => !battalion.garrisonedInBuildingId);
+      const expeditionCandidate = ownBattalions.find(
+        (battalion) => !battalion.garrisonedInBuildingId && !battalion.embarkedInCaravanId
+      );
+      const expeditionTarget = nearestEnemy && enemyDistance < 170 ? nearestEnemy : enemyCastle;
+      const rivalOpeningComplete = currentEmpire?.id === "empire-rival" && tick >= 8;
 
       const farmUtility =
         Math.max(0, 56 - currentSettlement.localFood) * 2 +
         Math.max(0, 8 - currentSettlement.population.farmers) * 10 +
         this.getDoctrineUtility(currentHeir, "Prioritize farm labor");
       const recruitUtility =
-        availableCitizens >= 6 && ownBattalions.length === 0
+        availableCitizens >= 6 && (ownBattalions.length === 0 || (rivalOpeningComplete && ownBattalions.length < 2))
           ? 48 + Math.max(0, 260 - enemyDistance) / 5 + this.getDoctrineUtility(currentHeir, "Raise a battalion")
           : 0;
       const defendUtility =
@@ -996,6 +1015,16 @@ export class Simulation {
         garrisonTarget && garrisonCandidate && enemyDistance < 300
           ? 36 + (300 - enemyDistance) / 5 + this.getDoctrineUtility(currentHeir, "Garrison defensive works")
           : 0;
+      const expeditionUtility =
+        expeditionCandidate &&
+        expeditionTarget &&
+        rivalOpeningComplete &&
+        ownBattalions.length >= 2 &&
+        enemyDistance > 240
+          ? 46 +
+            Math.min(18, ownBattalions.reduce((total, battalion) => total + battalion.morale, 0) / 12) +
+            this.getDoctrineUtility(currentHeir, "Lead an expedition")
+          : 0;
 
       if (
         farmUtility >= recruitUtility &&
@@ -1003,6 +1032,7 @@ export class Simulation {
         farmUtility >= assimilationUtility &&
         farmUtility >= inspireUtility &&
         farmUtility >= garrisonUtility &&
+        farmUtility >= expeditionUtility &&
         farmUtility >= 30
       ) {
         const nextFarmers = Math.min(availableCitizens, Math.max(8, settlement.population.farmers));
@@ -1047,6 +1077,7 @@ export class Simulation {
         assimilationUtility >= defendUtility &&
         assimilationUtility >= inspireUtility &&
         assimilationUtility >= garrisonUtility &&
+        assimilationUtility >= expeditionUtility &&
         assimilationUtility >= 30
       ) {
         const count = Math.min(4, currentSettlement.population.captives);
@@ -1085,6 +1116,7 @@ export class Simulation {
         inspireUtility >= recruitUtility &&
         inspireUtility >= defendUtility &&
         inspireUtility >= garrisonUtility &&
+        inspireUtility >= expeditionUtility &&
         inspireUtility >= 30 &&
         weakestBattalion &&
         currentEmpire
@@ -1123,7 +1155,13 @@ export class Simulation {
         continue;
       }
 
-      if (garrisonUtility >= defendUtility && garrisonUtility >= 30 && garrisonTarget && garrisonCandidate) {
+      if (
+        garrisonUtility >= defendUtility &&
+        garrisonUtility >= expeditionUtility &&
+        garrisonUtility >= 30 &&
+        garrisonTarget &&
+        garrisonCandidate
+      ) {
         this.state = {
           ...this.state,
           buildings: {
@@ -1163,6 +1201,7 @@ export class Simulation {
         recruitUtility >= assimilationUtility &&
         recruitUtility >= inspireUtility &&
         recruitUtility >= garrisonUtility &&
+        recruitUtility >= expeditionUtility &&
         recruitUtility >= 30 &&
         castle
       ) {
@@ -1236,6 +1275,38 @@ export class Simulation {
           "Attack designated targets",
           "An enemy force breached the settlement's defensive perimeter.",
           defendUtility,
+          tick
+        );
+        continue;
+      }
+
+      if (
+        expeditionUtility >= 30 &&
+        expeditionCandidate &&
+        expeditionTarget &&
+        expeditionCandidate.targetId !== expeditionTarget.id
+      ) {
+        this.state = {
+          ...this.state,
+          battalions: {
+            ...this.state.battalions,
+            [expeditionCandidate.id]: {
+              ...expeditionCandidate,
+              targetId: expeditionTarget.id,
+              destination: expeditionTarget.position
+            }
+          }
+        };
+        this.eventWriter.emit(tick, "attack-ordered", {
+          battalionId: expeditionCandidate.id,
+          targetId: expeditionTarget.id,
+          heirId: currentHeir.id
+        });
+        this.recordHeirDecision(
+          currentHeir.id,
+          "Lead an expedition",
+          "A prepared field force could pressure the rival throne before local danger required its return.",
+          expeditionUtility,
           tick
         );
       }
