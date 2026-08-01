@@ -4,7 +4,17 @@ import { createInitialWorld } from "../../src/simulation/state/WorldState";
 
 describe("heir governance", () => {
   it("turns settlement pressure into an explainable autonomous decision", () => {
-    const simulation = new Simulation(createInitialWorld(112358));
+    const initial = createInitialWorld(112358);
+    const simulation = new Simulation({
+      ...initial,
+      settlements: {
+        ...initial.settlements,
+        "settlement-rival": {
+          ...initial.settlements["settlement-rival"],
+          localFood: 50
+        }
+      }
+    });
 
     const result = simulation.tick();
     const heir = simulation.getState().heirs["heir-rival"];

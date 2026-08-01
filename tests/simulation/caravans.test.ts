@@ -68,7 +68,7 @@ describe("caravans", () => {
     const suppliedBattalion = simulation.getState().battalions[battalion.id];
 
     expect(caravan.cargoFood).toBe(0);
-    expect(simulation.getState().settlements["settlement-capital"].localFood).toBe(36);
+    expect(simulation.getState().settlements["settlement-capital"].localFood).toBe(24);
     expect(simulation.getState().empires["empire-player"].resources.wood).toBe(32);
     expect(suppliedBattalion.supply).toBe(80);
     expect(results.flatMap((result) => result.events).some((event) => event.type === "supply-delivered")).toBe(true);

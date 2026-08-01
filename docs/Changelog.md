@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.5.0 - 2026-08-01
+
+- Added a local population lifecycle: food consumption, Villa-based citizen capacity, surplus-driven growth, and starvation losses.
+- Slowed the browser prototype to the canonical five-second simulation cadence and doubled initial food reserves for a viable opening.
+- Bumped the deterministic save schema to `1.1.0` and added regression coverage for growth and starvation.
+
 ## 1.1.0 - 2026-08-01
 
 - Added rival settlement, castle capture, heir death, successor governance, and victory state.

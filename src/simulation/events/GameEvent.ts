@@ -4,6 +4,8 @@ export type EventType =
   | "command-applied"
   | "command-rejected"
   | "food-produced"
+  | "population-grown"
+  | "starvation"
   | "wood-produced"
   | "iron-produced"
   | "faith-produced"

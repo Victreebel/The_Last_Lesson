@@ -209,7 +209,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.input.on("pointerup", (pointer: Phaser.Input.Pointer) => this.handlePointerUp(pointer));
 
     this.time.addEvent({
-      delay: 1000,
+      delay: 5000,
       loop: true,
       callback: () => {
         const result = this.simulation.tick();
@@ -1317,6 +1317,21 @@ export class MilestoneOneScene extends Phaser.Scene {
     }, 0);
   }
 
+  private getCitizenCapacity(settlementId: string): number {
+    const state = this.simulation.getState();
+    const settlement = state.settlements[settlementId];
+    return settlement.buildingIds.reduce((capacity, buildingId) => {
+      const building = state.buildings[buildingId];
+      if (!building?.complete) {
+        return capacity;
+      }
+      if (building.kind === "castle") {
+        return capacity + 24;
+      }
+      return capacity + (building.kind === "villa" ? 12 : 0);
+    }, 0);
+  }
+
   private issueCommand(command: Omit<GameCommand, "id" | "issuedBy" | "tick">): void {
     this.simulation.enqueueCommand({
       id: `ui-command-${this.commandSequence++}`,
@@ -1564,7 +1579,7 @@ export class MilestoneOneScene extends Phaser.Scene {
       [
         `ORDER: ${this.getModeLabel()}`,
         `SELECTION: ${this.selectedCaravanId ? "SUPPLY CARAVAN" : this.selectedBattalionIds.size ? `${this.selectedBattalionIds.size} BATTALION(S)` : "NO UNIT SELECTED"}`,
-        `POPULATION: ${settlement.population.citizens}  //  MILITARY: ${settlement.population.militarizedCitizens}`,
+        `POPULATION: ${settlement.population.citizens}/${this.getCitizenCapacity(settlement.id)}  //  MILITARY: ${settlement.population.militarizedCitizens}  //  GROWTH: ${settlement.population.growthProgress}/80`,
         `LABOR: FARM ${settlement.population.farmers}  BUILD ${settlement.population.builders}  LUMBER ${settlement.population.lumberjacks}  MINE ${settlement.population.miners}`,
         `CAPTIVES: ${settlement.population.captives}/${this.getCaptiveCapacity(settlement.id)}  //  REBELLION: ${settlement.pressures.rebellion}%`
       ].join("\n")

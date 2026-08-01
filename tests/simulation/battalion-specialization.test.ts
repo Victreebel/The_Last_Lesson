@@ -52,7 +52,7 @@ describe("battalion specializations", () => {
     expect(spears?.attack).toBe(16);
     expect(spears?.defense).toBe(96);
     expect(simulation.getState().empires["empire-player"].resources.iron).toBe(0);
-    expect(simulation.getState().settlements["settlement-capital"].localFood).toBe(22);
+    expect(simulation.getState().settlements["settlement-capital"].localFood).toBe(49);
   });
 
   it("applies counter advantages and attack cooldowns deterministically", () => {

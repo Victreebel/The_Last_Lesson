@@ -38,7 +38,7 @@ describe("faith and religion", () => {
     const result = simulation.tick();
     const capital = simulation.getState().settlements["settlement-capital"];
 
-    expect(capital.localFood).toBe(54);
+    expect(capital.localFood).toBe(81);
     expect(capital.internalFaith).toBe(58);
     expect(capital.externalReligiousPressure).toBeGreaterThan(0);
     expect(capital.pressures.rebellion).toBe(0);

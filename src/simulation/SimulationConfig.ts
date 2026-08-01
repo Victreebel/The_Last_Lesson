@@ -7,8 +7,7 @@ export interface SimulationConfig {
 
 export const defaultSimulationConfig: SimulationConfig = {
   tickDurationMs: 5000,
-  schemaVersion: "1.0.0",
+  schemaVersion: "1.1.0",
   gameVersion: "0.0.0",
   contentVersion: "0.0.0"
 };
-

@@ -34,7 +34,7 @@ describe("terrain resource buildings", () => {
     simulation.runTicks(4);
     const state = simulation.getState();
 
-    expect(state.settlements["settlement-capital"].localFood).toBe(62);
+    expect(state.settlements["settlement-capital"].localFood).toBe(80);
     expect(state.empires["empire-player"].resources.wood).toBe(20);
     expect(state.empires["empire-player"].resources.iron).toBe(8);
   });

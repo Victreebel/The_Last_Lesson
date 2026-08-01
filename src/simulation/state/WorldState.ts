@@ -82,6 +82,7 @@ export interface CitizenPopulation {
   readonly loyalty: number;
   readonly devotion: number;
   readonly health: number;
+  readonly growthProgress: number;
 }
 
 export interface SettlementState {
@@ -299,9 +300,10 @@ export function createInitialWorld(seed: number): WorldState {
           happiness: 70,
           loyalty: 80,
           devotion: 65,
-          health: 90
+          health: 90,
+          growthProgress: 0
         },
-        localFood: 30,
+        localFood: 60,
         internalFaith: 50,
         externalReligiousPressure: 0,
         pressures: {
@@ -338,9 +340,10 @@ export function createInitialWorld(seed: number): WorldState {
           happiness: 65,
           loyalty: 75,
           devotion: 55,
-          health: 90
+          health: 90,
+          growthProgress: 0
         },
-        localFood: 30,
+        localFood: 60,
         internalFaith: 45,
         externalReligiousPressure: 0,
         pressures: {

@@ -4,7 +4,7 @@ import type { GameCommand } from "../commands/GameCommand";
 import type { GameEvent } from "../events/GameEvent";
 import type { WorldState } from "../state/WorldState";
 
-export const SAVE_FORMAT_VERSION = "1.0.0";
+export const SAVE_FORMAT_VERSION = "1.1.0";
 
 export interface SaveGame {
   readonly format: "the-last-lesson-save";

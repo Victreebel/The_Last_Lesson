@@ -74,6 +74,7 @@ Implemented:
 - Captive capture, hovel capacity, hovel liberation, rebellion escape, and Town Square assimilation.
 - Town Square-built land caravans that load food, use roads, deliver battalion supply, and can be raided.
 - Battalion embarkation, transport movement, and player-controlled disembarkation.
+- Local food consumption, Villa-limited citizen capacity, surplus-driven population growth, and starvation consequences.
 
 ## Milestone 4: Persistence Foundation
 

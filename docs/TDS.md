@@ -1374,5 +1374,6 @@ The following compatible systems are now implemented in the prototype and are th
 - Land caravans are Town Square-built physical supply units. They load local food, benefit from roads, replenish nearby battalions, and can be raided to destroy cargo and sever a settlement's transport capacity.
 - Caravans also carry battalions within explicit capacity. Embarked troops move with the transport and retain combat capability; the player can disembark them, while a destroyed caravan forcibly ejects passengers with a morale and supply shock.
 - The Book of Lessons is the player-facing explainability surface: it exposes current heir convictions and recent world events, and provides local save/load using the versioned save format.
+- Population is now an active local simulation. Every five-second world tick consumes food from citizens and captives, Villas extend citizen capacity beyond a Castle's starting capacity, sustained food surplus creates citizens through tracked growth progress, and shortages cause starvation, morale damage, health loss, and a documented event.
 
 Implementation remains deliberately gray-box. Art, audio, campaign content, advanced diplomacy, transport vehicles, full captive gameplay, and multiplayer authority are planned production milestones rather than implied completed features.

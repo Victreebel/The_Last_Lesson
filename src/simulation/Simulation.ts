@@ -96,6 +96,7 @@ export class Simulation {
       this.updateHeirGovernance(nextTick);
       this.updateEconomy(nextTick);
       this.updateConstruction(nextTick);
+      this.updatePopulation(nextTick);
       this.updateBattalionMovement(nextTick);
       this.updateCaravanMovement(nextTick);
       this.updateCaravanDeliveries(nextTick);
@@ -1091,6 +1092,97 @@ export class Simulation {
       ...this.state,
       buildings: updatedBuildings
     };
+  }
+
+  private updatePopulation(tick: number): void {
+    for (const settlement of Object.values(this.state.settlements).sort((left, right) =>
+      left.id.localeCompare(right.id)
+    )) {
+      const population = settlement.population;
+      const totalPopulation = population.citizens + population.captives;
+      // One simulation tick represents five seconds of world time. This keeps
+      // food consequential without turning the opening castle into a famine trap.
+      const foodRequired = Math.max(1, Math.ceil(totalPopulation / 8));
+      const citizenCapacity = this.getCitizenCapacity(settlement.id);
+
+      if (settlement.localFood < foodRequired) {
+        const shortage = foodRequired - settlement.localFood;
+        const deaths = Math.min(population.citizens, Math.max(1, Math.ceil(shortage / 6)));
+        const survivingCitizens = population.citizens - deaths;
+        this.state = {
+          ...this.state,
+          settlements: {
+            ...this.state.settlements,
+            [settlement.id]: {
+              ...settlement,
+              localFood: 0,
+              population: {
+                ...population,
+                citizens: survivingCitizens,
+                militarizedCitizens: Math.min(population.militarizedCitizens, survivingCitizens),
+                happiness: Math.max(0, population.happiness - 5),
+                loyalty: Math.max(0, population.loyalty - 3),
+                health: Math.max(0, population.health - 8),
+                growthProgress: 0
+              },
+              pressures: {
+                ...settlement.pressures,
+                food: Math.min(100, settlement.pressures.food + shortage * 5)
+              }
+            }
+          }
+        };
+        this.eventWriter.emit(tick, "starvation", { settlementId: settlement.id, deaths, shortage });
+        continue;
+      }
+
+      const foodAfterConsumption = settlement.localFood - foodRequired;
+      const surplus = Math.max(0, foodAfterConsumption - 20);
+      const accumulatedGrowth = population.growthProgress + surplus;
+      const potentialBirths = Math.floor(accumulatedGrowth / 80);
+      const births = Math.max(0, Math.min(potentialBirths, citizenCapacity - population.citizens));
+      const nextGrowthProgress = births > 0 ? accumulatedGrowth % 80 : Math.min(79, accumulatedGrowth);
+      this.state = {
+        ...this.state,
+        settlements: {
+          ...this.state.settlements,
+          [settlement.id]: {
+            ...settlement,
+            localFood: foodAfterConsumption,
+            population: {
+              ...population,
+              citizens: population.citizens + births,
+              health: Math.min(100, population.health + 1),
+              growthProgress: nextGrowthProgress
+            },
+            pressures: {
+              ...settlement.pressures,
+              food: Math.max(0, settlement.pressures.food - Math.min(5, Math.floor(surplus / 10)))
+            }
+          }
+        }
+      };
+      if (births > 0) {
+        this.eventWriter.emit(tick, "population-grown", { settlementId: settlement.id, births });
+      }
+    }
+  }
+
+  private getCitizenCapacity(settlementId: string): number {
+    const settlement = this.state.settlements[settlementId];
+    if (!settlement) {
+      return 0;
+    }
+    return settlement.buildingIds.reduce((capacity, buildingId) => {
+      const building = this.state.buildings[buildingId];
+      if (!building?.complete) {
+        return capacity;
+      }
+      if (building.kind === "castle") {
+        return capacity + 24;
+      }
+      return capacity + (building.kind === "villa" ? 12 : 0);
+    }, 0);
   }
 
   private updateReligion(tick: number): void {
