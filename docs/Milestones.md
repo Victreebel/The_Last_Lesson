@@ -90,6 +90,7 @@ Implemented:
 - A third opening settlement, Grovewatch, so conquering the first rival throne produces a governed frontier rather than ending the campaign.
 - Inspectable Crown castles that focus the heir console and Book of Lessons on the selected settlement's governor.
 - Settlement-contextual command controls: selecting a Crown castle routes labor, construction, recruitment, logistics, assimilation, and local miracles to its governed settlement.
+- Compact Realm roster for switching between Crown domains, centering the camera, and reviewing each settlement's governor and field population.
 
 ## Milestone 4: Persistence Foundation
 

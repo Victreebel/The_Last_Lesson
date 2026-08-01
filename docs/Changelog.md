@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.22.0 - 2026-08-01
+
+- Added the compact `REALM` top-bar control and Crown Domains roster. It presents every owned settlement with its governor and population, centers the tactical camera on selection, and changes the active command seat.
+
 ## 1.21.0 - 2026-08-01
 
 - Selecting a Crown castle now establishes the active command seat. The tactical readout, building inventory, placement commands, labor, recruitment, transport, assimilation, and Bless Harvest all operate on that settlement.

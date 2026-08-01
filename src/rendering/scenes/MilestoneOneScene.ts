@@ -173,6 +173,12 @@ export class MilestoneOneScene extends Phaser.Scene {
   private bookPanel!: Phaser.GameObjects.Container;
   private bookPanelBody!: Phaser.GameObjects.Text;
   private bookPanelExpanded = false;
+  private realmControl!: Phaser.GameObjects.Container;
+  private realmControlLabel!: Phaser.GameObjects.Text;
+  private realmPanel!: Phaser.GameObjects.Container;
+  private realmPanelBody!: Phaser.GameObjects.Text;
+  private realmPanelExpanded = false;
+  private readonly realmSettlementControls: Phaser.GameObjects.Container[] = [];
   private victoryPanel!: Phaser.GameObjects.Container;
   private victoryTitle!: Phaser.GameObjects.Text;
   private victoryDetail!: Phaser.GameObjects.Text;
@@ -327,6 +333,7 @@ export class MilestoneOneScene extends Phaser.Scene {
   private createUi(): void {
     this.createTopHud();
     this.createBookOfLessons();
+    this.createRealmPanel();
     this.createVictoryPanel();
     this.createIntelPanel();
     this.createCommandDock();
@@ -350,14 +357,14 @@ export class MilestoneOneScene extends Phaser.Scene {
     });
     this.gameTitleText.setScrollFactor(0).setDepth(41);
 
-    this.pauseControlButton = this.add.rectangle(318, 14, 64, 30, UI_COLORS.command, 1).setOrigin(0);
+    this.pauseControlButton = this.add.rectangle(436, 14, 64, 30, UI_COLORS.command, 1).setOrigin(0);
     this.pauseControlButton.setStrokeStyle(1, UI_COLORS.trim);
     this.pauseControlButton.setInteractive({ useHandCursor: true });
     this.pauseControlButton.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
       pointer.event.stopPropagation();
       this.togglePause();
     });
-    this.pauseControlLabel = this.add.text(328, 23, "PAUSE", {
+    this.pauseControlLabel = this.add.text(446, 23, "PAUSE", {
       fontFamily: "Arial Black, Arial",
       fontSize: "10px",
       color: UI_COLORS.text
@@ -365,7 +372,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.pauseControl = this.add.container(0, 0, [this.pauseControlButton, this.pauseControlLabel]);
     this.pauseControl.setScrollFactor(0).setDepth(41);
 
-    this.resourceText = this.add.text(398, 18, "", {
+    this.resourceText = this.add.text(516, 18, "", {
       fontFamily: "Arial, sans-serif",
       fontSize: "13px",
       color: UI_COLORS.text
@@ -386,6 +393,8 @@ export class MilestoneOneScene extends Phaser.Scene {
     control.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
       pointer.event.stopPropagation();
       this.bookPanelExpanded = !this.bookPanelExpanded;
+      this.realmPanelExpanded = false;
+      this.updateRealmPanel();
       this.updateBookOfLessons();
     });
     this.bookControlLabel = this.add.text(200, 23, "BOOK [+]", {
@@ -447,6 +456,110 @@ export class MilestoneOneScene extends Phaser.Scene {
     ]);
     this.bookPanel.setScrollFactor(0).setDepth(70).setVisible(false);
     this.updateBookOfLessons();
+  }
+
+  private createRealmPanel(): void {
+    const control = this.add.rectangle(318, 14, 108, 30, UI_COLORS.command, 1).setOrigin(0);
+    control.setStrokeStyle(1, UI_COLORS.trim);
+    control.setInteractive({ useHandCursor: true });
+    control.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+      pointer.event.stopPropagation();
+      this.realmPanelExpanded = !this.realmPanelExpanded;
+      this.bookPanelExpanded = false;
+      this.updateBookOfLessons();
+      this.updateRealmPanel();
+    });
+    this.realmControlLabel = this.add.text(328, 23, "REALM [+]", {
+      fontFamily: "Arial Black, Arial",
+      fontSize: "10px",
+      color: UI_COLORS.text
+    });
+    this.realmControl = this.add.container(0, 0, [control, this.realmControlLabel]);
+    this.realmControl.setScrollFactor(0).setDepth(41);
+
+    const background = this.add.rectangle(0, 0, 384, 238, UI_COLORS.panelDeep, 0.98).setOrigin(0);
+    background.setStrokeStyle(2, UI_COLORS.accent);
+    background.setInteractive({ useHandCursor: false });
+    background.on("pointerdown", (pointer: Phaser.Input.Pointer) => pointer.event.stopPropagation());
+    const title = this.add.text(18, 14, "REALM // CROWN DOMAINS", {
+      fontFamily: "Arial Black, Arial",
+      fontSize: "15px",
+      color: "#f2d77f"
+    });
+    this.realmPanelBody = this.add.text(18, 42, "", {
+      fontFamily: "Arial, sans-serif",
+      fontSize: "10px",
+      color: UI_COLORS.muted
+    });
+    this.realmPanel = this.add.container(0, 0, [background, title, this.realmPanelBody]);
+    this.realmPanel.setScrollFactor(0).setDepth(70).setVisible(false);
+  }
+
+  private updateRealmPanel(): void {
+    this.realmPanel.setVisible(this.realmPanelExpanded);
+    this.realmControlLabel.setText(this.realmPanelExpanded ? "REALM [-]" : "REALM [+]");
+
+    this.realmSettlementControls.splice(0).forEach((control) => control.destroy());
+    if (!this.realmPanelExpanded) {
+      return;
+    }
+
+    const state = this.simulation.getState();
+    const settlements = state.empires["empire-player"].settlementIds
+      .map((settlementId) => state.settlements[settlementId])
+      .filter((settlement): settlement is SettlementState => Boolean(settlement));
+    this.realmPanelBody.setText(
+      settlements.length > 1
+        ? "SELECT A CROWN SEAT TO FOCUS ITS GOVERNOR AND COMMANDS."
+        : "CONQUER A RIVAL THRONE TO CREATE A NEW CROWN SEAT."
+    );
+
+    settlements.slice(0, 4).forEach((settlement, index) => {
+      const y = 70 + index * 40;
+      const active = settlement.id === this.getActiveControlledSettlement()?.id;
+      const governor = state.heirs[settlement.heirId];
+      const button = this.add.rectangle(18, y, 348, 32, active ? UI_COLORS.commandActive : UI_COLORS.command, 1).setOrigin(0);
+      button.setStrokeStyle(active ? 2 : 1, active ? UI_COLORS.accent : UI_COLORS.trim);
+      button.setInteractive({ useHandCursor: true });
+      button.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+        pointer.event.stopPropagation();
+        this.selectCrownSeat(settlement.id, true);
+      });
+      const label = this.add.text(28, y + 6, this.getSettlementDisplayName(settlement.id), {
+        fontFamily: "Arial Black, Arial",
+        fontSize: "10px",
+        color: UI_COLORS.text
+      });
+      const detail = this.add.text(164, y + 7, `${governor?.name.toUpperCase() ?? "UNASSIGNED"} // ${settlement.population.citizens}C ${settlement.population.militarizedCitizens}M`, {
+        fontFamily: "Arial, sans-serif",
+        fontSize: "9px",
+        color: "#c1cdc2"
+      });
+      const row = this.add.container(0, 0, [button, label, detail]);
+      this.realmPanel.add(row);
+      this.realmSettlementControls.push(row);
+    });
+
+    this.layoutUi();
+  }
+
+  private selectCrownSeat(settlementId: string, focusCamera: boolean): void {
+    const state = this.simulation.getState();
+    const settlement = state.settlements[settlementId];
+    if (!settlement || settlement.ownerEmpireId !== "empire-player") {
+      this.updateUi(["Only Crown castles can establish a command seat."]);
+      return;
+    }
+
+    this.inspectedSettlementId = settlement.id;
+    if (focusCamera) {
+      const castle = state.buildings[settlement.centralBuildingId];
+      if (castle) {
+        this.cameras.main.centerOn(castle.position.x, castle.position.y);
+      }
+    }
+    this.realmPanelExpanded = false;
+    this.updateUi([`Command seat focused on ${this.getSettlementDisplayName(settlement.id)}.`]);
   }
 
   private createVictoryPanel(): void {
@@ -1034,15 +1147,20 @@ export class MilestoneOneScene extends Phaser.Scene {
 
     this.topHud.setSize(width, topHeight);
     this.gameTitleText.setPosition(18, 10);
-    const pauseX = compact ? width - 82 : 302;
+    const pauseX = compact ? width - 82 : 436;
     const pauseY = compact ? 36 : 14;
     this.pauseControlButton.setPosition(pauseX, pauseY);
     this.pauseControlLabel.setPosition(pauseX + 10, pauseY + 9);
-    this.resourceText.setPosition(compact ? 18 : 382, compact ? 47 : 19);
+    this.resourceText.setPosition(compact ? 18 : 516, compact ? 47 : 19);
     this.bookControl.setPosition(0, 0);
+    this.realmControl.setPosition(0, 0);
     this.bookPanel.setPosition(
       Math.max(16, Math.round((width - 470) / 2)),
       Math.max(topHeight + 18, Math.round((height - 410) / 2))
+    );
+    this.realmPanel.setPosition(
+      Math.max(16, Math.round((width - 384) / 2)),
+      Math.max(topHeight + 18, Math.round((height - 238) / 2))
     );
     this.victoryPanel.setPosition(
       Math.max(16, Math.round((width - 420) / 2)),
@@ -1843,8 +1961,7 @@ export class MilestoneOneScene extends Phaser.Scene {
           !this.isRightClick(pointer) &&
           this.mode !== "attack"
         ) {
-          this.inspectedSettlementId = currentBuilding.settlementId;
-          this.updateUi([`Heir panel focused on ${this.getSettlementDisplayName(currentBuilding.settlementId)}.`]);
+          this.selectCrownSeat(currentBuilding.settlementId, false);
           return;
         }
 
@@ -2073,6 +2190,7 @@ export class MilestoneOneScene extends Phaser.Scene {
         : `MANDATE: ${this.getImperialMandate()}\nLATEST INTEL: ${events.join(" // ")}`
     );
     this.updateHeirPanel();
+    this.updateRealmPanel();
     this.updateBuildingsPanel();
     this.updateBookOfLessons();
     this.updateVictoryPanel();
