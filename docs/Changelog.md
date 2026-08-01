@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.9.0 - 2026-08-01
+
+- Added the first painterly battlefield art layer beneath the explicit, simulation-labelled terrain overlays.
+- Preserved grid, terrain symbols, building labels, and tactical UI contrast so the visual update strengthens rather than obscures RTS readability.
+
 ## 1.8.0 - 2026-08-01
 
 - Added Town Square-built Warships with water-only launch and movement, transport capacity, and distinctive world labels.

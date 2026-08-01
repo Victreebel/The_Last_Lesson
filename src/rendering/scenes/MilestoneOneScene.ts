@@ -196,6 +196,10 @@ export class MilestoneOneScene extends Phaser.Scene {
     super("MilestoneOneScene");
   }
 
+  preload(): void {
+    this.load.image("painted-world", "assets/painterly-battlefield-v1.png");
+  }
+
   create(): void {
     this.cameras.main.setBounds(0, 0, 1400, 900);
     this.worldLayer = this.add.container(0, 0);
@@ -243,8 +247,13 @@ export class MilestoneOneScene extends Phaser.Scene {
   }
 
   private drawTerrain(): void {
+    const backdrop = this.add.image(700, 450, "painted-world");
+    backdrop.setDisplaySize(1400, 900);
+    backdrop.setAlpha(0.82);
+    this.worldLayer.add(backdrop);
+
     const graphics = this.add.graphics();
-    graphics.fillStyle(TERRAIN_COLORS.grassland, 1);
+    graphics.fillStyle(TERRAIN_COLORS.grassland, 0.46);
     graphics.fillRect(0, 0, 1400, 900);
 
     for (let x = 0; x <= 1400; x += 80) {
@@ -266,7 +275,7 @@ export class MilestoneOneScene extends Phaser.Scene {
 
   private drawTerrainZone(graphics: Phaser.GameObjects.Graphics, zone: TerrainZone): void {
     const { bounds } = zone;
-    graphics.fillStyle(TERRAIN_COLORS[zone.kind], 0.92);
+    graphics.fillStyle(TERRAIN_COLORS[zone.kind], 0.64);
     graphics.fillRoundedRect(bounds.x, bounds.y, bounds.width, bounds.height, 12);
     graphics.lineStyle(2, 0xd6d1af, 0.35);
     graphics.strokeRoundedRect(bounds.x, bounds.y, bounds.width, bounds.height, 12);

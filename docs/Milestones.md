@@ -78,6 +78,7 @@ Implemented:
 - Garrisonable castles, walls, gates, and outposts, including breach consequences and visual command controls.
 - Expanded governor utility decisions with concerns, captive integration, defensive garrisoning, and autonomous morale intervention.
 - Water-only Warship launch and movement from Town Squares, with transport capacity and embarked-fire restrictions.
+- Painterly battlefield art direction integrated beneath deterministic terrain overlays and tactical controls.
 
 ## Milestone 4: Persistence Foundation
 
