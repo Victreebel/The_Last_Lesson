@@ -452,6 +452,29 @@ export function terrainAtPosition(state: WorldState, position: Position): Terrai
   return zone?.kind ?? "grassland";
 }
 
+export function isPositionVisibleToEmpire(state: WorldState, empireId: string, position: Position): boolean {
+  const isInRange = (observer: Position, range: number) =>
+    Math.hypot(observer.x - position.x, observer.y - position.y) <= range;
+
+  return (
+    Object.values(state.buildings).some(
+      (building) =>
+        building.ownerEmpireId === empireId &&
+        building.complete &&
+        isInRange(building.position, building.kind === "castle" ? 280 : building.kind === "outpost" ? 220 : 130)
+    ) ||
+    Object.values(state.battalions).some(
+      (battalion) =>
+        battalion.ownerEmpireId === empireId &&
+        !battalion.embarkedInCaravanId &&
+        isInRange(battalion.position, 300)
+    ) ||
+    Object.values(state.caravans).some(
+      (caravan) => caravan.ownerEmpireId === empireId && isInRange(caravan.position, caravan.kind === "ship" ? 260 : 180)
+    )
+  );
+}
+
 export function isBuildingTerrainCompatible(kind: BuildingKind, terrain: TerrainKind): boolean {
   if (kind === "farm") {
     return terrain === "fertile";

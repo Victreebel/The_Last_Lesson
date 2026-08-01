@@ -7,6 +7,7 @@ import { SeededRandom } from "./random/SeededRandom";
 import {
   isBuildingTerrainCompatible,
   getBuildingCost,
+  isPositionVisibleToEmpire,
   terrainAtPosition,
   terrainDefenseMultiplier,
   terrainMovementMultiplier,
@@ -935,7 +936,11 @@ export class Simulation {
       const castle = this.state.buildings[settlement.centralBuildingId];
       const nearestEnemy = castle
         ? Object.values(this.state.battalions)
-            .filter((battalion) => battalion.ownerEmpireId !== settlement.ownerEmpireId)
+            .filter(
+              (battalion) =>
+                battalion.ownerEmpireId !== settlement.ownerEmpireId &&
+                isPositionVisibleToEmpire(this.state, settlement.ownerEmpireId, battalion.position)
+            )
             .sort(
               (left, right) =>
                 distance(left.position, castle.position) - distance(right.position, castle.position) ||
@@ -949,7 +954,8 @@ export class Simulation {
               (building) =>
                 building.kind === "castle" &&
                 building.ownerEmpireId !== settlement.ownerEmpireId &&
-                building.complete
+                building.complete &&
+                isPositionVisibleToEmpire(this.state, settlement.ownerEmpireId, building.position)
             )
             .sort(
               (left, right) =>
@@ -1025,6 +1031,34 @@ export class Simulation {
             Math.min(18, ownBattalions.reduce((total, battalion) => total + battalion.morale, 0) / 12) +
             this.getDoctrineUtility(currentHeir, "Lead an expedition")
           : 0;
+
+      if (rivalOpeningComplete && ownBattalions.length >= 2 && expeditionCandidate && !expeditionTarget) {
+        const scoutDestination = { x: 700, y: 300 };
+        if (
+          expeditionCandidate.destination?.x !== scoutDestination.x ||
+          expeditionCandidate.destination?.y !== scoutDestination.y
+        ) {
+          this.state = {
+            ...this.state,
+            battalions: {
+              ...this.state.battalions,
+              [expeditionCandidate.id]: {
+                ...expeditionCandidate,
+                targetId: undefined,
+                destination: scoutDestination
+              }
+            }
+          };
+          this.recordHeirDecision(
+            currentHeir.id,
+            "Scout the frontier",
+            "No rival force was observed, so the field force advanced to contested ground to establish contact.",
+            38 + this.getDoctrineUtility(currentHeir, "Scout the frontier"),
+            tick
+          );
+        }
+        continue;
+      }
 
       if (
         farmUtility >= recruitUtility &&

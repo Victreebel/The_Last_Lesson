@@ -11,6 +11,7 @@ import {
 import {
   createInitialWorld,
   getBuildingCost,
+  isPositionVisibleToEmpire,
   isBuildingTerrainCompatible,
   terrainAtPosition,
   type BattalionState,
@@ -690,10 +691,16 @@ export class MilestoneOneScene extends Phaser.Scene {
       );
     }
     for (const building of Object.values(state.buildings)) {
+      if (building.ownerEmpireId !== "empire-player" && !isPositionVisibleToEmpire(state, "empire-player", building.position)) {
+        continue;
+      }
       this.minimapGraphics.fillStyle(building.ownerEmpireId === "empire-player" ? 0xe2bd61 : 0xbb5a54, 1);
       this.minimapGraphics.fillRect(mapX(building.position.x) - 2, mapY(building.position.y) - 2, 4, 4);
     }
     for (const battalion of Object.values(state.battalions)) {
+      if (battalion.ownerEmpireId !== "empire-player" && !isPositionVisibleToEmpire(state, "empire-player", battalion.position)) {
+        continue;
+      }
       this.minimapGraphics.fillStyle(battalion.ownerEmpireId === "empire-player" ? 0x85c4dd : 0xd56b62, 1);
       this.minimapGraphics.fillCircle(mapX(battalion.position.x), mapY(battalion.position.y), 2);
     }
@@ -1764,8 +1771,13 @@ export class MilestoneOneScene extends Phaser.Scene {
 
     sprite.setPosition(building.position.x, building.position.y);
     sprite.setFillStyle(building.complete ? color : 0x6a6041, 1);
+    const visible =
+      building.ownerEmpireId === "empire-player" ||
+      isPositionVisibleToEmpire(this.simulation.getState(), "empire-player", building.position);
+    sprite.setVisible(visible);
     label.setPosition(building.position.x, building.position.y - BUILDING_SIZES[building.kind] / 2 - 5);
     label.setText(this.getBuildingWorldLabel(building));
+    label.setVisible(visible);
   }
 
   private renderBattalion(battalion: BattalionState): void {
@@ -1817,6 +1829,10 @@ export class MilestoneOneScene extends Phaser.Scene {
     base.setStrokeStyle(this.selectedBattalionIds.has(battalion.id) ? 4 : 2, 0xf0d36f);
     const label = container.getAt(1) as Phaser.GameObjects.Text;
     label.setText(this.getBattalionLabel(battalion));
+    container.setVisible(
+      battalion.ownerEmpireId === "empire-player" ||
+        isPositionVisibleToEmpire(this.simulation.getState(), "empire-player", battalion.position)
+    );
   }
 
   private renderCaravan(caravan: CaravanState): void {
@@ -1891,6 +1907,10 @@ export class MilestoneOneScene extends Phaser.Scene {
     base.setStrokeStyle(this.selectedCaravanId === caravan.id ? 4 : 2, 0xf0d36f);
     const label = container.getAt(1) as Phaser.GameObjects.Text;
     label.setText(this.getCaravanLabel(caravan));
+    container.setVisible(
+      caravan.ownerEmpireId === "empire-player" ||
+        isPositionVisibleToEmpire(this.simulation.getState(), "empire-player", caravan.position)
+    );
   }
 
   private getBattalionLabel(battalion: BattalionState): string {

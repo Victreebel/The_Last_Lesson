@@ -85,6 +85,7 @@ Implemented:
 - Event-driven combat feedback for battle readability and tactical impact.
 - A victory/defeat resolution screen that explains the crown outcome and starts a fresh deterministic reign without leaving the battlefield.
 - A rival governor that transitions from a protected opening into an explainable offensive expedition, providing a real strategic clock for every match.
+- Deterministic visibility for both the Crown and autonomous heirs, with hostile entities hidden until they are observed by a structure, battalion, or caravan.
 
 ## Milestone 4: Persistence Foundation
 

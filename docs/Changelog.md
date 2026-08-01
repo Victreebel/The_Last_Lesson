@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.16.0 - 2026-08-01
+
+- Added deterministic per-empire visibility from completed structures, battalions, and caravans; unseen rival entities are now hidden from the world view and minimap.
+- Made rival governance respect the same observed-information rule. The rival now scouts contested ground before committing an expedition against a discovered throne.
+
 ## 1.15.0 - 2026-08-01
 
 - Added a rival-governance opening: after a fair early-game grace window, the rival heir raises a second field battalion and launches an explainable expedition toward the opposing throne.
