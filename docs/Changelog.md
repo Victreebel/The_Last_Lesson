@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.3.1 - 2026-08-02
+
+- The main verification workflow now builds the authoritative multiplayer Docker image after its deterministic and browser gates, preventing an unvalidated container from becoming the first production deployment.
+
 ## 2.3.0 - 2026-08-02
 
 - Added a container-ready authoritative multiplayer host with a deterministic-transport-preserving `/health` endpoint, an operational deployment guide, and networking coverage for the health contract.
