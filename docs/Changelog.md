@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.2.2 - 2026-08-02
+
+- Extended the production browser gate so a phone-sized campaign theatre must select the Crownfall Rival doctrine and begin a reign, not merely draw a nonblank canvas.
+
 ## 2.2.1 - 2026-08-02
 
 - Reworked campaign-theatre hit handling into one fixed-overlay interaction surface so the visual theatre and doctrine cards receive their intended input across runtime coordinate spaces. Campaign launch now suppresses the unrelated world-selection release and preserves its accessible reign announcement.
