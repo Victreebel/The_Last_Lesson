@@ -160,7 +160,7 @@ the-last-lesson/
   README.md
 ```
 
-For Milestone 0, `networking/server` may be skeletal. The simulation must still be command-driven so networking can be added without rewriting core systems.
+The simulation is command-driven and the network transport is now implemented as an adapter over the same authority boundary. Future networking work must extend the existing host contract rather than introduce a parallel simulation.
 
 ---
 
@@ -997,7 +997,7 @@ The simulation must not depend on local-only state. If a player command cannot b
 
 ### 20.3 Initial Implementation
 
-Milestone 0 and Milestone 1 do not need live multiplayer. They must still use command logs and deterministic simulation so multiplayer can be added later.
+All live multiplayer paths must continue to use command logs and deterministic simulation. No browser-only action may mutate `WorldState` outside an authoritative command.
 
 ### 20.4 Local Authority Foundation
 
@@ -1204,7 +1204,7 @@ Content validation should run in tests and CI.
 
 ## 25. Milestone Plan
 
-### Milestone 0: Simulation Kernel
+### Milestone 0: Simulation Kernel — Complete
 
 Goal: prove deterministic simulation.
 
@@ -1224,7 +1224,7 @@ Completion criteria:
 - Vitest passes
 - same command log produces identical state and event log
 
-### Milestone 1: Gray-Box RTS Loop
+### Milestone 1: Gray-Box RTS Loop — Complete and Expanded
 
 Goal: prove basic play.
 
@@ -1245,7 +1245,7 @@ Completion criteria:
 
 - player can place farm, gather resources, create battalion, move, and attack
 
-### Milestone 2: Heir Learning Prototype
+### Milestone 2: Heir Learning Prototype — Complete and Expanded
 
 Goal: prove teaching is fun.
 
@@ -1264,7 +1264,7 @@ Completion criteria:
 - heir changes behavior based on player teaching
 - player can inspect why
 
-### Milestone 3: Faith and Religion Prototype
+### Milestone 3: Faith and Religion Prototype — Complete and Expanded
 
 Goal: prove civilization pressure loop.
 
@@ -1282,7 +1282,7 @@ Completion criteria:
 - faith rises and falls based on civilization health
 - miracles affect strategic pressures
 
-### Milestone 4: Two-Settlement Victory Slice
+### Milestone 4: Multi-Settlement Victory Slice — Complete and Expanded
 
 Goal: prove conquest loop.
 
@@ -1299,7 +1299,7 @@ Completion criteria:
 
 - player can conquer settlement and see doctrine loss consequences
 
-### Milestone 5: Replay and Save
+### Milestone 5: Replay and Save — Complete
 
 Goal: prove persistence.
 
@@ -1315,20 +1315,22 @@ Completion criteria:
 - saved game reloads exactly
 - replay reproduces final state
 
-### Milestone 6: Multiplayer Foundation
+### Milestone 6: Authoritative Multiplayer — Playable Local-Network Co-op
 
 Goal: prove network-compatible architecture.
 
-Includes:
+Implemented:
 
-- command protocol
-- local authoritative server
-- client command submission
-- state snapshot sync
+- serialized command protocol
+- local authoritative server and named WebSocket rooms
+- browser lobby, client intent submission, and host-owned snapshot sync
+- empire ownership validation for all player intents
+- connection-loss freeze and a 120-second room-resume window
 
-Completion criteria:
+Acceptance criteria:
 
 - two local clients can submit commands to one simulation authority
+- a returning client receives the retained authoritative snapshot before room expiry
 
 ---
 
@@ -1383,22 +1385,16 @@ interface LearningEngine {
 
 ---
 
-## 27. Immediate Implementation Tasks
+## 27. Current Implementation Baseline
 
-The first coding task should create:
+The project is a TypeScript, Vite, Phaser, Vitest, and `ws` application. Its first production boundary is complete:
 
-1. `package.json`
-2. `tsconfig.json`
-3. `vite.config.ts`
-4. `vitest.config.ts`
-5. `src/simulation/Simulation.ts`
-6. `src/simulation/random/SeededRandom.ts`
-7. `src/simulation/state/WorldState.ts`
-8. `src/simulation/commands/GameCommand.ts`
-9. `src/simulation/events/GameEvent.ts`
-10. `src/tests/simulation/determinism.test.ts`
-
-No renderer is required for the first test. The first proof is deterministic state evolution.
+1. `Simulation` owns deterministic ticks, state, command scheduling, events, and hashes.
+2. `LocalAuthority` owns connected-player identity, host-assigned command identity/ticks, command ownership validation, opening-world setup, and immutable snapshots.
+3. `MultiplayerServer` adapts named WebSocket rooms to `LocalAuthority`; it contains no game rules.
+4. `RemoteAuthorityClient` owns a browser WebSocket only. It has no simulation state and exposes message/connection listeners.
+5. `MilestoneOneScene` owns renderer and command UI. It forwards intents to an authority in remote play and freezes on a lost authority connection.
+6. The deterministic suite and production TypeScript/Vite build are required quality gates.
 
 ---
 
@@ -1422,28 +1418,23 @@ Simulation versions:
 
 ---
 
-## 29. Open Implementation Notes
+## 29. Remaining Delivery Work
 
-The following are not design questions; they are implementation details to resolve during coding:
+The frozen gameplay architecture is implemented as a robust vertical slice. Remaining release work is product delivery rather than a new core-system design:
 
-- exact state hash algorithm
-- exact seeded RNG algorithm
-- exact map tile size
-- exact Phaser camera defaults
-- exact JSON schema validation library
-- exact multiplayer transport library
+- balance playtests across the four authored Campaign Theatre openings;
+- bespoke painterly environment, building, battalion, and miracle presentation assets;
+- campaign progression, onboarding, and broader content tuning;
+- account identity, public matchmaking, reconnect tokens, rate limiting, and broader anti-cheat for internet multiplayer;
+- deployment, telemetry, accessibility audit, localization, and storefront packaging.
 
-These decisions should be made conservatively during implementation and documented in `docs/Changelog.md`.
+Each addition must preserve deterministic command replay and the simulation/presentation separation documented above.
 
 ---
 
-## 30. Final Readiness Statement
+## 30. Current Readiness Statement
 
-The frozen design is ready to enter production.
-
-The next action is to scaffold the TypeScript/Vite/Phaser repository and implement Milestone 0: the deterministic simulation kernel.
-
-The Last Lesson should not add new core mechanics before Milestone 2 proves whether teaching AI is fun.
+The Last Lesson is in active vertical-slice production. Its frozen architecture, deterministic simulation, teaching loop, authored scenarios, save/replay path, and playable local-network co-op have been implemented and verified. New work should prioritize player onboarding, content depth, balance, and release delivery over unbounded new mechanics.
 
 ---
 
@@ -1494,5 +1485,7 @@ The following compatible systems are now implemented in the prototype and are th
 - `divine-judgment` is a player-directed Faith miracle that spends 18 Faith to establish a three-tick, decaying religious ward at an owned settlement. The ward reduces only effective external religious pressure, remains fully visible in source-level pressure events, and never changes rival units, resources, or map visibility.
 - Enemy outposts project a bounded local religious pressure, making a defended frontier a real ideological threat instead of an empty vision structure. Pressure events separately expose castle, road, caravan, and outpost contributions. Only battalions assigned to a settlement reduce that settlement's rebellion pressure; distant armies cannot stabilize a different domain.
 - Faith generation applies the same local-domain rule. `faith-produced` events expose citizen Faith, locally assigned military Faith, internal-religion contribution, and external-pressure penalty so the UI and Book of Lessons never have to infer an opaque total.
+- Multiplayer rooms are hosted through the same `LocalAuthority` used in deterministic tests. Browser clients submit untimestamped intents, receive immutable authoritative snapshots, and cannot command another empire's assets or mint fixture-only Faith.
+- An in-game `MULTI` lobby starts local-network co-op, while the renderer freezes at the latest valid snapshot after connection loss. The host retains an empty room for two minutes so a returning player can rejoin its exact authority state while the host remains online.
 
-Implementation remains deliberately gray-box. Art, audio, campaign content, advanced diplomacy, transport vehicles, full captive gameplay, and multiplayer authority are planned production milestones rather than implied completed features.
+Implementation intentionally keeps tactical identifiers explicit while presentation matures. Painterly terrain, responsive command UI, optional tactical audio, authored campaign theatres, full captive gameplay, transport vehicles, and authoritative multiplayer are implemented. Advanced diplomacy, account-backed internet matchmaking, and a complete bespoke art/content package remain production-delivery work rather than implied completed features.

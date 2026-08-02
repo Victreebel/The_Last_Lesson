@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.71.0 - 2026-08-01
+
+- Updated the living Technical Design Specification to reflect the actual implementation baseline: complete deterministic milestones, playable local-network co-op, current authoritative boundaries, and remaining delivery work.
+
 ## 1.70.0 - 2026-08-01
 
 - Added a 120-second idle-room grace period to the multiplayer host. A room stops simulating when empty but preserves its authority state, so a returning client can rejoin the same reign rather than starting over.
