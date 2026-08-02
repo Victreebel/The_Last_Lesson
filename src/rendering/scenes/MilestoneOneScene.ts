@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import { getEarnedScenarioHonor, SCENARIO_HONORS, type CampaignHonor } from "../../campaign/CampaignHonors";
+import { getCampaignChapter, getCampaignProgression } from "../../campaign/CampaignProgression";
 import { storeMultiplayerReconnectToken, type MultiplayerConnectRequest } from "../../app/MultiplayerLobby";
 import type { CommandIntent } from "../../networking/LocalAuthority";
 import { RemoteAuthorityClient } from "../../networking/RemoteAuthorityClient";
@@ -391,6 +392,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.drawTerrain();
     this.restoreCampaignChronicle();
     this.restoreCampaignHonors();
+    this.campaignScenario = getCampaignProgression(this.campaignChronicle).nextTheatre ?? "crownfall";
     this.createUi();
     this.paused = true;
     this.pauseControlLabel.setText("SELECT");
@@ -1471,6 +1473,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     });
     const controls: Phaser.GameObjects.GameObject[] = [background, title, subtitle];
     const scenarios: ScenarioId[] = ["crownfall", "rivergate", "ashen-oath", "stonewall"];
+    const campaignProgression = getCampaignProgression(this.campaignChronicle);
     scenarios.forEach((scenario, index) => {
       const profile = SCENARIO_PROFILES[scenario];
       const x = 20 + (index % 2) * 214;
@@ -1481,13 +1484,19 @@ export class MilestoneOneScene extends Phaser.Scene {
       const button = this.add.rectangle(x, y, 206, 56, selected ? UI_COLORS.commandActive : UI_COLORS.command, 1).setOrigin(0);
       button.setScrollFactor(0);
       button.setStrokeStyle(selected ? 2 : 1, selected ? UI_COLORS.accent : UI_COLORS.trim);
-      const label = this.add.text(x + 10, y + 9, conquests ? `${profile.label} // CROWNED ${conquests}` : profile.label, {
+      const chapter = getCampaignChapter(scenario);
+      const status = conquests
+        ? `CROWNED ${conquests}`
+        : campaignProgression.nextTheatre === scenario
+          ? "NEXT THEATRE"
+          : "UNCONQUERED";
+      const label = this.add.text(x + 10, y + 9, `CHAPTER ${chapter} // ${profile.label}`, {
         fontFamily: "Arial Black, Arial",
         fontSize: "10px",
-        color: conquests ? "#f2d77f" : UI_COLORS.text,
+        color: conquests || campaignProgression.nextTheatre === scenario ? "#f2d77f" : UI_COLORS.text,
         wordWrap: { width: 184 }
       });
-      const detail = this.add.text(x + 10, y + 27, honor ? `HONOR // ${honor.label}` : profile.summary.split(".")[0].toUpperCase(), {
+      const detail = this.add.text(x + 10, y + 27, honor ? `HONOR // ${honor.label}` : status, {
         fontFamily: "Arial, sans-serif",
         fontSize: "8px",
         color: UI_COLORS.muted,
@@ -1631,6 +1640,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.paused = true;
     this.pauseControlLabel.setText("SELECT");
     this.campaignSetupPending = true;
+    this.campaignScenario = getCampaignProgression(this.campaignChronicle).nextTheatre ?? this.campaignScenario;
     this.victoryPanel.setVisible(false);
     this.campaignSetupInput?.destroy();
     this.campaignSetupInput = undefined;
@@ -1688,6 +1698,7 @@ export class MilestoneOneScene extends Phaser.Scene {
       campaignHonor = this.recordCampaignHonor(state);
     }
     const campaignConquests = this.getCampaignConquests(state.scenarioId);
+    const nextTheatre = getCampaignProgression(this.campaignChronicle).nextTheatre;
     this.victoryTitle.setText(playerWon ? "THE CROWN ASCENDS" : "THE CROWN HAS FALLEN");
     this.victoryDetail.setText(
       playerWon
@@ -1698,6 +1709,7 @@ export class MilestoneOneScene extends Phaser.Scene {
             `LESSONS ${report.lessonsTaught}  //  HEIRS GUIDED ${report.heirsGuided}`,
             `FAITH HELD ${report.faithHeld}`,
             `CHRONICLE: ${SCENARIO_PROFILES[state.scenarioId].label.toUpperCase()} CROWNED ${campaignConquests}`,
+            nextTheatre ? `NEXT THEATRE: ${SCENARIO_PROFILES[nextTheatre].label}` : "CAMPAIGN: EVERY THEATRE CROWNED",
             campaignHonor
               ? `HONOR: ${campaignHonor.label}`
               : `HONOR UNSEALED: ${SCENARIO_HONORS[state.scenarioId].label}`

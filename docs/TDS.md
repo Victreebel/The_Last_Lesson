@@ -1447,7 +1447,7 @@ The frozen gameplay architecture is implemented as a robust vertical slice. Rema
 
 - balance playtests across the four authored Campaign Theatre openings;
 - bespoke miracle presentation assets, plus remaining environment-art expansion;
-- campaign progression, onboarding, and broader content tuning;
+- onboarding and broader content tuning;
 - account identity, public matchmaking, persistence, and broader anti-cheat for internet multiplayer;
 - telemetry, accessibility audit, localization, storefront packaging, and separate public hosting for the authoritative multiplayer service.
 
@@ -1492,6 +1492,7 @@ The following compatible systems are now implemented in the prototype and are th
 - The renderer presents an explicit match-resolution panel whenever simulation victory resolves. It distinguishes ascent and defeat, explains the state in-world, and can recreate the deterministic opening campaign without altering the simulation contract.
 - The match-resolution panel offers a presentation-only route back to Campaign Theatre selection. It pauses and clears the current scene's local selection state, re-renders the current Chronicle markers, and never alters the completed authoritative simulation or its replay record.
 - The presentation layer maintains an optional local Campaign Chronicle keyed by scenario ID. It records a completed Crown victory once per active reign and projects that count into Campaign Theatre selection and the victory debrief. Chronicle state never enters `WorldState`, save files, replay artifacts, or multiplayer authority.
+- `campaign/CampaignProgression.ts` derives a four-chapter recommended theatre route from the local Chronicle. Campaign Theatre keeps every scenario selectable, but selects and highlights the first unconquered chapter after a victory. This is presentation-only progression: it never changes scenario state, resources, AI, saves, replays, or multiplayer authority.
 - `reports/ReignReport.ts` derives the campaign debrief from resolved world state and immutable event history. It may summarize duration, thrones captured, lessons taught, heir guidance, and final Faith, but must never mutate simulation state or be serialized independently.
 - `replay/ReplayRecord.ts` defines a versioned portable replay artifact containing an initial world, applied command log, and total tick count. Deserialize validation and playback must use the same deterministic simulation path as live play; presentation may later archive or export this artifact without changing its contents.
 - The Book of Lessons may retain an opening-world snapshot beside local presentation persistence and offer a replay-integrity command. It must re-run the applied command log through `ReplayRecord`, compare state and event hashes, and report the result without touching authoritative state.

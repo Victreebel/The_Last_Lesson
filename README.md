@@ -21,7 +21,7 @@ The current browser prototype is a playable single-player campaign: establish th
 - A campaign-opening rival doctrine choice: `DISCIPLE`, `RIVAL`, or `ARCHITECT` changes only the rival's opening grace and doctrine-learning pace, never grants hidden resources or combat bonuses.
 - Four deterministic Campaign Theatre openings: `CROWNFALL` for a balanced throne war, `RIVERGATE` for civic supply and naval play, `ASHEN OATH` for plague recovery, captive management, and religious defense, and `STONEWALL` for fortified-frontier defense, logistics, retreat, and counter-siege play.
 - Rival settlements begin with their own terrain-valid farms and labeled fertile fields, so every theatre opens against sustainable enemy economies rather than passive empty-castle targets.
-- A local Campaign Chronicle marks every theatre the Crown has conquered, preserving a sense of campaign progress without locking scenario access or changing match rules.
+- A local Campaign Chronicle marks every theatre the Crown has conquered and recommends a four-chapter route through the theatres without locking scenario access or changing match rules.
 - Local save/load from the Book of Lessons, plus an automatic recovery save every five world ticks and a `CONTINUE LOCAL REIGN` entry point after refresh. Reigns can also export as portable `.tll` archives and restore on another browser without losing their deterministic replay origin.
 - An authoritative end-of-reign debrief records campaign duration, thrones taken, lessons taught, heir guidance, and Faith held.
 - The end-of-reign debrief can immediately replay the current theatre or return to Campaign Theatre selection, preserving a smooth path between scenarios.

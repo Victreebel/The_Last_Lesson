@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.0 - 2026-08-02
+
+- Connected the four authored theatres into a presentation-only campaign path. The Chronicle now recommends the first unconquered chapter, highlights it in Campaign Theatre, and advances the selection after a victorious reign without locking alternate scenarios or modifying simulation rules.
+
 ## 2.5.9 - 2026-08-02
 
 - Bounded the multiplayer host to conservative room, co-op-seat, and WebSocket payload capacities before an input can consume simulation authority. Production hosts may adjust those limits with documented environment variables.
