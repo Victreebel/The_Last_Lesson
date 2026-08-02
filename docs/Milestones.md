@@ -101,6 +101,7 @@ Implemented:
 - Religious infrastructure: completed road corridors and nearby caravans now propagate opposing faith through the existing pressure, rebellion, and faith systems with deterministic source-level events.
 - Campaign Theatre with three authored deterministic openings: Crownfall (balanced), Rivergate (civic supply and naval opening), and Ashen Oath (captives and hostile religious roads).
 - Scout Hounds: Town Square-trained, non-population reconnaissance packs with high movement speed and extended visibility.
+- Rare settlement defection under catastrophic captive rebellion, rival religious pressure, collapsed loyalty, and absent local defense. Defection is a political transfer: it displaces rather than kills the governor, preserving the rule that only a fallen Castle kills an heir.
 
 ## Milestone 4: Persistence Foundation
 

@@ -40,6 +40,7 @@ export type EventType =
   | "damage-dealt"
   | "entity-destroyed"
   | "settlement-captured"
+  | "settlement-defected"
   | "victory-achieved";
 
 export interface GameEvent {

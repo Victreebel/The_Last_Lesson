@@ -468,6 +468,7 @@ Captives:
 - increase rebellion pressure when ratio is high
 - live in Hovels
 - may be recaptured or freed when their housing or transport is destroyed
+- can contribute to a settlement defection only when wider religious, loyalty, and security failures are also present
 
 ---
 
@@ -823,6 +824,17 @@ Rebellion Pressure =
 ```
 
 No single threshold should be the only cause of rebellion.
+
+### 15.5 Settlement Defection
+
+Defection is a rare territorial failure, not another damage mechanic. A settlement defects only when all of the following are true on a world tick:
+
+- rebellion pressure is at least `85`
+- external religious pressure is at least `30`
+- citizen loyalty is at most `30`
+- the settlement has no local friendly battalion
+
+The settlement transfers to the nearest rival empire with a throne. Its buildings change ownership and a successor governor is created for the receiving empire. The displaced governor remains alive: heirs die only when their own central Castle falls to military capture. Defection removes the former empire's local battalions and uses the normal empire-scoped victory resolution if the source empire loses its final settlement. The event log records the pressure-driven cause, successor, and displaced governor.
 
 ---
 

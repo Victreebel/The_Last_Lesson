@@ -107,6 +107,7 @@ export class Simulation {
       this.updateShipCombat(nextTick);
       this.updateReligion(nextTick);
       this.updateCaptives(nextTick);
+      this.updateSettlementDefections(nextTick);
       this.updateFaith(nextTick);
     }
 
@@ -1915,6 +1916,53 @@ export class Simulation {
     }
   }
 
+  private updateSettlementDefections(tick: number): void {
+    for (const settlement of Object.values(this.state.settlements).sort((left, right) =>
+      left.id.localeCompare(right.id)
+    )) {
+      const hasLocalFieldDefense = Object.values(this.state.battalions).some(
+        (battalion) => battalion.ownerEmpireId === settlement.ownerEmpireId && battalion.settlementId === settlement.id
+      );
+      const qualifiesForDefection =
+        settlement.pressures.rebellion >= 85 &&
+        settlement.externalReligiousPressure >= 30 &&
+        settlement.population.loyalty <= 30 &&
+        !hasLocalFieldDefense;
+      if (!qualifiesForDefection) {
+        continue;
+      }
+
+      const castle = this.state.buildings[settlement.centralBuildingId];
+      const receivingEmpire = castle
+        ? Object.values(this.state.empires)
+            .filter((empire) => empire.id !== settlement.ownerEmpireId)
+            .map((empire) => ({
+              empire,
+              distanceToSettlement: this.distanceFromNearestEmpireCastle(empire.id, castle.position)
+            }))
+            .filter(({ distanceToSettlement }) => Number.isFinite(distanceToSettlement))
+            .sort(
+              (left, right) =>
+                left.distanceToSettlement - right.distanceToSettlement ||
+                left.empire.id.localeCompare(right.empire.id)
+            )[0]?.empire
+        : undefined;
+      if (receivingEmpire) {
+        this.transferSettlement(settlement.id, receivingEmpire.id, tick, "defected");
+      }
+    }
+  }
+
+  private distanceFromNearestEmpireCastle(empireId: string, target: Position): number {
+    const distances = Object.values(this.state.settlements)
+      .filter((settlement) => settlement.ownerEmpireId === empireId)
+      .map((settlement) => this.state.buildings[settlement.centralBuildingId])
+      .filter((castle): castle is BuildingState => Boolean(castle))
+      .map((castle) => distance(castle.position, target));
+
+    return distances.length === 0 ? Number.POSITIVE_INFINITY : Math.min(...distances);
+  }
+
   private getCaptiveCapacity(settlementId: string): number {
     const settlement = this.state.settlements[settlementId];
     if (!settlement) {
@@ -2581,9 +2629,22 @@ export class Simulation {
       return;
     }
 
-    const settlement = this.state.settlements[castle.settlementId];
+    this.transferSettlement(castle.settlementId, attacker.ownerEmpireId, tick, "captured");
+  }
+
+  private transferSettlement(
+    settlementId: string,
+    receivingEmpireId: string,
+    tick: number,
+    reason: "captured" | "defected"
+  ): void {
+    const settlement = this.state.settlements[settlementId];
+    if (!settlement || settlement.ownerEmpireId === receivingEmpireId) {
+      return;
+    }
+
     const losingEmpire = this.state.empires[settlement.ownerEmpireId];
-    const winningEmpire = this.state.empires[attacker.ownerEmpireId];
+    const winningEmpire = this.state.empires[receivingEmpireId];
     if (!losingEmpire || !winningEmpire) {
       return;
     }
@@ -2602,7 +2663,7 @@ export class Simulation {
         doctrineIds: []
       }
     };
-    if (fallenHeir) {
+    if (fallenHeir && reason === "captured") {
       nextHeirs[fallenHeir.id] = { ...fallenHeir, alive: false };
     }
 
@@ -2615,7 +2676,10 @@ export class Simulation {
       nextBuildings[buildingId] = {
         ...building,
         ownerEmpireId: winningEmpire.id,
-        defense: building.id === castleId ? getBuildingStats("castle").defense : Math.max(1, building.defense)
+        defense:
+          reason === "captured" && building.id === settlement.centralBuildingId
+            ? getBuildingStats("castle").defense
+            : Math.max(1, building.defense)
       };
     }
 
@@ -2660,12 +2724,14 @@ export class Simulation {
       }
     };
 
-    this.eventWriter.emit(tick, "settlement-captured", {
+    this.eventWriter.emit(tick, reason === "captured" ? "settlement-captured" : "settlement-defected", {
       settlementId: settlement.id,
       formerEmpireId: losingEmpire.id,
       newEmpireId: winningEmpire.id,
-      fallenHeirId: settlement.heirId,
-      successorHeirId
+      fallenHeirId: reason === "captured" ? settlement.heirId : undefined,
+      displacedHeirId: reason === "defected" ? settlement.heirId : undefined,
+      successorHeirId,
+      reason: reason === "defected" ? "rebellion" : undefined
     });
     if (victory.winnerEmpireId) {
       this.eventWriter.emit(tick, "victory-achieved", { winnerEmpireId: winningEmpire.id });

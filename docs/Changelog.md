@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.39.0 - 2026-08-01
+
+- Added deterministic settlement defection. A settlement may transfer to the nearest rival throne only under catastrophic rebellion, strong external religious pressure, collapsed loyalty, and no local friendly battalion.
+- Defection changes buildings and governance but does not kill the displaced heir; only a captured Castle kills its seated governor.
+
 ## 1.38.0 - 2026-08-01
 
 - Added Scout Hounds, a Town Square-trained four-hound pack that spends food and wood instead of citizens, moves quickly, and reveals farther than ordinary battalions.
