@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.95.0 - 2026-08-02
+
+- Added production web metadata for the public campaign: an intentional browser title, description, dark theme color, and Open Graph/Twitter previews using the existing painterly battlefield art.
+- The deployed game now presents its real strategy premise when shared rather than falling back to bare Vite metadata.
+
 ## 1.94.0 - 2026-08-02
 
 - Added an automated GitHub Pages release workflow. Every `main` push now rebuilds the verified static campaign with the repository base path and deploys it through GitHub Pages once that publishing source is enabled in repository settings.
