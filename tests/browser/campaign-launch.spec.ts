@@ -105,6 +105,67 @@ test("exports a portable reign archive from the Book of Lessons", async ({ page 
   await expect((await download).suggestedFilename()).toMatch(/^the-last-lesson-crownfall-tick-\d+\.tll$/);
 });
 
+test("restores an exported portable reign archive through the Book of Lessons", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto("/");
+  await beginCrownfallRivalReign(page);
+  await clickCanvasPoint(page, { x: 249, y: 29 });
+
+  const resolution = await page.locator("canvas").evaluate((element: HTMLCanvasElement) => ({
+    width: element.width,
+    height: element.height
+  }));
+  const topHeight = resolution.width < 640 ? 122 : resolution.width < 900 ? 94 : 58;
+  const bookScale = resolution.width < 640 ? Math.min(1, (resolution.width - 32) / 470) : 1;
+  const bookPanelX = Math.max(16, Math.round((resolution.width - 470 * bookScale) / 2));
+  const bookPanelY = Math.max(topHeight + 18, Math.round((resolution.height - 590 * bookScale) / 2));
+
+  const download = page.waitForEvent("download");
+  await clickCanvasPoint(page, {
+    x: bookPanelX + 120 * bookScale,
+    y: bookPanelY + 421 * bookScale
+  });
+  const archive = await download;
+  const archivePath = await archive.path();
+  if (!archivePath) {
+    throw new Error("Portable save download did not expose a local path.");
+  }
+
+  const chooser = page.waitForEvent("filechooser");
+  await clickCanvasPoint(page, {
+    x: bookPanelX + 350 * bookScale,
+    y: bookPanelY + 421 * bookScale
+  });
+  await (await chooser).setFiles(archivePath);
+
+  await expect(page.locator("#the-last-lesson-announcements")).toContainText("Portable reign restored");
+  await expect(page.locator("#the-last-lesson-portable-save-input")).toHaveCount(0);
+});
+
+test("rejects a malformed portable archive without replacing the reign", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto("/");
+  await beginCrownfallRivalReign(page);
+  await clickCanvasPoint(page, { x: 249, y: 29 });
+
+  const resolution = await page.locator("canvas").evaluate((element: HTMLCanvasElement) => ({
+    width: element.width,
+    height: element.height
+  }));
+  const bookPanelX = Math.max(16, Math.round((resolution.width - 470) / 2));
+  const bookPanelY = Math.max(58 + 18, Math.round((resolution.height - 590) / 2));
+  const chooser = page.waitForEvent("filechooser");
+  await clickCanvasPoint(page, { x: bookPanelX + 350, y: bookPanelY + 421 });
+  await (await chooser).setFiles({
+    name: "broken-reign.tll",
+    mimeType: "application/json",
+    buffer: Buffer.from('{"format":"not-a-portable-save"}')
+  });
+
+  await expect(page.locator("#the-last-lesson-announcements")).toContainText("could not be restored");
+  await expect(page.locator("#the-last-lesson-portable-save-input")).toHaveCount(0);
+});
+
 test("retains the installed campaign shell through an offline reload", async ({ page, context }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto("/");

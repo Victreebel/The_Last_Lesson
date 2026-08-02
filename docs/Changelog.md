@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.4.1 - 2026-08-02
+
+- Hardened portable `.tll` restoration in the Book of Lessons: the temporary browser file picker now cleans itself up after either selection or cancellation and carries an accessible archive label.
+- Added production-browser coverage for both restoring an exported archive and safely rejecting a malformed archive, protecting the complete cross-browser save path rather than only the download step.
+
 ## 2.4.0 - 2026-08-02
 
 - The Book of Lessons can now export and import versioned portable `.tll` reign archives. Each archive contains the active deterministic save and its campaign opening world, preserving replay verification when a player moves a reign between browsers or devices.

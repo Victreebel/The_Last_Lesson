@@ -1743,20 +1743,24 @@ export class MilestoneOneScene extends Phaser.Scene {
 
   private requestPortableSaveImport(): void {
     const input = document.createElement("input");
+    input.id = "the-last-lesson-portable-save-input";
     input.type = "file";
     input.accept = ".tll,application/json";
     input.style.display = "none";
+    input.setAttribute("aria-label", "Choose a The Last Lesson portable save archive");
+    const removeInput = () => input.remove();
     input.addEventListener(
       "change",
       () => {
         const file = input.files?.[0];
-        input.remove();
+        removeInput();
         if (file) {
           void this.importPortableSave(file);
         }
       },
       { once: true }
     );
+    input.addEventListener("cancel", removeInput, { once: true });
     document.body.append(input);
     input.click();
   }
