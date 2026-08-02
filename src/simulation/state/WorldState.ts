@@ -26,6 +26,32 @@ export interface Position {
   readonly y: number;
 }
 
+export type RivalDifficulty = "disciple" | "rival" | "architect";
+
+export interface RivalDifficultyProfile {
+  readonly label: string;
+  readonly openingGraceTicks: number;
+  readonly doctrineConfidenceGain: number;
+}
+
+export const RIVAL_DIFFICULTY_PROFILES: Record<RivalDifficulty, RivalDifficultyProfile> = {
+  disciple: {
+    label: "DISCIPLE",
+    openingGraceTicks: 11,
+    doctrineConfidenceGain: 1
+  },
+  rival: {
+    label: "RIVAL",
+    openingGraceTicks: 8,
+    doctrineConfidenceGain: 3
+  },
+  architect: {
+    label: "ARCHITECT",
+    openingGraceTicks: 5,
+    doctrineConfidenceGain: 6
+  }
+};
+
 export type TerrainKind =
   | "grassland"
   | "fertile"
@@ -212,6 +238,7 @@ export interface HeirConcern {
 export interface WorldState {
   readonly tick: number;
   readonly seed: number;
+  readonly rivalDifficulty: RivalDifficulty;
   readonly victory: VictoryState;
   readonly terrainZones: TerrainZone[];
   readonly empires: Record<EmpireId, EmpireState>;
@@ -223,10 +250,11 @@ export interface WorldState {
   readonly doctrines: Record<DoctrineId, DoctrineRule>;
 }
 
-export function createInitialWorld(seed: number): WorldState {
+export function createInitialWorld(seed: number, rivalDifficulty: RivalDifficulty = "rival"): WorldState {
   return {
     tick: 0,
     seed,
+    rivalDifficulty,
     victory: {},
     terrainZones: [
       {

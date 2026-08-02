@@ -8,6 +8,7 @@ import {
   isBuildingTerrainCompatible,
   getBuildingCost,
   isPositionVisibleToEmpire,
+  RIVAL_DIFFICULTY_PROFILES,
   terrainAtPosition,
   terrainDefenseMultiplier,
   terrainMovementMultiplier,
@@ -1023,7 +1024,9 @@ export class Simulation {
         (battalion) => !battalion.garrisonedInBuildingId && !battalion.embarkedInCaravanId
       );
       const expeditionTarget = nearestEnemy && enemyDistance < 170 ? nearestEnemy : enemyCastle;
-      const rivalOpeningComplete = currentEmpire?.id === "empire-rival" && tick >= 8;
+      const rivalOpeningComplete =
+        currentEmpire?.id === "empire-rival" &&
+        tick >= RIVAL_DIFFICULTY_PROFILES[this.state.rivalDifficulty].openingGraceTicks;
 
       const farmUtility =
         Math.max(0, 56 - currentSettlement.localFood) * 2 +
@@ -1483,8 +1486,16 @@ export class Simulation {
         : action === "Inspire battalions"
           ? "Restore military morale"
           : "Secure the settlement";
+    const confidenceGain =
+      heir.ownerEmpireId === "empire-rival"
+        ? RIVAL_DIFFICULTY_PROFILES[this.state.rivalDifficulty].doctrineConfidenceGain
+        : 1;
     const doctrine: DoctrineRule = existingDoctrine
-      ? { ...existingDoctrine, updatedAtTick: tick }
+      ? {
+          ...existingDoctrine,
+          confidence: Math.min(100, existingDoctrine.confidence + confidenceGain),
+          updatedAtTick: tick
+        }
       : {
           id: doctrineId,
           ownerId: heir.id,

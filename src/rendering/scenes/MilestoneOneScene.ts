@@ -22,6 +22,8 @@ import {
   type BuildingState,
   type DoctrineRule,
   type HeirState,
+  type RivalDifficulty,
+  RIVAL_DIFFICULTY_PROFILES,
   type SettlementState,
   type TerrainKind,
   type TerrainZone
@@ -155,10 +157,12 @@ interface HeirFeedbackControl {
 }
 
 export class MilestoneOneScene extends Phaser.Scene {
-  private simulation = new Simulation(createInitialWorld(777));
+  private campaignDifficulty: RivalDifficulty = "rival";
+  private simulation = new Simulation(createInitialWorld(777, this.campaignDifficulty));
   private readonly audio = new AudioDirector();
   private commandSequence = 0;
   private paused = false;
+  private campaignSetupPending = true;
   private gameSpeed: 1 | 2 | 3 = 1;
   private simulationClock?: Phaser.Time.TimerEvent;
   private inspectedSettlementId = "settlement-capital";
@@ -191,6 +195,7 @@ export class MilestoneOneScene extends Phaser.Scene {
   private victoryPanel!: Phaser.GameObjects.Container;
   private victoryTitle!: Phaser.GameObjects.Text;
   private victoryDetail!: Phaser.GameObjects.Text;
+  private campaignSetupPanel!: Phaser.GameObjects.Container;
   private statusText!: Phaser.GameObjects.Text;
   private eventText!: Phaser.GameObjects.Text;
   private resourceText!: Phaser.GameObjects.Text;
@@ -242,6 +247,8 @@ export class MilestoneOneScene extends Phaser.Scene {
 
     this.drawTerrain();
     this.createUi();
+    this.paused = true;
+    this.pauseControlLabel.setText("SELECT");
     this.scale.on("resize", () => this.layoutUi());
     this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => this.handlePointerDown(pointer));
     this.input.on("pointermove", (pointer: Phaser.Input.Pointer) => this.handlePointerMove(pointer));
@@ -333,6 +340,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.createBookOfLessons();
     this.createRealmPanel();
     this.createVictoryPanel();
+    this.createCampaignSetupPanel();
     this.createIntelPanel();
     this.createCommandDock();
     this.createMinimap();
@@ -394,6 +402,10 @@ export class MilestoneOneScene extends Phaser.Scene {
   }
 
   private togglePause(): void {
+    if (this.campaignSetupPending) {
+      this.updateUi(["Choose a rival doctrine to begin the reign."]);
+      return;
+    }
     this.paused = !this.paused;
     this.pauseControlLabel.setText(this.paused ? "RESUME" : "PAUSE");
     this.updateUi([this.paused ? "Simulation paused." : "Simulation resumed."]);
@@ -692,14 +704,73 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.victoryPanel.setScrollFactor(0).setDepth(90).setVisible(false);
   }
 
-  private restartCampaign(): void {
-    this.simulation = new Simulation(createInitialWorld(777));
+  private createCampaignSetupPanel(): void {
+    const background = this.add.rectangle(0, 0, 470, 252, UI_COLORS.panelDeep, 0.98).setOrigin(0);
+    background.setStrokeStyle(2, UI_COLORS.accent);
+    background.setInteractive({ useHandCursor: false });
+    background.on("pointerdown", (pointer: Phaser.Input.Pointer) => pointer.event.stopPropagation());
+    const title = this.add.text(20, 18, "RIVAL DOCTRINE", {
+      fontFamily: "Arial Black, Arial",
+      fontSize: "19px",
+      color: "#f2d77f"
+    });
+    const subtitle = this.add.text(20, 50, "THE RIVAL LEARNS FROM ITS OWN REIGN.", {
+      fontFamily: "Arial, sans-serif",
+      fontSize: "11px",
+      color: UI_COLORS.muted
+    });
+    const controls: Phaser.GameObjects.GameObject[] = [background, title, subtitle];
+    const difficulties: RivalDifficulty[] = ["disciple", "rival", "architect"];
+    difficulties.forEach((difficulty, index) => {
+      const profile = RIVAL_DIFFICULTY_PROFILES[difficulty];
+      const x = 20 + index * 146;
+      const button = this.add.rectangle(x, 88, 136, 116, UI_COLORS.command, 1).setOrigin(0);
+      button.setStrokeStyle(1, UI_COLORS.trim);
+      button.setInteractive({ useHandCursor: true });
+      button.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+        pointer.event.stopPropagation();
+        this.startCampaign(difficulty);
+      });
+      const label = this.add.text(x + 12, 106, profile.label, {
+        fontFamily: "Arial Black, Arial",
+        fontSize: "12px",
+        color: UI_COLORS.text,
+        wordWrap: { width: 112 }
+      });
+      const detail = this.add.text(
+        x + 12,
+        148,
+        `GRACE ${profile.openingGraceTicks} TICKS\nLEARNING +${profile.doctrineConfidenceGain}`,
+        {
+          fontFamily: "Arial, sans-serif",
+          fontSize: "10px",
+          color: UI_COLORS.muted,
+          lineSpacing: 3
+        }
+      );
+      controls.push(button, label, detail);
+    });
+    this.campaignSetupPanel = this.add.container(0, 0, controls);
+    this.campaignSetupPanel.setScrollFactor(0).setDepth(100).setVisible(true);
+  }
+
+  private startCampaign(difficulty: RivalDifficulty): void {
+    this.campaignDifficulty = difficulty;
+    this.campaignSetupPending = false;
+    this.campaignSetupPanel.setVisible(false);
+    this.restartCampaign(`${RIVAL_DIFFICULTY_PROFILES[difficulty].label} rival doctrine selected.`);
+  }
+
+  private restartCampaign(message = "A new reign begins."): void {
+    this.simulation = new Simulation(createInitialWorld(777, this.campaignDifficulty));
     this.commandSequence = 0;
     this.paused = false;
     this.inspectedSettlementId = "settlement-capital";
     this.lastLessonEventId = undefined;
     this.lessonBanner.setVisible(false);
     this.pauseControlLabel.setText("PAUSE");
+    this.campaignSetupPending = false;
+    this.campaignSetupPanel.setVisible(false);
     this.clearSelection();
     this.selectedBuildingKind = null;
     this.mode = "select";
@@ -709,7 +780,7 @@ export class MilestoneOneScene extends Phaser.Scene {
       payload: { settlementId: "settlement-capital", farmers: 8, builders: 4, lumberjacks: 6, miners: 0 }
     });
     this.renderWorld();
-    this.updateUi(["A new reign begins."]);
+    this.updateUi([message]);
   }
 
   private updateVictoryPanel(): void {
@@ -744,9 +815,10 @@ export class MilestoneOneScene extends Phaser.Scene {
       .map((event) => `${event.tick}: ${event.type.replaceAll("-", " ").toUpperCase()}`);
     this.bookPanelBody.setText(
       [
-        `CURRENT SEAT: ${this.getSettlementDisplayName(settlement?.id)}`,
-        `CURRENT HEIR: ${heir?.name.toUpperCase() ?? "UNASSIGNED"}`,
-        `STATE: ${heir?.mode.toUpperCase() ?? "NONE"}  //  TRUST: ${heir?.trust ?? 0}`,
+      `CURRENT SEAT: ${this.getSettlementDisplayName(settlement?.id)}`,
+      `CURRENT HEIR: ${heir?.name.toUpperCase() ?? "UNASSIGNED"}`,
+      `STATE: ${heir?.mode.toUpperCase() ?? "NONE"}  //  TRUST: ${heir?.trust ?? 0}`,
+      `RIVAL DOCTRINE: ${RIVAL_DIFFICULTY_PROFILES[state.rivalDifficulty].label}`,
         "",
         "CONVICTIONS:",
         ...(doctrines.length
@@ -776,6 +848,9 @@ export class MilestoneOneScene extends Phaser.Scene {
         return;
       }
       this.simulation = restoreSaveGame(deserializeSaveGame(serialized));
+      this.campaignDifficulty = this.simulation.getState().rivalDifficulty;
+      this.campaignSetupPending = false;
+      this.campaignSetupPanel.setVisible(false);
       this.inspectedSettlementId = "settlement-capital";
       this.lastLessonEventId = undefined;
       this.lessonBanner.setVisible(false);
@@ -1264,6 +1339,10 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.victoryPanel.setPosition(
       Math.max(16, Math.round((width - 420) / 2)),
       Math.max(topHeight + 18, Math.round((height - 206) / 2))
+    );
+    this.campaignSetupPanel.setPosition(
+      Math.max(16, Math.round((width - 470) / 2)),
+      Math.max(topHeight + 18, Math.round((height - 252) / 2))
     );
     this.intelPanel.setPosition(16, topHeight + 14);
     this.commandDock.setPosition(16, Math.max(topHeight + 220, height - 396));

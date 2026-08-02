@@ -13,6 +13,7 @@ The current browser prototype is a playable single-player campaign: establish th
 - Battalion specializations, supply, morale, visibility, enemy scouting, combat feedback, and empire-scoped victory.
 - Heirs with inspectable doctrine, utility decisions, concerns, rewards, punishments, and live lesson feedback.
 - Multi-settlement Crown management through castle selection and the compact `REALM` navigator.
+- A campaign-opening rival doctrine choice: `DISCIPLE`, `RIVAL`, or `ARCHITECT` changes only the rival's opening grace and doctrine-learning pace, never grants hidden resources or combat bonuses.
 
 ## Run Locally
 

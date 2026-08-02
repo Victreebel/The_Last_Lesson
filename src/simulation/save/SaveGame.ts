@@ -2,7 +2,7 @@ import { Simulation } from "../Simulation";
 import type { SimulationConfig } from "../SimulationConfig";
 import type { GameCommand } from "../commands/GameCommand";
 import type { GameEvent } from "../events/GameEvent";
-import type { WorldState } from "../state/WorldState";
+import type { RivalDifficulty, WorldState } from "../state/WorldState";
 
 export const SAVE_FORMAT_VERSION = "1.1.0";
 
@@ -45,7 +45,18 @@ export function deserializeSaveGame(serialized: string): SaveGame {
   ) {
     throw new Error("Unsupported or malformed The Last Lesson save.");
   }
-  return parsed as SaveGame;
+  const rivalDifficulty = (parsed.world as Partial<WorldState>).rivalDifficulty;
+  const normalizedDifficulty: RivalDifficulty =
+    rivalDifficulty === "disciple" || rivalDifficulty === "architect" || rivalDifficulty === "rival"
+      ? rivalDifficulty
+      : "rival";
+  return {
+    ...(parsed as SaveGame),
+    world: {
+      ...(parsed.world as WorldState),
+      rivalDifficulty: normalizedDifficulty
+    }
+  };
 }
 
 export function restoreSaveGame(save: SaveGame, config?: SimulationConfig): Simulation {

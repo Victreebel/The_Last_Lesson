@@ -28,4 +28,15 @@ describe("save games", () => {
     expect(restoredResult.stateHash).toBe(originalResult.stateHash);
     expect(restoredResult.events).toEqual(originalResult.events);
   });
+
+  it("defaults legacy saves to the standard rival doctrine", () => {
+    const save = createSaveGame(new Simulation(createInitialWorld(9002)));
+    const legacy = JSON.parse(serializeSaveGame(save)) as { world: Record<string, unknown> };
+    delete legacy.world.rivalDifficulty;
+
+    const restored = restoreSaveGame(deserializeSaveGame(JSON.stringify(legacy)));
+
+    expect(restored.getState().rivalDifficulty).toBe("rival");
+    expect(() => restored.tick()).not.toThrow();
+  });
 });

@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.27.0 - 2026-08-01
+
+- Added a campaign-opening Rival Doctrine choice: `DISCIPLE`, `RIVAL`, and `ARCHITECT` provide transparent rival-governance difficulty profiles.
+- Profiles are deterministic world state. They alter only the rival's protected opening window and governor doctrine-confidence gain; resources, troops, combat values, visibility, and map state remain fair.
+
 ## 1.26.0 - 2026-08-01
 
 - Added a compact `SPEED` control to the tactical header. It cycles the playable browser simulation between 1x, 2x, and 3x while preserving the fixed deterministic tick logic, save data, event order, and replay contract.
