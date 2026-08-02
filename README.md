@@ -96,6 +96,16 @@ The static campaign is installable on supported browsers. After the first succes
 
 Release art is generated reproducibly with `pnpm optimize:assets`. It keeps the original painterly PNGs in `art/source/` and writes the smaller runtime WebP atlases plus the social preview into `public/assets/` before every production build.
 
+## Storefront Package
+
+Create a self-contained HTML5 upload archive with:
+
+```sh
+pnpm package:storefront
+```
+
+This produces `release/the-last-lesson-web.zip`, with `index.html` at its root and relative asset paths for browser-game storefronts. The archive includes the install manifest and offline worker; it is the single-player campaign package, while online co-op still needs an authoritative WebSocket host.
+
 ```sh
 pnpm build
 pnpm test

@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.1.0 - 2026-08-02
+
+- Added `pnpm package:storefront`, which builds a relative-path, self-contained HTML5 archive with `index.html` at its root for browser-game storefront uploads.
+- The generated archive is ignored by Git and preserves the single-player install/offline path without implying that the separate multiplayer authority is publicly hosted.
+
 ## 2.0.0 - 2026-08-02
 
 - Added one optional, deterministic Campaign Honor to every theatre: Veterans' Lesson, Tidecaller, Civic Reckoning, and Unbroken Gate. Honors reward the specific tactical system each opening teaches and appear in the debrief, Campaign Theatre, and Book of Lessons.
