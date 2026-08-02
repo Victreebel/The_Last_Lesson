@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.69.0 - 2026-08-01
+
+- Added explicit remote connection-state handling. An interrupted host freezes the current multiplayer snapshot, marks the header `FROZEN / REJOIN`, and leaves no path for a client to continue the match from a non-authoritative local timeline.
+- Browser-verified the live join, host termination, frozen-state, and rejoin affordance flow.
+
 ## 1.68.0 - 2026-08-01
 
 - Hardened the authoritative command boundary: clients may command only their own empire's settlements, heirs, battalions, buildings, and transports. The deterministic fixture-only Faith grant command is rejected from connected clients.

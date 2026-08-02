@@ -7,6 +7,8 @@ import type {
 } from "./protocol";
 
 export type RemoteAuthorityListener = (message: ServerMessage) => void;
+export type RemoteConnectionState = "connected" | "disconnected";
+export type RemoteConnectionListener = (state: RemoteConnectionState) => void;
 
 /**
  * Presentation-facing WebSocket client. It never owns simulation state and only
@@ -15,12 +17,19 @@ export type RemoteAuthorityListener = (message: ServerMessage) => void;
 export class RemoteAuthorityClient {
   private socket?: WebSocket;
   private readonly listeners = new Set<RemoteAuthorityListener>();
+  private readonly connectionListeners = new Set<RemoteConnectionListener>();
 
   connect(url: string, join: JoinMatchMessage): void {
     this.disconnect();
     const socket = new WebSocket(url);
     this.socket = socket;
-    socket.addEventListener("open", () => this.send(join));
+    socket.addEventListener("open", () => {
+      if (this.socket !== socket) {
+        return;
+      }
+      this.emitConnectionState("connected");
+      this.send(join);
+    });
     socket.addEventListener("message", (event) => this.handleMessage(event.data));
     socket.addEventListener("error", () => {
       this.emit({ type: "protocol-error", message: "The multiplayer connection encountered an error." });
@@ -28,6 +37,7 @@ export class RemoteAuthorityClient {
     socket.addEventListener("close", () => {
       if (this.socket === socket) {
         this.socket = undefined;
+        this.emitConnectionState("disconnected");
       }
     });
   }
@@ -48,6 +58,11 @@ export class RemoteAuthorityClient {
   onMessage(listener: RemoteAuthorityListener): () => void {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
+  }
+
+  onConnectionState(listener: RemoteConnectionListener): () => void {
+    this.connectionListeners.add(listener);
+    return () => this.connectionListeners.delete(listener);
   }
 
   private send(message: ClientMessage): void {
@@ -77,6 +92,12 @@ export class RemoteAuthorityClient {
   private emit(message: ServerMessage | ProtocolErrorMessage): void {
     for (const listener of this.listeners) {
       listener(message);
+    }
+  }
+
+  private emitConnectionState(state: RemoteConnectionState): void {
+    for (const listener of this.connectionListeners) {
+      listener(state);
     }
   }
 }

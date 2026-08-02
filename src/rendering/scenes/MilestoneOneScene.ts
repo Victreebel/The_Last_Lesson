@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import type { MultiplayerConnectRequest } from "../../app/MultiplayerLobby";
 import type { CommandIntent } from "../../networking/LocalAuthority";
 import { RemoteAuthorityClient } from "../../networking/RemoteAuthorityClient";
+import type { RemoteConnectionState } from "../../networking/RemoteAuthorityClient";
 import type { AuthoritySnapshot } from "../../networking/LocalAuthority";
 import type { ServerMessage } from "../../networking/protocol";
 import { AudioDirector } from "../AudioDirector";
@@ -194,6 +195,7 @@ export class MilestoneOneScene extends Phaser.Scene {
   private simulation = new Simulation(structuredClone(this.campaignInitialWorld));
   private remoteAuthority?: RemoteAuthorityClient;
   private remoteUnsubscribe?: () => void;
+  private remoteStatusUnsubscribe?: () => void;
   private remoteRoomId?: string;
   private readonly audio = new AudioDirector();
   private commandSequence = 0;
@@ -538,6 +540,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     const authority = new RemoteAuthorityClient();
     this.remoteAuthority = authority;
     this.remoteUnsubscribe = authority.onMessage((message) => this.handleRemoteMessage(message));
+    this.remoteStatusUnsubscribe = authority.onConnectionState((state) => this.handleRemoteConnectionState(state));
     authority.connect(request.url, {
       type: "join-match",
       roomId: request.roomId,
@@ -555,6 +558,8 @@ export class MilestoneOneScene extends Phaser.Scene {
   private disconnectFromMultiplayer(): void {
     this.remoteUnsubscribe?.();
     this.remoteUnsubscribe = undefined;
+    this.remoteStatusUnsubscribe?.();
+    this.remoteStatusUnsubscribe = undefined;
     this.remoteAuthority?.disconnect();
     this.remoteAuthority = undefined;
     this.remoteRoomId = undefined;
@@ -584,6 +589,18 @@ export class MilestoneOneScene extends Phaser.Scene {
       return;
     }
     this.updateUi([message.message]);
+  }
+
+  private handleRemoteConnectionState(state: RemoteConnectionState): void {
+    if (state === "connected") {
+      this.networkControlLabel.setText("ONLINE");
+      return;
+    }
+    // Do not resume a disconnected match locally: the host owns its only valid state.
+    this.networkControlLabel.setText("REJOIN");
+    this.pauseControlLabel.setText("FROZEN");
+    this.speedControlLabel.setText("FROZEN");
+    this.updateUi(["Multiplayer host disconnected. The reign is frozen; use REJOIN to reconnect."]);
   }
 
   private applyRemoteSnapshot(snapshot: AuthoritySnapshot): void {
