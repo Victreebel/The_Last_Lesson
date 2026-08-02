@@ -18,4 +18,20 @@ describe("fortifications", () => {
       gate.getState().battalions["battalion-rival-1"].position.x
     );
   });
+
+  it("does not apply land fortification penalties to warships", () => {
+    const initial = createInitialWorld(101011);
+    const simulation = new Simulation({
+      ...initial,
+      buildings: {
+        ...initial.buildings,
+        "test-wall": { id: "test-wall", ownerEmpireId: "empire-player", settlementId: "settlement-capital", kind: "wall", position: { x: 650, y: 520 }, defense: 100, complete: true, remainingBuildTicks: 0 }
+      },
+      caravans: {
+        "test-ship": { id: "test-ship", ownerEmpireId: "empire-rival", settlementId: "settlement-rival", kind: "ship", position: { x: 650, y: 520 }, destination: { x: 810, y: 520 }, cargoFood: 0, capacity: 52, passengerBattalionIds: [], defense: 110, maxDefense: 110, speed: 56 }
+      }
+    });
+    simulation.tick();
+    expect(simulation.getState().caravans["test-ship"].position.x).toBe(706);
+  });
 });

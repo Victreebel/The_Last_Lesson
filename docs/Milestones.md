@@ -119,6 +119,7 @@ Implemented:
 - Walls and Gates now affect local hostile movement. Gates provide a deliberately less restrictive breach path, so defensive layout changes actual battlefield choices.
 - Construction now requires assigned builders. Builder capacity deterministically allocates progress among foundations, and a site with no available labor visibly stalls rather than advancing for free.
 - Governing heirs now staff unfinished foundations before selecting their normal food, military, captive, or faith response, making conquered settlements operational without repetitive player labor reassignment.
+- Warships now use water-appropriate movement rather than the land-unit water penalty. Land fortifications remain a land-only movement concern.
 
 ## Milestone 4: Persistence Foundation
 

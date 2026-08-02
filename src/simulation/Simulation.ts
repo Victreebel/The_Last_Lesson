@@ -2403,9 +2403,10 @@ export class Simulation {
       }
       const terrain = terrainAtPosition(this.state, caravan.position);
       const moatMultiplier = this.moatMovementMultiplier(caravan.ownerEmpireId, caravan.position);
-      const fortificationMultiplier = this.fortificationMovementMultiplier(caravan.ownerEmpireId, caravan.position);
+      const fortificationMultiplier =
+        caravan.kind === "caravan" ? this.fortificationMovementMultiplier(caravan.ownerEmpireId, caravan.position) : 1;
       const speed =
-        caravan.speed * terrainMovementMultiplier(terrain) * this.roadMovementMultiplier(caravan) * moatMultiplier * fortificationMultiplier;
+        caravan.speed * (caravan.kind === "ship" ? 1 : terrainMovementMultiplier(terrain)) * this.roadMovementMultiplier(caravan) * moatMultiplier * fortificationMultiplier;
       if (speed === 0) {
         nextCaravans[caravan.id] = caravan;
         continue;
