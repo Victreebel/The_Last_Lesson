@@ -361,6 +361,12 @@ AI may only use information available to its empire.
 
 Scenario content may alter opening state, structures, resources, and pressures, but must not change the fixed tick order or introduce non-deterministic rules. The campaign theatre selects a scenario first, then a Rival Doctrine difficulty profile.
 
+### 7.3 Scout Hounds
+
+Scout hounds use the battalion transport, selection, movement, and combat contract while remaining a distinct non-population specialization. A Town Square can train a fixed pack of four hounds for 8 food and 4 wood. Hounds are fast, lightly defended, low damage, cannot garrison, never contribute captives when destroyed, and provide a 440-unit visibility radius instead of the normal 300-unit field-battalion radius.
+
+This keeps the initial Dog unit focused on reconnaissance without adding individual-unit AI or a second movement system.
+
 ---
 
 ## 8. Settlements and Buildings

@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.38.0 - 2026-08-01
+
+- Added Scout Hounds, a Town Square-trained four-hound pack that spends food and wood instead of citizens, moves quickly, and reveals farther than ordinary battalions.
+- Hounds cannot garrison and do not create captives when defeated, preserving their reconnaissance role.
+
 ## 1.37.0 - 2026-08-01
 
 - Added a reversible `REVIEW REIGN` workflow to the Book of Lessons. Players can replay the active command history from tick zero in read-only mode and return to the exact live paused campaign.

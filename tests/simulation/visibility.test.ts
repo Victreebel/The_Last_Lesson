@@ -22,4 +22,24 @@ describe("visibility", () => {
       )
     ).toBe(true);
   });
+
+  it("lets scout hounds reveal farther than a human battalion", () => {
+    const state = createInitialWorld(778);
+    const rivalCastle = state.buildings["building-rival-castle"];
+    const hounds = {
+      ...state.battalions["battalion-rival-1"],
+      id: "battalion-crown-hounds",
+      ownerEmpireId: "empire-player" as const,
+      specialization: "hounds" as const,
+      position: { x: 680, y: 390 }
+    };
+
+    expect(
+      isPositionVisibleToEmpire(
+        { ...state, battalions: { ...state.battalions, [hounds.id]: hounds } },
+        "empire-player",
+        rivalCastle.position
+      )
+    ).toBe(true);
+  });
 });

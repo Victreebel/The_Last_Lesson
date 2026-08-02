@@ -261,21 +261,26 @@ export class Simulation {
         return;
       }
 
-      const available = settlement.population.citizens - settlement.population.militarizedCitizens;
-      const size = Math.max(1, Math.floor(command.payload.size));
       const specialization = command.payload.specialization ?? "militia";
+      const isScoutPack = specialization === "hounds";
+      const available = settlement.population.citizens - settlement.population.militarizedCitizens;
+      const size = isScoutPack ? 4 : Math.max(1, Math.floor(command.payload.size));
       const profile = getBattalionProfile(specialization);
       const hasMilitaryQuarters = settlement.buildingIds.some((id) => {
         const building = this.state.buildings[id];
         return building?.kind === "military-quarters" && building.complete;
       });
+      const hasTownSquare = settlement.buildingIds.some((id) => {
+        const building = this.state.buildings[id];
+        return building?.kind === "town-square" && building.complete;
+      });
       const empire = this.state.empires[settlement.ownerEmpireId];
       if (
-        size > available ||
+        (!isScoutPack && size > available) ||
         settlement.localFood < size * profile.foodPerUnit ||
         empire.resources.wood < size * profile.woodPerUnit ||
         empire.resources.iron < size * profile.ironPerUnit ||
-        (specialization !== "militia" && !hasMilitaryQuarters)
+        (isScoutPack ? !hasTownSquare : specialization !== "militia" && !hasMilitaryQuarters)
       ) {
         this.eventWriter.emit(tick, "command-rejected", { commandId: command.id });
         return;
@@ -326,7 +331,7 @@ export class Simulation {
             battalionIds: [...settlement.battalionIds, battalionId],
             population: {
               ...settlement.population,
-              militarizedCitizens: settlement.population.militarizedCitizens + size
+              militarizedCitizens: settlement.population.militarizedCitizens + (isScoutPack ? 0 : size)
             },
             localFood: settlement.localFood - size * profile.foodPerUnit
           }
@@ -573,6 +578,7 @@ export class Simulation {
       if (
         !battalion ||
         !building ||
+        battalion.specialization === "hounds" ||
         battalion.embarkedInCaravanId ||
         battalion.garrisonedInBuildingId ||
         battalion.ownerEmpireId !== building.ownerEmpireId ||
@@ -2433,7 +2439,9 @@ export class Simulation {
               settlement.population.militarizedCitizens -
                 Object.values(this.state.battalions)
                   .filter((battalion) =>
-                    battalion.settlementId === settlement.id && garrisonedBattalionIds.has(battalion.id)
+                    battalion.settlementId === settlement.id &&
+                    battalion.specialization !== "hounds" &&
+                    garrisonedBattalionIds.has(battalion.id)
                   )
                   .reduce((total, battalion) => total + battalion.size, 0)
             )
@@ -2530,13 +2538,17 @@ export class Simulation {
     }
     const capacity = this.getCaptiveCapacity(captorSettlement.id);
     const availableHousing = Math.max(0, capacity - captorSettlement.population.captives);
-    const capturedCount = Math.min(availableHousing, Math.max(1, Math.floor(defeated.size / 2)));
+    const capturedCount =
+      defeated.specialization === "hounds" ? 0 : Math.min(availableHousing, Math.max(1, Math.floor(defeated.size / 2)));
     const nextDefenderSettlement = {
       ...defenderSettlement,
       battalionIds: defenderSettlement.battalionIds.filter((id) => id !== defeated.id),
       population: {
         ...defenderSettlement.population,
-        militarizedCitizens: Math.max(0, defenderSettlement.population.militarizedCitizens - defeated.size)
+        militarizedCitizens: Math.max(
+          0,
+          defenderSettlement.population.militarizedCitizens - (defeated.specialization === "hounds" ? 0 : defeated.size)
+        )
       }
     };
     const nextCaptorSettlement = {
@@ -2733,6 +2745,17 @@ interface BattalionProfile {
 
 function getBattalionProfile(specialization: BattalionSpecialization): BattalionProfile {
   switch (specialization) {
+    case "hounds":
+      return {
+        attackPerUnit: 1,
+        defensePerUnit: 6,
+        range: 24,
+        speed: 68,
+        attackCooldownTicks: 1,
+        foodPerUnit: 2,
+        woodPerUnit: 1,
+        ironPerUnit: 0
+      };
     case "spears":
       return {
         attackPerUnit: 2,
@@ -2833,10 +2856,13 @@ function getDoctrineObservation(command: GameCommand, state: WorldState): Doctri
     case "create-battalion":
       return {
         domain: "military",
-        key: "raise-battalion",
-        condition: "Citizens can be mobilized",
-        preferredAction: "Raise a battalion",
-        goal: "Secure the settlement"
+        key: command.payload.specialization === "hounds" ? "train-hounds" : "raise-battalion",
+        condition:
+          command.payload.specialization === "hounds"
+            ? "A Town Square can support a scout pack"
+            : "Citizens can be mobilized",
+        preferredAction: command.payload.specialization === "hounds" ? "Train scout hounds" : "Raise a battalion",
+        goal: command.payload.specialization === "hounds" ? "Reveal hostile movements" : "Secure the settlement"
       };
     case "create-caravan":
       return {

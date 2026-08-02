@@ -175,7 +175,7 @@ export interface BuildingState {
   readonly garrisonBattalionIds?: BattalionId[];
 }
 
-export type BattalionSpecialization = "militia" | "spears" | "archers" | "raiders";
+export type BattalionSpecialization = "militia" | "spears" | "archers" | "raiders" | "hounds";
 
 export type CaravanKind = "caravan" | "ship";
 
@@ -701,7 +701,7 @@ export function isPositionVisibleToEmpire(state: WorldState, empireId: string, p
       (battalion) =>
         battalion.ownerEmpireId === empireId &&
         !battalion.embarkedInCaravanId &&
-        isInRange(battalion.position, 300)
+        isInRange(battalion.position, battalion.specialization === "hounds" ? 440 : 300)
     ) ||
     Object.values(state.caravans).some(
       (caravan) => caravan.ownerEmpireId === empireId && isInRange(caravan.position, caravan.kind === "ship" ? 260 : 180)

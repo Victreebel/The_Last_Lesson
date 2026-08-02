@@ -1153,7 +1153,8 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.addWideCommandButton(210, 258, "DISEMBARK", "SELECTED CARAVAN", () => this.disembarkCaravan());
     this.addWideCommandButton(14, 312, "GARRISON", "NEAREST DEFENSE WORKS", () => this.garrisonSelectedBattalions());
     this.addWideCommandButton(210, 312, "WARSHIP", "18W 4I / TOWN SQUARE", () => this.createShip());
-    this.addWideCommandButton(114, 366, "DIVINE JUDGMENT", "18 FAITH / RELIGIOUS WARD", () => this.castDivineJudgment());
+    this.addCommandButton(14, 366, "HOUNDS", "8F 4W", () => this.createBattalion("hounds"));
+    this.addWideCommandButton(110, 366, "DIVINE JUDGMENT", "18 FAITH / RELIGIOUS WARD", () => this.castDivineJudgment());
   }
 
   private createMinimap(): void {
@@ -2052,7 +2053,15 @@ export class MilestoneOneScene extends Phaser.Scene {
         building.kind === "military-quarters" &&
         building.complete
     );
-    if (specialization !== "militia" && !hasMilitaryQuarters) {
+    const hasTownSquare = settlement.buildingIds.some((id) => {
+      const building = this.simulation.getState().buildings[id];
+      return building?.kind === "town-square" && building.complete;
+    });
+    if (specialization === "hounds" && !hasTownSquare) {
+      this.updateUi(["Construct a Town Square before training scout hounds."]);
+      return;
+    }
+    if (specialization !== "militia" && specialization !== "hounds" && !hasMilitaryQuarters) {
       this.updateUi(["Construct Military Quarters before training specialized battalions."]);
       return;
     }
@@ -2060,7 +2069,7 @@ export class MilestoneOneScene extends Phaser.Scene {
       type: "create-battalion",
       payload: {
         settlementId: settlement.id,
-        size: specialization === "militia" ? 10 : 8,
+        size: specialization === "militia" ? 10 : specialization === "hounds" ? 4 : 8,
         specialization
       }
     });
@@ -2599,7 +2608,9 @@ export class MilestoneOneScene extends Phaser.Scene {
 
   private getBattalionLabel(battalion: BattalionState): string {
     const suffix = battalion.id.split("-").at(-1) ?? "1";
-    return `${battalion.specialization.toUpperCase()} ${suffix}\n${battalion.size} TROOPS`;
+    return battalion.specialization === "hounds"
+      ? `HOUNDS ${suffix}\n${battalion.size} SCOUTS`
+      : `${battalion.specialization.toUpperCase()} ${suffix}\n${battalion.size} TROOPS`;
   }
 
   private getCaravanLabel(caravan: CaravanState): string {

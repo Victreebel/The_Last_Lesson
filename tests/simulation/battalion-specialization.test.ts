@@ -106,4 +106,56 @@ describe("battalion specializations", () => {
     simulation.tick();
     expect(simulation.getState().battalions[raiders.id].defense).toBe(76);
   });
+
+  it("trains scout hounds from a Town Square without mobilizing citizens", () => {
+    const initial = createInitialWorld(8181);
+    const simulation = new Simulation({
+      ...initial,
+      empires: {
+        ...initial.empires,
+        "empire-player": {
+          ...initial.empires["empire-player"],
+          resources: { ...initial.empires["empire-player"].resources, wood: 4 }
+        }
+      },
+      settlements: {
+        ...initial.settlements,
+        "settlement-capital": {
+          ...initial.settlements["settlement-capital"],
+          localFood: 8,
+          buildingIds: [...initial.settlements["settlement-capital"].buildingIds, "building-town-square-hounds"]
+        }
+      },
+      buildings: {
+        ...initial.buildings,
+        "building-town-square-hounds": {
+          id: "building-town-square-hounds",
+          ownerEmpireId: "empire-player",
+          settlementId: "settlement-capital",
+          kind: "town-square",
+          position: { x: 500, y: 300 },
+          defense: 150,
+          complete: true,
+          remainingBuildTicks: 0
+        }
+      }
+    });
+    simulation.enqueueCommand({
+      id: "train-hounds",
+      issuedBy: "player-1",
+      tick: 1,
+      type: "create-battalion",
+      payload: { settlementId: "settlement-capital", size: 99, specialization: "hounds" }
+    });
+
+    simulation.tick();
+    const hounds = Object.values(simulation.getState().battalions).find(
+      (battalion) => battalion.ownerEmpireId === "empire-player"
+    );
+
+    expect(hounds).toMatchObject({ specialization: "hounds", size: 4, speed: 68, attack: 4, defense: 24 });
+    expect(simulation.getState().settlements["settlement-capital"].population.militarizedCitizens).toBe(0);
+    expect(simulation.getState().settlements["settlement-capital"].localFood).toBe(0);
+    expect(simulation.getState().empires["empire-player"].resources.wood).toBe(0);
+  });
 });

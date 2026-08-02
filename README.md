@@ -12,7 +12,7 @@ The current browser prototype is a playable single-player campaign: establish th
 - Real-time battlefield camera, selection, movement, attack orders, garrisons, land caravans, and Warships.
 - Terrain-bound construction and harvesting: fertile farms, forest lumber mills, iron mines, roads, walls, gates, outposts, and housing.
 - Population, food, local growth, starvation, captives, rebellion, faith, religion, and miracles. Bless Harvest, Inspire Army, and Divine Judgment give Faith distinct economic, battlefield, and religious responses; road corridors and caravans also carry religious influence between empires.
-- Battalion specializations, supply, morale, visibility, enemy scouting, combat feedback, and empire-scoped victory.
+- Battalion specializations, scout hounds, supply, morale, visibility, enemy scouting, combat feedback, and empire-scoped victory.
 - Heirs with inspectable doctrine, utility decisions, concerns, rewards, punishments, and live lesson feedback.
 - Multi-settlement Crown management through castle selection and the compact `REALM` navigator.
 - A campaign-opening rival doctrine choice: `DISCIPLE`, `RIVAL`, or `ARCHITECT` changes only the rival's opening grace and doctrine-learning pace, never grants hidden resources or combat bonuses.
@@ -36,6 +36,7 @@ Open the URL printed by Vite, normally `http://127.0.0.1:5173/`.
 - Click or drag: select Crown forces.
 - Right-click or use the command dock: issue movement, attack, embarkation, and supply orders.
 - `BUILD`: choose a structure, then click terrain; drag to lay roads and walls.
+- `HOUNDS`: train a fast four-hound scout pack from a Town Square. It costs food and wood, reveals farther than a battalion, and uses no citizens.
 - Click a Crown Castle or choose a seat in `REALM`: change the active governor and settlement command context.
 - `HEIR`: inspect doctrine and reward or punish the current governor's last lesson.
 - `BOOK`: inspect recent history and create or restore a local deterministic save.
