@@ -303,6 +303,7 @@ export class MilestoneOneScene extends Phaser.Scene {
   private victoryTitle!: Phaser.GameObjects.Text;
   private victoryDetail!: Phaser.GameObjects.Text;
   private campaignSetupPanel!: Phaser.GameObjects.Container;
+  private campaignSetupInput?: Phaser.GameObjects.Zone;
   private statusText!: Phaser.GameObjects.Text;
   private eventText!: Phaser.GameObjects.Text;
   private resourceText!: Phaser.GameObjects.Text;
@@ -340,6 +341,7 @@ export class MilestoneOneScene extends Phaser.Scene {
   private selectionBox?: Phaser.GameObjects.Rectangle;
   private pointerDownWorld?: Phaser.Math.Vector2;
   private selectionDragActive = false;
+  private suppressNextPointerUp = false;
   private cursors?: Phaser.Types.Input.Keyboard.CursorKeys;
 
   constructor() {
@@ -1400,11 +1402,6 @@ export class MilestoneOneScene extends Phaser.Scene {
       const button = this.add.rectangle(x, y, 206, 56, selected ? UI_COLORS.commandActive : UI_COLORS.command, 1).setOrigin(0);
       button.setScrollFactor(0);
       button.setStrokeStyle(selected ? 2 : 1, selected ? UI_COLORS.accent : UI_COLORS.trim);
-      button.setInteractive({ useHandCursor: true });
-      button.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
-        pointer.event.stopPropagation();
-        this.selectCampaignScenario(scenario);
-      });
       const label = this.add.text(x + 10, y + 9, conquests ? `${profile.label} // CROWNED ${conquests}` : profile.label, {
         fontFamily: "Arial Black, Arial",
         fontSize: "10px",
@@ -1432,11 +1429,6 @@ export class MilestoneOneScene extends Phaser.Scene {
       const button = this.add.rectangle(x, 242, 136, 108, UI_COLORS.command, 1).setOrigin(0);
       button.setScrollFactor(0);
       button.setStrokeStyle(1, UI_COLORS.trim);
-      button.setInteractive({ useHandCursor: true });
-      button.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
-        pointer.event.stopPropagation();
-        this.startCampaign(difficulty);
-      });
       const label = this.add.text(x + 12, 259, `BEGIN // ${profile.label}`, {
         fontFamily: "Arial Black, Arial",
         fontSize: "10px",
@@ -1460,11 +1452,6 @@ export class MilestoneOneScene extends Phaser.Scene {
       const continueButton = this.add.rectangle(20, 366, 430, 42, UI_COLORS.commandActive, 1).setOrigin(0);
       continueButton.setScrollFactor(0);
       continueButton.setStrokeStyle(1, UI_COLORS.trim);
-      continueButton.setInteractive({ useHandCursor: true });
-      continueButton.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
-        pointer.event.stopPropagation();
-        this.loadLocalGame();
-      });
       const continueLabel = this.add.text(140, 380, "CONTINUE LOCAL REIGN", {
         fontFamily: "Arial Black, Arial",
         fontSize: "11px",
@@ -1475,6 +1462,39 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.campaignSetupPanel = this.add.container(0, 0, controls);
     this.campaignSetupPanel.setSize(470, panelHeight);
     this.campaignSetupPanel.setScrollFactor(0).setDepth(100).setVisible(true);
+    this.campaignSetupInput?.destroy();
+    this.campaignSetupInput = this.add.zone(0, 0, 470, panelHeight).setOrigin(0).setScrollFactor(0).setDepth(101);
+    this.campaignSetupInput.setInteractive({ useHandCursor: true });
+    this.campaignSetupInput.on(
+      "pointerdown",
+      (pointer: Phaser.Input.Pointer, localX: number, localY: number) => this.handleCampaignSetupPointerDown(pointer, localX, localY)
+    );
+  }
+
+  private handleCampaignSetupPointerDown(pointer: Phaser.Input.Pointer, localX: number, localY: number): void {
+    pointer.event.stopPropagation();
+    this.suppressNextPointerUp = true;
+
+    if (localY >= 82 && localY < 208) {
+      const column = localX < 224 ? 0 : 1;
+      const row = localY < 152 ? 0 : 1;
+      const scenarios: ScenarioId[] = ["crownfall", "rivergate", "ashen-oath", "stonewall"];
+      this.selectCampaignScenario(scenarios[row * 2 + column]);
+      return;
+    }
+
+    if (localY >= 242 && localY < 350) {
+      const index = Math.floor((localX - 20) / 146);
+      const difficulties: RivalDifficulty[] = ["disciple", "rival", "architect"];
+      if (index >= 0 && index < difficulties.length && localX >= 20 + index * 146 && localX < 156 + index * 146) {
+        this.startCampaign(difficulties[index]);
+      }
+      return;
+    }
+
+    if (this.hasLocalSave() && localY >= 366 && localY < 408 && localX >= 20 && localX < 450) {
+      this.loadLocalGame();
+    }
   }
 
   private selectCampaignScenario(scenario: ScenarioId): void {
@@ -1482,6 +1502,8 @@ export class MilestoneOneScene extends Phaser.Scene {
       return;
     }
     this.campaignScenario = scenario;
+    this.campaignSetupInput?.destroy();
+    this.campaignSetupInput = undefined;
     this.campaignSetupPanel.destroy(true);
     this.createCampaignSetupPanel();
     this.layoutUi();
@@ -1491,6 +1513,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.campaignDifficulty = difficulty;
     this.campaignSetupPending = false;
     this.campaignSetupPanel.setVisible(false);
+    this.campaignSetupInput?.setVisible(false).disableInteractive();
     this.restartCampaign(`${RIVAL_DIFFICULTY_PROFILES[difficulty].label} rival doctrine selected.`);
     const campaignAnnouncement = `${SCENARIO_PROFILES[this.campaignScenario].label} reign begins. ${this.getImperialMandate()}`;
     // Phaser dispatches the scene-wide pointer-up after this button's pointer-down handler.
@@ -1512,6 +1535,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.pauseControlLabel.setText("PAUSE");
     this.campaignSetupPending = false;
     this.campaignSetupPanel.setVisible(false);
+    this.campaignSetupInput?.setVisible(false).disableInteractive();
     this.clearSelection();
     this.clearControlGroups();
     this.selectedBuildingKind = null;
@@ -1529,6 +1553,8 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.pauseControlLabel.setText("SELECT");
     this.campaignSetupPending = true;
     this.victoryPanel.setVisible(false);
+    this.campaignSetupInput?.destroy();
+    this.campaignSetupInput = undefined;
     this.campaignSetupPanel.destroy(true);
     this.createCampaignSetupPanel();
     this.clearSelection();
@@ -1667,6 +1693,7 @@ export class MilestoneOneScene extends Phaser.Scene {
       this.restoreReplayOrigin();
       this.campaignSetupPending = false;
       this.campaignSetupPanel.setVisible(false);
+      this.campaignSetupInput?.setVisible(false).disableInteractive();
       this.paused = false;
       this.pauseControlLabel.setText("PAUSE");
       this.inspectedSettlementId = "settlement-capital";
@@ -2317,10 +2344,10 @@ export class MilestoneOneScene extends Phaser.Scene {
       Math.max(16, Math.round((width - 420 * victoryScale) / 2)),
       Math.max(topHeight + 18, Math.round((height - 304 * victoryScale) / 2))
     );
-    this.campaignSetupPanel.setPosition(
-      Math.max(16, Math.round((width - 470 * campaignScale) / 2)),
-      Math.max(topHeight + 18, Math.round((height - this.campaignSetupPanel.height * campaignScale) / 2))
-    );
+    const campaignPanelX = Math.max(16, Math.round((width - 470 * campaignScale) / 2));
+    const campaignPanelY = Math.max(topHeight + 18, Math.round((height - this.campaignSetupPanel.height * campaignScale) / 2));
+    this.campaignSetupPanel.setPosition(campaignPanelX, campaignPanelY);
+    this.campaignSetupInput?.setScale(campaignScale).setPosition(campaignPanelX, campaignPanelY);
     this.intelPanel.setVisible(!narrow);
     this.intelPanel.setPosition(16, topHeight + 14);
     this.commandDock.setScale(narrow ? 0.86 : 1);
@@ -2502,6 +2529,11 @@ export class MilestoneOneScene extends Phaser.Scene {
   }
 
   private handlePointerUp(pointer: Phaser.Input.Pointer): void {
+    if (this.suppressNextPointerUp) {
+      this.suppressNextPointerUp = false;
+      this.pointerDownWorld = undefined;
+      return;
+    }
     if (this.isRightClick(pointer) || !this.pointerDownWorld) {
       return;
     }

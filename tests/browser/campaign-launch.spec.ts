@@ -15,7 +15,7 @@ async function expectRenderedCanvas(page: Page): Promise<void> {
   expect(maximum - minimum).toBeGreaterThan(24);
 }
 
-test("launches the installed single-player campaign theatre", async ({ page }) => {
+test("launches the campaign theatre and begins a Crownfall reign", async ({ page }) => {
   const pageErrors: Error[] = [];
   const assetUrls: string[] = [];
   page.on("pageerror", (error) => pageErrors.push(error));
@@ -29,6 +29,21 @@ test("launches the installed single-player campaign theatre", async ({ page }) =
   await page.waitForTimeout(800);
   await expectRenderedCanvas(page);
   await page.waitForFunction(async () => Boolean((await navigator.serviceWorker.ready).active));
+  const canvas = page.locator("canvas");
+  const bounds = await canvas.boundingBox();
+  if (!bounds) {
+    throw new Error("Tactical canvas did not expose a layout box.");
+  }
+  const resolution = await canvas.evaluate((element: HTMLCanvasElement) => ({ width: element.width, height: element.height }));
+  const topHeight = resolution.width < 640 ? 122 : resolution.width < 900 ? 94 : 58;
+  const panelX = Math.max(16, Math.round((resolution.width - 470) / 2));
+  const panelY = Math.max(topHeight + 18, Math.round((resolution.height - 402) / 2));
+  const rivalDoctrinePoint = { x: panelX + 234, y: panelY + 296 };
+  await page.mouse.click(
+    bounds.x + (rivalDoctrinePoint.x / resolution.width) * bounds.width,
+    bounds.y + (rivalDoctrinePoint.y / resolution.height) * bounds.height
+  );
+  await expect(page.locator("#the-last-lesson-announcements")).toContainText("CROWNFALL reign begins");
   await expect.poll(() => assetUrls.some((url) => url.endsWith("painterly-battlefield-v1.webp"))).toBe(true);
   await expect.poll(() => assetUrls.some((url) => url.endsWith("building-atlas-v1.webp"))).toBe(true);
   expect(pageErrors).toEqual([]);

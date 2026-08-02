@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.2.1 - 2026-08-02
+
+- Reworked campaign-theatre hit handling into one fixed-overlay interaction surface so the visual theatre and doctrine cards receive their intended input across runtime coordinate spaces. Campaign launch now suppresses the unrelated world-selection release and preserves its accessible reign announcement.
+
 ## 2.2.0 - 2026-08-02
 
 - Added Playwright browser smoke coverage to the release gate. Desktop verification now checks the PWA shell, WebP tactical assets, and rendered campaign theatre; a phone-sized pass checks that the tactical surface remains visibly rendered without runtime errors.
