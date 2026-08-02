@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.49.0 - 2026-08-01
+
+- Added civic morale recovery. Every third tick, supplied battalions can regain morale from a peaceful, adequately housed, happy, loyal, and religiously secure home settlement. The recovery is event-explained and cannot replace logistical supply.
+
 ## 1.48.0 - 2026-08-01
 
 - Added deterministic battle aftermath morale. Destroying an enemy battalion bolsters the victor and nearby settlement forces while shaking surviving defenders; the full delta is exposed through `battle-morale-shifted`.

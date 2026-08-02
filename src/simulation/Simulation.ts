@@ -2352,6 +2352,7 @@ export class Simulation {
     for (const battalion of Object.values(this.state.battalions).sort((left, right) =>
       left.id.localeCompare(right.id)
     )) {
+      const homeSettlement = this.state.settlements[battalion.settlementId];
       const supplied = Object.values(this.state.buildings).some(
         (building) =>
           building.ownerEmpireId === battalion.ownerEmpireId &&
@@ -2361,7 +2362,11 @@ export class Simulation {
       );
       const nextSupply = Math.max(0, Math.min(100, battalion.supply + (supplied ? 5 : -2)));
       const moraleLoss = Math.max(0, 2 - Math.floor((battalion.experience ?? 0) / 50));
-      const nextMorale = nextSupply === 0 ? Math.max(0, battalion.morale - moraleLoss) : battalion.morale;
+      const civicRecovery = this.getCivicMoraleRecovery(homeSettlement, battalion, nextSupply, tick);
+      const nextMorale =
+        nextSupply === 0
+          ? Math.max(0, battalion.morale - moraleLoss)
+          : Math.min(100, battalion.morale + civicRecovery);
       nextBattalions[battalion.id] = {
         ...battalion,
         supply: nextSupply,
@@ -2375,8 +2380,43 @@ export class Simulation {
           moraleLoss
         });
       }
+      if (civicRecovery > 0 && homeSettlement) {
+        this.eventWriter.emit(tick, "morale-recovered", {
+          battalionId: battalion.id,
+          settlementId: homeSettlement.id,
+          moraleRecovered: civicRecovery,
+          reason: "peace-housing-religion"
+        });
+      }
     }
     this.state = { ...this.state, battalions: nextBattalions };
+  }
+
+  private getCivicMoraleRecovery(
+    settlement: WorldState["settlements"][string] | undefined,
+    battalion: BattalionState,
+    supply: number,
+    tick: number
+  ): number {
+    if (!settlement || supply === 0 || tick % 3 !== 0) {
+      return 0;
+    }
+    const castle = this.state.buildings[settlement.centralBuildingId];
+    const enemyNearHome =
+      castle &&
+      Object.values(this.state.battalions).some(
+        (enemy) =>
+          enemy.ownerEmpireId !== battalion.ownerEmpireId &&
+          isPositionVisibleToEmpire(this.state, battalion.ownerEmpireId, enemy.position) &&
+          distance(enemy.position, castle.position) <= 240
+      );
+    const hasHousing = settlement.population.citizens <= this.getCitizenCapacity(settlement.id);
+    const hasCivicConfidence =
+      settlement.population.happiness >= 75 &&
+      settlement.population.loyalty >= 75 &&
+      settlement.internalFaith >= settlement.externalReligiousPressure;
+
+    return !enemyNearHome && hasHousing && hasCivicConfidence ? 1 : 0;
   }
 
   private updateShipCombat(tick: number): void {

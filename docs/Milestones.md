@@ -111,6 +111,7 @@ Implemented:
 - Settlement health now has a deterministic plague cycle. Critical health plus food pressure starts a short localized outbreak, with visible deaths and social consequences across three world ticks.
 - Destroyed Villas now inflict immediate, event-explained civilian losses and social instability, while Hovels continue to liberate their captive population.
 - Decisive battalion victories now create bounded, explainable morale and devotion shifts for the victor, its local allies, and surviving defenders.
+- Supplied battalions now recover morale from peaceful, adequately housed, happy, loyal, and religiously secure home settlements, tying civic legitimacy directly to military readiness.
 
 ## Milestone 4: Persistence Foundation
 
