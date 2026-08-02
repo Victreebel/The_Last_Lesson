@@ -421,7 +421,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     canvas.setAttribute("aria-describedby", "the-last-lesson-accessibility-brief");
     canvas.setAttribute(
       "aria-keyshortcuts",
-      "ArrowUp ArrowDown ArrowLeft ArrowRight B H R L M A F Escape Space Control+1 Control+2 Control+3 Control+4 Control+5 Control+6 Control+7 Control+8 Control+9"
+      "ArrowUp ArrowDown ArrowLeft ArrowRight B C H R L M A F Escape Space Control+1 Control+2 Control+3 Control+4 Control+5 Control+6 Control+7 Control+8 Control+9"
     );
     this.accessibilityAnnouncements = document.getElementById("the-last-lesson-announcements") ?? undefined;
   }
@@ -452,6 +452,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     bind("H", () => this.toggleHeirPanel());
     bind("R", () => this.toggleRealmPanel());
     bind("L", () => this.toggleBookOfLessons());
+    bind("C", () => this.castMendSettlement());
     bind("M", () => this.enterMoveMode());
     bind("A", () => this.enterAttackMode());
     bind("F", () => this.enterAttackMoveMode());
@@ -2085,6 +2086,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     button.setInteractive({ useHandCursor: true });
     button.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
       pointer.event.stopPropagation();
+      this.suppressNextPointerUp = true;
       this.audio.play("command");
       onClick();
     });
@@ -2109,6 +2111,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     button.setInteractive({ useHandCursor: true });
     button.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
       pointer.event.stopPropagation();
+      this.suppressNextPointerUp = true;
       this.audio.play("command");
       onClick();
     });
@@ -2139,6 +2142,8 @@ export class MilestoneOneScene extends Phaser.Scene {
     button.setInteractive({ useHandCursor: true });
     button.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
       pointer.event.stopPropagation();
+      this.suppressNextPointerUp = true;
+      this.audio.play("command");
       onClick();
     });
     button.on("pointerover", (pointer: Phaser.Input.Pointer) => this.showCommandTooltip(pointer, `${label}: ${detail}`));

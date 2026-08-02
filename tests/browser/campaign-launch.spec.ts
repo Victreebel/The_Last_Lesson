@@ -34,6 +34,31 @@ async function beginCrownfallRivalReign(page: Page): Promise<void> {
   await expect(page.locator("#the-last-lesson-announcements")).toContainText("CROWNFALL reign begins");
 }
 
+async function beginAshenOathRivalReign(page: Page): Promise<void> {
+  const canvas = page.locator("canvas");
+  const bounds = await canvas.boundingBox();
+  if (!bounds) {
+    throw new Error("Tactical canvas did not expose a layout box.");
+  }
+  const resolution = await canvas.evaluate((element: HTMLCanvasElement) => ({ width: element.width, height: element.height }));
+  const topHeight = resolution.width < 640 ? 122 : resolution.width < 900 ? 94 : 58;
+  const campaignScale = resolution.width < 640 ? Math.min(1, (resolution.width - 32) / 470) : 1;
+  const panelX = Math.max(16, Math.round((resolution.width - 470 * campaignScale) / 2));
+  const panelY = Math.max(topHeight + 18, Math.round((resolution.height - 402 * campaignScale) / 2));
+  const ashenOathPoint = { x: panelX + 120 * campaignScale, y: panelY + 170 * campaignScale };
+  const rivalDoctrinePoint = { x: panelX + 234 * campaignScale, y: panelY + 296 * campaignScale };
+
+  await page.mouse.click(
+    bounds.x + (ashenOathPoint.x / resolution.width) * bounds.width,
+    bounds.y + (ashenOathPoint.y / resolution.height) * bounds.height
+  );
+  await page.mouse.click(
+    bounds.x + (rivalDoctrinePoint.x / resolution.width) * bounds.width,
+    bounds.y + (rivalDoctrinePoint.y / resolution.height) * bounds.height
+  );
+  await expect(page.locator("#the-last-lesson-announcements")).toContainText("ASHEN OATH reign begins");
+}
+
 async function clickCanvasPoint(page: Page, point: { x: number; y: number }): Promise<void> {
   const canvas = page.locator("canvas");
   const bounds = await canvas.boundingBox();
@@ -79,6 +104,16 @@ test("renders a usable tactical canvas on a phone-sized viewport", async ({ page
   await expectRenderedCanvas(page);
   await beginCrownfallRivalReign(page);
   expect(pageErrors).toEqual([]);
+});
+
+test("surfaces and resolves Ashen Oath's opening civic crisis", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto("/");
+  await beginAshenOathRivalReign(page);
+  await expect(page.locator("#the-last-lesson-announcements")).toContainText("MEND CROWNKEEP: END THE PLAGUE");
+
+  await page.locator("canvas").press("c");
+  await expect(page.locator("#the-last-lesson-announcements")).toContainText("Mend Settlement petitioned");
 });
 
 test("exports a portable reign archive from the Book of Lessons", async ({ page }) => {

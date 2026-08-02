@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.5.2 - 2026-08-02
+
+- Added the `C` canvas shortcut for Mend Settlement at the active Crown seat, with browser coverage for Ashen Oath's player-facing emergency response.
+- Command-dock buttons now consume their pointer interaction before the map-selection handler, preserving selection after a tactical or civic command.
+
 ## 2.5.1 - 2026-08-02
 
 - Ashen Oath now begins with a bounded civic plague and a first Mandate to use Mend Settlement. The opening Faith reserve can cure it immediately; delaying remains survivable but has an explicit human cost before the captive and religious-pressure decisions begin.
