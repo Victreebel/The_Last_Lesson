@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.64.0 - 2026-08-01
+
+- Added deterministic clear-muster selection around a Castle. New player-trained and heir-trained battalions now avoid overlapping buildings and existing field forces; Stonewall's first defender no longer spawns on its gate.
+
 ## 1.63.0 - 2026-08-01
 
 - Reworked the expanded construction-palette tile metadata into compact Owned and Cost lines, preventing resource costs from overflowing adjacent building choices.

@@ -5,6 +5,7 @@ import type { GameEvent } from "./events/GameEvent";
 import { stableHash } from "./hash/stableHash";
 import { SeededRandom } from "./random/SeededRandom";
 import {
+  getBuildingFootprint,
   isBuildingTerrainCompatible,
   isBuildingPlacementClear,
   getBuildingCost,
@@ -302,7 +303,7 @@ export class Simulation {
         id: battalionId,
         ownerEmpireId: settlement.ownerEmpireId,
         settlementId: settlement.id,
-        position: { x: castle.position.x + 70, y: castle.position.y + 10 },
+        position: this.getMusterPosition(settlement.id) ?? { x: castle.position.x + 70, y: castle.position.y + 10 },
         specialization,
         size,
         attack: size * profile.attackPerUnit,
@@ -1514,7 +1515,7 @@ export class Simulation {
           id: battalionId,
           ownerEmpireId: settlement.ownerEmpireId,
           settlementId: settlement.id,
-          position: { x: castle.position.x + 70, y: castle.position.y + 10 },
+          position: this.getMusterPosition(settlement.id) ?? { x: castle.position.x + 70, y: castle.position.y + 10 },
           specialization: "militia",
           size,
           attack: size * profile.attackPerUnit,
@@ -2828,6 +2829,40 @@ export class Simulation {
 
   private isGarrisonable(kind: BuildingState["kind"]): boolean {
     return kind === "castle" || kind === "wall" || kind === "gate" || kind === "outpost";
+  }
+
+  private getMusterPosition(settlementId: string): Position | undefined {
+    const settlement = this.state.settlements[settlementId];
+    const castle = settlement ? this.state.buildings[settlement.centralBuildingId] : undefined;
+    if (!castle) {
+      return undefined;
+    }
+    const candidates: Position[] = [
+      { x: castle.position.x + 60, y: castle.position.y + 150 },
+      { x: castle.position.x - 8, y: castle.position.y + 92 },
+      { x: castle.position.x - 72, y: castle.position.y + 40 },
+      { x: castle.position.x - 64, y: castle.position.y - 56 },
+      { x: castle.position.x + 72, y: castle.position.y - 58 },
+      { x: castle.position.x + 86, y: castle.position.y + 70 },
+      { x: castle.position.x + 70, y: castle.position.y + 10 }
+    ];
+    const buildings = Object.values(this.state.buildings).sort((left, right) => left.id.localeCompare(right.id));
+    const fieldBattalions = Object.values(this.state.battalions)
+      .filter((battalion) => !battalion.garrisonedInBuildingId && !battalion.embarkedInCaravanId)
+      .sort((left, right) => left.id.localeCompare(right.id));
+    return candidates.find(
+      (candidate) =>
+        candidate.x >= 32 &&
+        candidate.x <= 1368 &&
+        candidate.y >= 32 &&
+        candidate.y <= 868 &&
+        terrainAtPosition(this.state, candidate) !== "water" &&
+        !buildings.some(
+          (building) =>
+            distance(building.position, candidate) < getBuildingFootprint(building.kind) + 32
+        ) &&
+        !fieldBattalions.some((battalion) => distance(battalion.position, candidate) < 64)
+    );
   }
 
   private getGarrisonCapacity(kind: BuildingState["kind"]): number {

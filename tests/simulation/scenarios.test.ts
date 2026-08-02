@@ -56,11 +56,14 @@ describe("campaign scenarios", () => {
 
     simulation.runTicks(9);
 
-    expect(simulation.getState().battalions["battalion-1-1"]).toMatchObject({
+    const militia = simulation.getState().battalions["battalion-1-1"];
+    expect(militia).toMatchObject({
       ownerEmpireId: "empire-player",
       specialization: "militia",
       size: 10
     });
+    const gate = simulation.getState().buildings["building-stonewall-gate"];
+    expect(Math.hypot(militia.position.x - gate.position.x, militia.position.y - gate.position.y)).toBeGreaterThan(80);
     expect(simulation.getState().settlements["settlement-capital"].population.militarizedCitizens).toBe(10);
   });
 });
