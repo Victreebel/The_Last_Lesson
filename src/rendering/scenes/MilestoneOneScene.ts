@@ -2194,20 +2194,28 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.buildingsPanelBody.setVisible(this.buildingsPanelExpanded);
     for (const [kind, tile] of this.buildingTiles) {
       const isSelected = kind === this.selectedBuildingKind;
+      const affordability = this.getBuildingAffordability(kind);
       tile.button.setVisible(this.buildingsPanelExpanded);
       tile.icon.setVisible(this.buildingsPanelExpanded);
       tile.label.setVisible(this.buildingsPanelExpanded);
       tile.count.setVisible(this.buildingsPanelExpanded);
       tile.button.setFillStyle(isSelected ? UI_COLORS.commandActive : UI_COLORS.command, 1);
       tile.button.setStrokeStyle(isSelected ? 2 : 1, isSelected ? UI_COLORS.accent : UI_COLORS.trim);
+      tile.button.setAlpha(affordability.canAfford ? 1 : 0.48);
+      tile.icon.setAlpha(affordability.canAfford ? 1 : 0.48);
+      tile.label.setAlpha(affordability.canAfford ? 1 : 0.48);
+      tile.count.setAlpha(affordability.canAfford ? 1 : 0.48);
       const cost = getBuildingCost(kind);
       tile.count.setText(`OWNED ${counts[kind] ?? 0}\nCOST ${cost.wood}W ${cost.iron}I`);
     }
 
     if (this.buildingsPanelExpanded) {
+      const affordability = this.selectedBuildingKind ? this.getBuildingAffordability(this.selectedBuildingKind) : undefined;
       this.buildingsPanelBody.setText(
         this.selectedBuildingKind
-          ? `READY: ${this.getBuildingLabel(this.selectedBuildingKind).toUpperCase()} // Select terrain to deploy.`
+          ? affordability?.canAfford
+            ? `READY: ${this.getBuildingLabel(this.selectedBuildingKind).toUpperCase()} // Select terrain to deploy.`
+            : `INSUFFICIENT: ${this.formatBuildingShortfall(affordability!)}.`
           : "Select a structure, then select terrain to deploy."
       );
     }
@@ -2232,6 +2240,11 @@ export class MilestoneOneScene extends Phaser.Scene {
   }
 
   private selectBuilding(kind: BuildingKind): void {
+    const affordability = this.getBuildingAffordability(kind);
+    if (!affordability.canAfford) {
+      this.updateUi([`${this.getBuildingLabel(kind)} requires ${this.formatBuildingShortfall(affordability)}.`]);
+      return;
+    }
     this.selectedBuildingKind = kind;
     this.mode = "building";
     this.buildingsPanelExpanded = false;
@@ -2241,6 +2254,29 @@ export class MilestoneOneScene extends Phaser.Scene {
 
   private getBuildingLabel(kind: BuildingKind): string {
     return BUILDING_OPTIONS.find((option) => option.kind === kind)?.label ?? kind;
+  }
+
+  private getBuildingAffordability(kind: BuildingKind): {
+    readonly canAfford: boolean;
+    readonly missingWood: number;
+    readonly missingIron: number;
+  } {
+    const resources = this.simulation.getState().empires["empire-player"].resources;
+    const cost = getBuildingCost(kind);
+    const missingWood = Math.max(0, cost.wood - resources.wood);
+    const missingIron = Math.max(0, cost.iron - resources.iron);
+    return { canAfford: missingWood === 0 && missingIron === 0, missingWood, missingIron };
+  }
+
+  private formatBuildingShortfall(affordability: {
+    readonly missingWood: number;
+    readonly missingIron: number;
+  }): string {
+    const needs = [
+      affordability.missingWood > 0 ? `${affordability.missingWood} WOOD` : undefined,
+      affordability.missingIron > 0 ? `${affordability.missingIron} IRON` : undefined
+    ].filter((need): need is string => Boolean(need));
+    return needs.length ? `NEED ${needs.join(" + ")}` : "RESOURCES READY";
   }
 
   private handlePointerDown(pointer: Phaser.Input.Pointer): void {
@@ -2384,8 +2420,9 @@ export class MilestoneOneScene extends Phaser.Scene {
       return false;
     }
     const position = this.snapToGrid(point);
-    if (!this.isValidBuildingPosition(kind, position)) {
-      this.updateUi(["Construction site blocked. Choose open terrain."]);
+    const placementFailure = this.getBuildingPlacementFailure(kind, position);
+    if (placementFailure) {
+      this.updateUi([placementFailure]);
       return false;
     }
 
@@ -2451,28 +2488,35 @@ export class MilestoneOneScene extends Phaser.Scene {
   }
 
   private isValidBuildingPosition(kind: BuildingKind, position: Phaser.Math.Vector2): boolean {
+    return !this.getBuildingPlacementFailure(kind, position);
+  }
+
+  private getBuildingPlacementFailure(kind: BuildingKind, position: Phaser.Math.Vector2): string | undefined {
     const size = BUILDING_SIZES[kind];
     if (position.x < size || position.y < size || position.x > 1400 - size || position.y > 900 - size) {
-      return false;
+      return "Construction must remain within the battlefield boundary.";
     }
 
-    if (
-      !isBuildingTerrainCompatible(kind, terrainAtPosition(this.simulation.getState(), position)) ||
-      !isBuildingPlacementClear(this.simulation.getState(), kind, position)
-    ) {
-      return false;
+    const state = this.simulation.getState();
+    const terrain = terrainAtPosition(state, position);
+    if (!isBuildingTerrainCompatible(kind, terrain)) {
+      return `${this.getBuildingLabel(kind)} cannot be deployed on ${terrain.replaceAll("-", " ")} terrain.`;
     }
 
-    const resources = this.simulation.getState().empires["empire-player"].resources;
-    const cost = getBuildingCost(kind);
-    if (resources.wood < cost.wood || resources.iron < cost.iron) {
-      return false;
+    const affordability = this.getBuildingAffordability(kind);
+    if (!affordability.canAfford) {
+      return `${this.getBuildingLabel(kind)} requires ${this.formatBuildingShortfall(affordability)}.`;
     }
 
-    return !Object.values(this.simulation.getState().buildings).some((building) => {
+    if (!isBuildingPlacementClear(state, kind, position)) {
+      return "Construction site overlaps an existing foundation or structure.";
+    }
+
+    const overlapsExistingBuilding = Object.values(state.buildings).some((building) => {
       const minimumDistance = (size + BUILDING_SIZES[building.kind]) * 0.55;
       return Phaser.Math.Distance.Between(position.x, position.y, building.position.x, building.position.y) < minimumDistance;
     });
+    return overlapsExistingBuilding ? "Construction site is too close to an existing structure." : undefined;
   }
 
   private isLinearBuilding(kind: BuildingKind): boolean {

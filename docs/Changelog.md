@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.85.0 - 2026-08-02
+
+- Added live affordability state to the construction palette; unaffordable structures dim and report their exact missing wood and/or iron before placement mode begins.
+- Replaced generic construction rejection with terrain, boundary, resource, foundation-overlap, and structure-clearance explanations.
+- Kept this as a renderer-side preflight only. Authoritative construction validation, command processing, saves, replays, and multiplayer authority remain unchanged.
+
 ## 1.84.0 - 2026-08-02
 
 - Expanded the Heir console's latest-lesson record to show doctrine domain, observed condition, intended purpose, and confidence alongside the governor's autonomous utility decision.
