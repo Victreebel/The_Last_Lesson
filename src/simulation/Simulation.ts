@@ -1805,33 +1805,46 @@ export class Simulation {
       if (!castle) {
         continue;
       }
-      const pressureSources = Object.values(this.state.settlements)
-        .filter((other) => other.ownerEmpireId !== settlement.ownerEmpireId)
+      const pressureSources = Object.values(this.state.empires)
+        .filter((empire) => empire.id !== settlement.ownerEmpireId)
         .reduce(
-          (totals, other) => {
-            const otherCastle = this.state.buildings[other.centralBuildingId];
-            if (!otherCastle) {
-              return totals;
-            }
+          (totals, rivalEmpire) => {
+            const rivalCastles = Object.values(this.state.settlements)
+              .filter((other) => other.ownerEmpireId === rivalEmpire.id)
+              .map((other) => this.state.buildings[other.centralBuildingId])
+              .filter((otherCastle): otherCastle is BuildingState => Boolean(otherCastle));
             return {
-              castle: totals.castle + Math.max(0, Math.floor(36 - distance(castle.position, otherCastle.position) / 18)),
+              castle:
+                totals.castle +
+                rivalCastles.reduce(
+                  (total, otherCastle) => total + Math.max(0, Math.floor(36 - distance(castle.position, otherCastle.position) / 18)),
+                  0
+                ),
               roads:
                 totals.roads +
-                this.getRoadReligiousPressure(other.ownerEmpireId, otherCastle.position, castle.position),
+                rivalCastles.reduce(
+                  (total, otherCastle) =>
+                    total + this.getRoadReligiousPressure(rivalEmpire.id, otherCastle.position, castle.position),
+                  0
+                ),
               caravans:
-                totals.caravans + this.getCaravanReligiousPressure(other.ownerEmpireId, castle.position)
+                totals.caravans + this.getCaravanReligiousPressure(rivalEmpire.id, castle.position),
+              outposts: totals.outposts + this.getOutpostReligiousPressure(rivalEmpire.id, castle.position)
             };
           },
-          { castle: 0, roads: 0, caravans: 0 }
+          { castle: 0, roads: 0, caravans: 0, outposts: 0 }
         );
       const rawExternalPressure = Math.min(
         100,
-        pressureSources.castle + pressureSources.roads + pressureSources.caravans
+        pressureSources.castle + pressureSources.roads + pressureSources.caravans + pressureSources.outposts
       );
       const wardPressure = Math.min(18, settlement.religiousWardTicks * 6);
       const externalPressure = Math.max(0, rawExternalPressure - wardPressure);
       const garrisonStrength = Object.values(this.state.battalions)
-        .filter((battalion) => battalion.ownerEmpireId === settlement.ownerEmpireId)
+        .filter(
+          (battalion) =>
+            battalion.ownerEmpireId === settlement.ownerEmpireId && battalion.settlementId === settlement.id
+        )
         .reduce((total, battalion) => total + battalion.size, 0);
       const totalPopulation = settlement.population.citizens + settlement.population.captives;
       const captiveRatio = totalPopulation === 0 ? 0 : (settlement.population.captives / totalPopulation) * 100;
@@ -1871,6 +1884,7 @@ export class Simulation {
           castlePressure: pressureSources.castle,
           roadPressure: pressureSources.roads,
           caravanPressure: pressureSources.caravans,
+          outpostPressure: pressureSources.outposts,
           wardPressure,
           rebellionPressure
         });
@@ -1904,6 +1918,19 @@ export class Simulation {
         0
       );
     return Math.min(12, influence);
+  }
+
+  private getOutpostReligiousPressure(empireId: string, target: Position): number {
+    const influence = Object.values(this.state.buildings)
+      .filter(
+        (building) =>
+          building.ownerEmpireId === empireId && building.kind === "outpost" && building.complete
+      )
+      .reduce(
+        (total, outpost) => total + Math.max(0, Math.floor(14 - distance(outpost.position, target) / 18)),
+        0
+      );
+    return Math.min(18, influence);
   }
 
   private updateCaptives(tick: number): void {

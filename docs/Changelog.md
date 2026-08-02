@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.41.0 - 2026-08-01
+
+- Enemy Outposts now project a bounded religious pressure beside castles, road corridors, and caravans. Pressure events expose every source.
+- Corrected rebellion security to count only a settlement's own battalions; armies stationed in distant domains no longer suppress local unrest.
+
 ## 1.40.0 - 2026-08-01
 
 - Added Plantation development for Luxury Groves. Dedicated luxury labor produces global Luxury, with transparent local happiness and devotion gains that feed the existing Faith system.

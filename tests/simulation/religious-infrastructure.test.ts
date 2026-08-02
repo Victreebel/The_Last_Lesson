@@ -3,7 +3,7 @@ import { Simulation } from "../../src/simulation/Simulation";
 import { createInitialWorld, type BuildingState, type CaravanState } from "../../src/simulation/state/WorldState";
 
 describe("religious infrastructure", () => {
-  it("lets an enemy road corridor and caravan increase external religious pressure", () => {
+  it("lets an enemy road corridor, caravan, and outpost increase external religious pressure", () => {
     const initial = createInitialWorld(5150);
     const rivalCastle = initial.buildings["building-rival-castle"];
     const capitalCastle = initial.buildings["building-castle"];
@@ -44,15 +44,25 @@ describe("religious infrastructure", () => {
       maxDefense: 100,
       speed: 32
     };
+    const outpost: BuildingState = {
+      id: "rival-doctrine-outpost",
+      ownerEmpireId: "empire-rival",
+      settlementId: "settlement-rival",
+      kind: "outpost",
+      position: { x: capitalCastle.position.x + 90, y: capitalCastle.position.y },
+      defense: 150,
+      complete: true,
+      remainingBuildTicks: 0
+    };
     const infrastructureWorld = {
       ...initial,
-      buildings: { ...initial.buildings, ...roads },
+      buildings: { ...initial.buildings, ...roads, [outpost.id]: outpost },
       caravans: { ...initial.caravans, [caravan.id]: caravan },
       settlements: {
         ...initial.settlements,
         "settlement-rival": {
           ...initial.settlements["settlement-rival"],
-          buildingIds: [...initial.settlements["settlement-rival"].buildingIds, ...Object.keys(roads)],
+          buildingIds: [...initial.settlements["settlement-rival"].buildingIds, ...Object.keys(roads), outpost.id],
           caravanIds: [caravan.id]
         }
       }
@@ -72,6 +82,7 @@ describe("religious infrastructure", () => {
     expect(infrastructurePressure).toBeGreaterThan(baselinePressure);
     expect(pressureEvent?.payload.roadPressure).toBeGreaterThan(0);
     expect(pressureEvent?.payload.caravanPressure).toBeGreaterThan(0);
+    expect(pressureEvent?.payload.outpostPressure).toBeGreaterThan(0);
     expect(rivalCastle.ownerEmpireId).toBe("empire-rival");
   });
 });
