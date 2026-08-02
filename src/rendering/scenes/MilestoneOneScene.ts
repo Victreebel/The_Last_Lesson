@@ -217,6 +217,7 @@ const UI_COLORS = {
 
 const LOCAL_SAVE_KEY = "the-last-lesson.primary-save.v1";
 const LOCAL_REPLAY_ORIGIN_KEY = "the-last-lesson.replay-origin.v1";
+const LOCAL_AUDIO_ENABLED_KEY = "the-last-lesson.audio-enabled.v1";
 
 interface BuildingTile {
   readonly button: Phaser.GameObjects.Rectangle;
@@ -272,6 +273,9 @@ export class MilestoneOneScene extends Phaser.Scene {
   private speedControlLabel!: Phaser.GameObjects.Text;
   private networkControl!: Phaser.GameObjects.Container;
   private networkControlLabel!: Phaser.GameObjects.Text;
+  private audioControl!: Phaser.GameObjects.Container;
+  private audioControlLabel!: Phaser.GameObjects.Text;
+  private audioEnabled = true;
   private bookControl!: Phaser.GameObjects.Container;
   private bookControlLabel!: Phaser.GameObjects.Text;
   private bookPanel!: Phaser.GameObjects.Container;
@@ -359,6 +363,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     });
 
     this.configureSimulationClock();
+    this.restoreAudioPreference();
 
     this.assignOpeningLabor();
     this.centerCameraOnSettlement(this.inspectedSettlementId);
@@ -692,7 +697,22 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.networkControl = this.add.container(0, 0, [networkButton, this.networkControlLabel]);
     this.networkControl.setScrollFactor(0).setDepth(41);
 
-    this.resourceText = this.add.text(696, 18, "", {
+    const audioButton = this.add.rectangle(690, 14, 56, 30, UI_COLORS.command, 1).setOrigin(0);
+    audioButton.setStrokeStyle(1, UI_COLORS.trim);
+    audioButton.setInteractive({ useHandCursor: true });
+    audioButton.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+      pointer.event.stopPropagation();
+      this.toggleAudio();
+    });
+    this.audioControlLabel = this.add.text(701, 23, "SFX ON", {
+      fontFamily: "Arial Black, Arial",
+      fontSize: "9px",
+      color: UI_COLORS.text
+    });
+    this.audioControl = this.add.container(0, 0, [audioButton, this.audioControlLabel]);
+    this.audioControl.setScrollFactor(0).setDepth(41);
+
+    this.resourceText = this.add.text(758, 18, "", {
       fontFamily: "Arial, sans-serif",
       fontSize: "13px",
       color: UI_COLORS.text
@@ -723,6 +743,31 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.speedControlLabel.setText(`SPEED ${this.gameSpeed}X`);
     this.configureSimulationClock();
     this.updateUi([`Simulation speed set to ${this.gameSpeed}X.`]);
+  }
+
+  private restoreAudioPreference(): void {
+    try {
+      this.audioEnabled = window.localStorage.getItem(LOCAL_AUDIO_ENABLED_KEY) !== "false";
+    } catch {
+      this.audioEnabled = true;
+    }
+    this.audio.setEnabled(this.audioEnabled);
+    this.audioControlLabel.setText(this.audioEnabled ? "SFX ON" : "SFX OFF");
+  }
+
+  private toggleAudio(): void {
+    this.audioEnabled = !this.audioEnabled;
+    this.audio.setEnabled(this.audioEnabled);
+    this.audioControlLabel.setText(this.audioEnabled ? "SFX ON" : "SFX OFF");
+    try {
+      window.localStorage.setItem(LOCAL_AUDIO_ENABLED_KEY, String(this.audioEnabled));
+    } catch {
+      // Audio preference is optional local presentation state.
+    }
+    if (this.audioEnabled) {
+      this.audio.play("command");
+    }
+    this.updateUi([this.audioEnabled ? "Tactical sound enabled." : "Tactical sound disabled."]);
   }
 
   private configureSimulationClock(): void {
@@ -2031,7 +2076,9 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.speedControlLabel.setPosition(speedX + 9, pauseY + 9);
     this.networkControl.setScale(narrow ? 0.7 : 1);
     this.networkControl.setPosition(narrow ? -85 : compact ? -164 : 0, narrow ? 48 : 0);
-    this.resourceText.setPosition(compact ? 18 : 696, narrow ? 88 : compact ? 47 : 19);
+    this.audioControl.setScale(narrow ? 0.7 : 1);
+    this.audioControl.setPosition(narrow ? -168 : compact ? -246 : 0, narrow ? 48 : 0);
+    this.resourceText.setPosition(compact ? 18 : 758, narrow ? 88 : compact ? 47 : 19);
     this.bookControl.setScale(narrow ? 0.7 : 1);
     this.realmControl.setScale(narrow ? 0.7 : 1);
     this.bookControl.setPosition(narrow ? -115 : 0, narrow ? 48 : 0);

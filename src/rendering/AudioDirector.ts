@@ -4,8 +4,14 @@ export type TacticalSound = "command" | "combat" | "naval" | "victory";
 export class AudioDirector {
   private context?: AudioContext;
   private lastCombatAt = 0;
+  private enabled = true;
+
+  setEnabled(enabled: boolean): void {
+    this.enabled = enabled;
+  }
 
   play(sound: TacticalSound): void {
+    if (!this.enabled) return;
     const now = Date.now();
     if ((sound === "combat" || sound === "naval") && now - this.lastCombatAt < 140) return;
     if (sound === "combat" || sound === "naval") this.lastCombatAt = now;

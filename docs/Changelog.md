@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.80.0 - 2026-08-02
+
+- Added a persistent `SFX ON/OFF` header control for optional tactical Web Audio.
+- The preference is local presentation state only and cannot affect simulation, saves, replays, or multiplayer authority.
+
 ## 1.79.0 - 2026-08-02
 
 - Added field feedback for Bless Harvest, Inspire Army, and Divine Judgment using authoritative `miracle-cast` events: a short expanding halo and named invocation at the affected settlement or battalion.
