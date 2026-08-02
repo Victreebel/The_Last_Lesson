@@ -9,7 +9,7 @@ The current browser prototype is a playable single-player campaign: establish th
 - Deterministic five-second simulation ticks, save/load, command logs, and replay-safe state.
 - Real-time battlefield camera, selection, movement, attack orders, garrisons, land caravans, and Warships.
 - Terrain-bound construction and harvesting: fertile farms, forest lumber mills, iron mines, roads, walls, gates, outposts, and housing.
-- Population, food, local growth, starvation, captives, rebellion, faith, religion, and miracles.
+- Population, food, local growth, starvation, captives, rebellion, faith, religion, and miracles. Road corridors and caravans also carry religious influence between empires.
 - Battalion specializations, supply, morale, visibility, enemy scouting, combat feedback, and empire-scoped victory.
 - Heirs with inspectable doctrine, utility decisions, concerns, rewards, punishments, and live lesson feedback.
 - Multi-settlement Crown management through castle selection and the compact `REALM` navigator.

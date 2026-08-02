@@ -839,6 +839,7 @@ export class MilestoneOneScene extends Phaser.Scene {
       `CURRENT HEIR: ${heir?.name.toUpperCase() ?? "UNASSIGNED"}`,
       `STATE: ${heir?.mode.toUpperCase() ?? "NONE"}  //  TRUST: ${heir?.trust ?? 0}`,
       `RIVAL DOCTRINE: ${RIVAL_DIFFICULTY_PROFILES[state.rivalDifficulty].label}`,
+      `FAITH: ${settlement?.internalFaith ?? 0}  //  RIVAL PRESSURE: ${settlement?.externalReligiousPressure ?? 0}`,
         "",
         "CONVICTIONS:",
         ...(doctrines.length
@@ -2440,7 +2441,8 @@ export class MilestoneOneScene extends Phaser.Scene {
         `SELECTION: ${this.selectedCaravanId ? "SUPPLY CARAVAN" : this.selectedBattalionIds.size ? `${this.selectedBattalionIds.size} BATTALION(S)` : "NO UNIT SELECTED"}`,
         `POPULATION: ${settlement.population.citizens}/${this.getCitizenCapacity(settlement.id)}  //  MILITARY: ${settlement.population.militarizedCitizens}  //  GROWTH: ${settlement.population.growthProgress}/80`,
         `LABOR: FARM ${settlement.population.farmers}  BUILD ${settlement.population.builders}  LUMBER ${settlement.population.lumberjacks}  MINE ${settlement.population.miners}`,
-        `CAPTIVES: ${settlement.population.captives}/${this.getCaptiveCapacity(settlement.id)}  //  REBELLION: ${settlement.pressures.rebellion}%`
+        `CAPTIVES: ${settlement.population.captives}/${this.getCaptiveCapacity(settlement.id)}  //  REBELLION: ${settlement.pressures.rebellion}%`,
+        `FAITH: ${settlement.internalFaith}  //  RIVAL PRESSURE: ${settlement.externalReligiousPressure}`
       ].join("\n")
     );
     const victory = state.victory.winnerEmpireId;

@@ -1724,15 +1724,26 @@ export class Simulation {
       if (!castle) {
         continue;
       }
-      const externalPressure = Object.values(this.state.settlements)
+      const pressureSources = Object.values(this.state.settlements)
         .filter((other) => other.ownerEmpireId !== settlement.ownerEmpireId)
-        .reduce((total, other) => {
-          const otherCastle = this.state.buildings[other.centralBuildingId];
-          if (!otherCastle) {
-            return total;
-          }
-          return total + Math.max(0, Math.floor(36 - distance(castle.position, otherCastle.position) / 18));
-        }, 0);
+        .reduce(
+          (totals, other) => {
+            const otherCastle = this.state.buildings[other.centralBuildingId];
+            if (!otherCastle) {
+              return totals;
+            }
+            return {
+              castle: totals.castle + Math.max(0, Math.floor(36 - distance(castle.position, otherCastle.position) / 18)),
+              roads:
+                totals.roads +
+                this.getRoadReligiousPressure(other.ownerEmpireId, otherCastle.position, castle.position),
+              caravans:
+                totals.caravans + this.getCaravanReligiousPressure(other.ownerEmpireId, castle.position)
+            };
+          },
+          { castle: 0, roads: 0, caravans: 0 }
+        );
+      const externalPressure = Math.min(100, pressureSources.castle + pressureSources.roads + pressureSources.caravans);
       const garrisonStrength = Object.values(this.state.battalions)
         .filter((battalion) => battalion.ownerEmpireId === settlement.ownerEmpireId)
         .reduce((total, battalion) => total + battalion.size, 0);
@@ -1770,12 +1781,41 @@ export class Simulation {
         this.eventWriter.emit(tick, "religious-pressure-changed", {
           settlementId: settlement.id,
           externalPressure,
+          castlePressure: pressureSources.castle,
+          roadPressure: pressureSources.roads,
+          caravanPressure: pressureSources.caravans,
           rebellionPressure
         });
       }
     }
 
     this.state = { ...this.state, settlements: nextSettlements };
+  }
+
+  private getRoadReligiousPressure(empireId: string, source: Position, target: Position): number {
+    const routeLength = distance(source, target);
+    if (routeLength < 80) {
+      return 0;
+    }
+    const routeSegments = Object.values(this.state.buildings).filter(
+      (building) =>
+        building.ownerEmpireId === empireId &&
+        building.kind === "road" &&
+        building.complete &&
+        distanceToSegment(building.position, source, target) <= 48
+    ).length;
+    const requiredSegments = Math.max(1, Math.ceil(routeLength / 96));
+    return Math.min(12, Math.floor((routeSegments / requiredSegments) * 12));
+  }
+
+  private getCaravanReligiousPressure(empireId: string, target: Position): number {
+    const influence = Object.values(this.state.caravans)
+      .filter((caravan) => caravan.ownerEmpireId === empireId)
+      .reduce(
+        (total, caravan) => total + Math.max(0, Math.floor(12 - distance(caravan.position, target) / 20)),
+        0
+      );
+    return Math.min(12, influence);
   }
 
   private updateCaptives(tick: number): void {
@@ -2578,6 +2618,20 @@ export class Simulation {
 
 function distance(a: Position, b: Position): number {
   return Math.hypot(a.x - b.x, a.y - b.y);
+}
+
+function distanceToSegment(point: Position, start: Position, end: Position): number {
+  const deltaX = end.x - start.x;
+  const deltaY = end.y - start.y;
+  const lengthSquared = deltaX * deltaX + deltaY * deltaY;
+  if (lengthSquared === 0) {
+    return distance(point, start);
+  }
+  const progress = Math.max(
+    0,
+    Math.min(1, ((point.x - start.x) * deltaX + (point.y - start.y) * deltaY) / lengthSquared)
+  );
+  return distance(point, { x: start.x + progress * deltaX, y: start.y + progress * deltaY });
 }
 
 function moveToward(from: Position, to: Position, maxDistance: number): Position {

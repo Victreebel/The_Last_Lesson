@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.30.0 - 2026-08-01
+
+- Roads now provide religious reach when they form a corridor between hostile thrones, and enemy caravans project a smaller mobile religious influence near a settlement.
+- Religious-pressure events now expose castle, road, and caravan sources. The Tactical Uplink and Book of Lessons show internal Faith alongside rival pressure.
+
 ## 1.29.0 - 2026-08-01
 
 - Reworked the narrow tactical layout for phone-sized viewports: the header reflows, resources wrap, governor/build controls share the available width, campaign panels scale to fit, and the command dock remains reachable.

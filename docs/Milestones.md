@@ -98,6 +98,7 @@ Implemented:
 - Campaign-opening Rival Doctrine profiles for fair, transparent difficulty that changes rival learning pace and opening grace rather than granting raw simulation bonuses.
 - Automatic local recovery saves every five ticks and a Continue Local Reign opening action, verified through a refresh-and-resume browser pass.
 - Responsive phone-sized layout pass: reflowed header, scaled campaign panels, accessible command dock, and intentional minimap/intel suppression where those surfaces cannot coexist without overlap.
+- Religious infrastructure: completed road corridors and nearby caravans now propagate opposing faith through the existing pressure, rebellion, and faith systems with deterministic source-level events.
 
 ## Milestone 4: Persistence Foundation
 
