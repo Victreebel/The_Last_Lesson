@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.76.0 - 2026-08-02
+
+- Replaced generic battalion rectangles with painterly formation markers for militia, spears, archers, raiders, and scout hounds, while preserving explicit labels, ranks, traits, selection, and visibility.
+- Added a painterly Warship marker while retaining the distinct supply-wagon presentation and existing transport interaction.
+- Kept unit art presentation-only: no combat value, target, path, visibility, command, save, replay, or multiplayer behavior changed.
+
 ## 1.75.0 - 2026-08-02
 
 - Replaced gray-box building presentation with a painterly isometric atlas for castles, civic structures, resource works, housing, roads, walls, gates, moats, and outposts.

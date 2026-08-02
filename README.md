@@ -24,6 +24,7 @@ The current browser prototype is a playable single-player campaign: establish th
 - An authoritative end-of-reign debrief records campaign duration, thrones taken, lessons taught, heir guidance, and Faith held.
 - Responsive tactical presentation: phone-sized views reflow the header and command surface, preserve the campaign choice, and suppress minimap/intel chrome that cannot fit without obscuring play.
 - A painterly isometric building atlas renders every construction type while retaining explicit ownership tint, terrain-aware labels, and the existing deterministic selection and placement hitboxes.
+- Painterly formation markers distinguish militia, spears, archers, raiders, scout hounds, and Warships at a glance while preserving tactical labels, ownership tint, and selection feedback.
 
 ## Run Locally
 

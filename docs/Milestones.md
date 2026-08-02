@@ -43,7 +43,7 @@ Acceptance:
 
 Known limitations:
 
-- Building art is painterly, but battalions and combat impacts remain functional tactical presentation.
+- Buildings and battalions use painterly assets, but combat impacts remain functional tactical presentation.
 - Combat has no projectile or attack cadence presentation yet.
 - Art, audio, and production-ready combat feedback remain future work.
 - Selection feedback is intentionally functional rather than final.

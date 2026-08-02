@@ -133,6 +133,18 @@ const BUILDING_ART_TILE_SIZE: Record<BuildingKind, number> = {
 
 const BUILDING_ATLAS_CELL_SIZE = 313.5;
 
+const UNIT_ART_FRAMES: Record<BattalionSpecialization, readonly [number, number]> = {
+  militia: [0, 0],
+  spears: [1, 0],
+  archers: [2, 0],
+  raiders: [0, 1],
+  hounds: [1, 1]
+};
+
+const UNIT_ATLAS_CELL_SIZE = 512;
+const UNIT_ATLAS_DISPLAY_WIDTH = 276;
+const UNIT_ATLAS_DISPLAY_HEIGHT = 184;
+
 const BUILDING_DISPLAY_LABELS: Record<BuildingKind, string> = {
   castle: "CASTLE",
   "military-quarters": "MILITARY\nQUARTERS",
@@ -320,6 +332,7 @@ export class MilestoneOneScene extends Phaser.Scene {
   preload(): void {
     this.load.image("painted-world", "assets/painterly-battlefield-v1.png");
     this.load.image("building-atlas", "assets/building-atlas-v1.png");
+    this.load.image("unit-atlas", "assets/unit-atlas-v1.png");
   }
 
   create(): void {
@@ -2985,24 +2998,30 @@ export class MilestoneOneScene extends Phaser.Scene {
     let container = this.battalionSprites.get(battalion.id);
 
     if (!container) {
-      const base = this.add.rectangle(
-        0,
-        0,
-        58,
-        36,
-        battalion.ownerEmpireId === "empire-player" ? 0x3d7391 : 0x9d4640,
-        1
+      const ownerColor = battalion.ownerEmpireId === "empire-player" ? 0x3d7391 : 0x9d4640;
+      const marker = this.add.ellipse(0, 0, 88, 52, ownerColor, 0.35);
+      marker.setStrokeStyle(2, 0x201614);
+      const [column, row] = UNIT_ART_FRAMES[battalion.specialization];
+      const art = this.add.image(0, 0, "unit-atlas");
+      art.setCrop(
+        column * UNIT_ATLAS_CELL_SIZE,
+        row * UNIT_ATLAS_CELL_SIZE,
+        UNIT_ATLAS_CELL_SIZE,
+        UNIT_ATLAS_CELL_SIZE
       );
-      base.setStrokeStyle(2, 0x201614);
-      const label = this.add.text(0, 0, this.getBattalionLabel(battalion), {
+      art.setDisplaySize(UNIT_ATLAS_DISPLAY_WIDTH, UNIT_ATLAS_DISPLAY_HEIGHT);
+      art.setOrigin((column + 0.5) / 3, (row + 0.5) / 2);
+      const label = this.add.text(0, 49, this.getBattalionLabel(battalion), {
         fontFamily: "Arial Black, Arial",
         fontSize: "9px",
-        color: "#ffffff"
+        color: "#ffffff",
+        stroke: "#10150f",
+        strokeThickness: 3
       });
       label.setOrigin(0.5);
       label.setAlign("center");
-      container = this.add.container(battalion.position.x, battalion.position.y, [base, label]);
-      container.setSize(58, 36);
+      container = this.add.container(battalion.position.x, battalion.position.y, [marker, art, label]);
+      container.setSize(96, 104);
       container.setInteractive({ useHandCursor: true });
       container.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
         pointer.event.stopPropagation();
@@ -3034,10 +3053,16 @@ export class MilestoneOneScene extends Phaser.Scene {
     }
 
     container.setPosition(battalion.position.x, battalion.position.y);
-    const base = container.getAt(0) as Phaser.GameObjects.Rectangle;
-    base.setFillStyle(battalion.ownerEmpireId === "empire-player" ? 0x3d7391 : 0x9d4640);
-    base.setStrokeStyle(this.selectedBattalionIds.has(battalion.id) ? 4 : 2, 0xf0d36f);
-    const label = container.getAt(1) as Phaser.GameObjects.Text;
+    const marker = container.getAt(0) as Phaser.GameObjects.Ellipse;
+    marker.setFillStyle(battalion.ownerEmpireId === "empire-player" ? 0x3d7391 : 0x9d4640, 0.35);
+    marker.setStrokeStyle(this.selectedBattalionIds.has(battalion.id) ? 4 : 2, 0xf0d36f);
+    const art = container.getAt(1) as Phaser.GameObjects.Image;
+    if (battalion.ownerEmpireId === "empire-player") {
+      art.clearTint();
+    } else {
+      art.setTint(0xe4aaaa);
+    }
+    const label = container.getAt(2) as Phaser.GameObjects.Text;
     label.setText(this.getBattalionLabel(battalion));
     container.setVisible(
       battalion.ownerEmpireId === "empire-player" ||
@@ -3057,15 +3082,26 @@ export class MilestoneOneScene extends Phaser.Scene {
         1
       );
       base.setStrokeStyle(2, 0x201614);
+      const shipArt = caravan.kind === "ship" ? this.add.image(0, 0, "unit-atlas") : undefined;
+      if (shipArt) {
+        shipArt.setCrop(2 * UNIT_ATLAS_CELL_SIZE, UNIT_ATLAS_CELL_SIZE, UNIT_ATLAS_CELL_SIZE, UNIT_ATLAS_CELL_SIZE);
+        shipArt.setDisplaySize(UNIT_ATLAS_DISPLAY_WIDTH, UNIT_ATLAS_DISPLAY_HEIGHT);
+        shipArt.setOrigin(2.5 / 3, 0.75);
+      }
       const label = this.add.text(0, 0, this.getCaravanLabel(caravan), {
         fontFamily: "Arial Black, Arial",
         fontSize: "8px",
         color: "#ffffff",
-        align: "center"
+        align: "center",
+        stroke: "#10150f",
+        strokeThickness: shipArt ? 3 : 0
       });
       label.setOrigin(0.5);
-      container = this.add.container(caravan.position.x, caravan.position.y, [base, label]);
-      container.setSize(54, 28);
+      if (shipArt) {
+        label.setY(49);
+      }
+      container = this.add.container(caravan.position.x, caravan.position.y, shipArt ? [base, shipArt, label] : [base, label]);
+      container.setSize(shipArt ? 96 : 54, shipArt ? 104 : 28);
       container.setInteractive({ useHandCursor: true });
       container.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
         pointer.event.stopPropagation();
@@ -3124,7 +3160,15 @@ export class MilestoneOneScene extends Phaser.Scene {
         : caravan.ownerEmpireId === "empire-player" ? 0xb58c43 : 0x7c4542
     );
     base.setStrokeStyle(this.selectedCaravanId === caravan.id ? 4 : 2, 0xf0d36f);
-    const label = container.getAt(1) as Phaser.GameObjects.Text;
+    const shipArt = caravan.kind === "ship" ? (container.getAt(1) as Phaser.GameObjects.Image) : undefined;
+    if (shipArt) {
+      if (caravan.ownerEmpireId === "empire-player") {
+        shipArt.clearTint();
+      } else {
+        shipArt.setTint(0xe4aaaa);
+      }
+    }
+    const label = container.getAt(caravan.kind === "ship" ? 2 : 1) as Phaser.GameObjects.Text;
     label.setText(this.getCaravanLabel(caravan));
     container.setVisible(
       caravan.ownerEmpireId === "empire-player" ||
