@@ -219,6 +219,7 @@ const LOCAL_SAVE_KEY = "the-last-lesson.primary-save.v1";
 const LOCAL_REPLAY_ORIGIN_KEY = "the-last-lesson.replay-origin.v1";
 const LOCAL_AUDIO_ENABLED_KEY = "the-last-lesson.audio-enabled.v1";
 const LOCAL_REDUCED_MOTION_KEY = "the-last-lesson.reduced-motion.v1";
+const LOCAL_CAMPAIGN_CHRONICLE_KEY = "the-last-lesson.campaign-chronicle.v1";
 
 interface BuildingTile {
   readonly button: Phaser.GameObjects.Rectangle;
@@ -241,6 +242,8 @@ interface ReplayReviewState {
 export class MilestoneOneScene extends Phaser.Scene {
   private campaignDifficulty: RivalDifficulty = "rival";
   private campaignScenario: ScenarioId = "crownfall";
+  private campaignChronicle: Partial<Record<ScenarioId, number>> = {};
+  private recordedCampaignVictoryScenario?: ScenarioId;
   private campaignInitialWorld: WorldState = createInitialWorld(777, this.campaignDifficulty, this.campaignScenario);
   private simulation = new Simulation(structuredClone(this.campaignInitialWorld));
   private remoteAuthority?: RemoteAuthorityClient;
@@ -353,6 +356,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.bindKeyboardControls();
 
     this.drawTerrain();
+    this.restoreCampaignChronicle();
     this.createUi();
     this.paused = true;
     this.pauseControlLabel.setText("SELECT");
@@ -793,6 +797,46 @@ export class MilestoneOneScene extends Phaser.Scene {
       // Motion preference is optional local presentation state.
     }
     this.updateUi([this.reducedMotion ? "Reduced motion enabled." : "Full motion enabled."]);
+  }
+
+  private restoreCampaignChronicle(): void {
+    try {
+      const parsed: unknown = JSON.parse(window.localStorage.getItem(LOCAL_CAMPAIGN_CHRONICLE_KEY) ?? "{}");
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        return;
+      }
+      const record = parsed as Record<string, unknown>;
+      const scenarios: readonly ScenarioId[] = ["crownfall", "rivergate", "ashen-oath", "stonewall"];
+      this.campaignChronicle = scenarios.reduce<Partial<Record<ScenarioId, number>>>((chronicle, scenario) => {
+        const victories = record[scenario];
+        if (typeof victories === "number" && Number.isSafeInteger(victories) && victories > 0) {
+          chronicle[scenario] = victories;
+        }
+        return chronicle;
+      }, {});
+    } catch {
+      this.campaignChronicle = {};
+    }
+  }
+
+  private getCampaignConquests(scenario: ScenarioId): number {
+    return this.campaignChronicle[scenario] ?? 0;
+  }
+
+  private recordCampaignVictory(scenario: ScenarioId): void {
+    if (this.recordedCampaignVictoryScenario === scenario) {
+      return;
+    }
+    this.recordedCampaignVictoryScenario = scenario;
+    this.campaignChronicle = {
+      ...this.campaignChronicle,
+      [scenario]: this.getCampaignConquests(scenario) + 1
+    };
+    try {
+      window.localStorage.setItem(LOCAL_CAMPAIGN_CHRONICLE_KEY, JSON.stringify(this.campaignChronicle));
+    } catch {
+      // Chronicle progress is optional local presentation state.
+    }
   }
 
   private configureSimulationClock(): void {
@@ -1272,6 +1316,7 @@ export class MilestoneOneScene extends Phaser.Scene {
       const x = 20 + (index % 2) * 214;
       const y = 82 + Math.floor(index / 2) * 70;
       const selected = scenario === this.campaignScenario;
+      const conquests = this.getCampaignConquests(scenario);
       const button = this.add.rectangle(x, y, 206, 56, selected ? UI_COLORS.commandActive : UI_COLORS.command, 1).setOrigin(0);
       button.setStrokeStyle(selected ? 2 : 1, selected ? UI_COLORS.accent : UI_COLORS.trim);
       button.setInteractive({ useHandCursor: true });
@@ -1279,10 +1324,10 @@ export class MilestoneOneScene extends Phaser.Scene {
         pointer.event.stopPropagation();
         this.selectCampaignScenario(scenario);
       });
-      const label = this.add.text(x + 10, y + 9, profile.label, {
+      const label = this.add.text(x + 10, y + 9, conquests ? `${profile.label} // CROWNED ${conquests}` : profile.label, {
         fontFamily: "Arial Black, Arial",
         fontSize: "10px",
-        color: UI_COLORS.text,
+        color: conquests ? "#f2d77f" : UI_COLORS.text,
         wordWrap: { width: 184 }
       });
       const detail = this.add.text(x + 10, y + 27, profile.summary.split(".")[0].toUpperCase(), {
@@ -1371,6 +1416,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.campaignInitialWorld = createInitialWorld(777, this.campaignDifficulty, this.campaignScenario);
     this.simulation = new Simulation(structuredClone(this.campaignInitialWorld));
     this.commandSequence = 0;
+    this.recordedCampaignVictoryScenario = undefined;
     this.replayReview = undefined;
     this.paused = false;
     this.inspectedSettlementId = "settlement-capital";
@@ -1424,6 +1470,10 @@ export class MilestoneOneScene extends Phaser.Scene {
       return;
     }
     const playerWon = report.winnerEmpireId === "empire-player";
+    if (playerWon) {
+      this.recordCampaignVictory(state.scenarioId);
+    }
+    const campaignConquests = this.getCampaignConquests(state.scenarioId);
     this.victoryTitle.setText(playerWon ? "THE CROWN ASCENDS" : "THE CROWN HAS FALLEN");
     this.victoryDetail.setText(
       playerWon
@@ -1432,7 +1482,8 @@ export class MilestoneOneScene extends Phaser.Scene {
             "",
             `REIGN ${formatReignDuration(report.durationSeconds)}  //  THRONES ${report.thronesCaptured}`,
             `LESSONS ${report.lessonsTaught}  //  HEIRS GUIDED ${report.heirsGuided}`,
-            `FAITH HELD ${report.faithHeld}`
+            `FAITH HELD ${report.faithHeld}`,
+            `CHRONICLE: ${SCENARIO_PROFILES[state.scenarioId].label.toUpperCase()} CROWNED ${campaignConquests}`
           ].join("\\n")
         : [
             "The rival crown holds every throne. A different doctrine must rise.",

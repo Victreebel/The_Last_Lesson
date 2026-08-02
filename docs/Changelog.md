@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.86.0 - 2026-08-02
+
+- Added a local Campaign Chronicle. Victories are recorded per Campaign Theatre opening and appear in the scenario selector and end-of-reign debrief.
+- Chronicle status is cosmetic progression: it never locks scenarios or enters simulation state, saves, replays, or multiplayer authority.
+
 ## 1.85.0 - 2026-08-02
 
 - Added live affordability state to the construction palette; unaffordable structures dim and report their exact missing wood and/or iron before placement mode begins.
