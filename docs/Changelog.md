@@ -561,3 +561,7 @@
 
 - Added capacity-limited battalion embarkation, synchronized transport movement, player disembarkation, and emergency ejection after caravan destruction.
 - Added Book of Lessons UI with heir doctrine history, recent event history, and local save/load controls.
+# 2.5.6 - 2026-08-02
+
+- Replaced raw internal event identifiers in the Tactical Uplink and Book of Lessons with a deterministic, player-facing Chronicle. Doctrine observations, heir decisions and concerns, miracles, civic crises, logistics, combat, and captures now report what happened and why using the existing immutable event payloads.
+- Added narrative regression coverage for doctrine, autonomous heir decisions, and Mend Settlement recovery without introducing a second simulation or history format.

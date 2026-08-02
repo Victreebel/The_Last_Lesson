@@ -7,6 +7,7 @@ import type { RemoteConnectionState } from "../../networking/RemoteAuthorityClie
 import type { AuthoritySnapshot } from "../../networking/LocalAuthority";
 import type { ServerMessage } from "../../networking/protocol";
 import { AudioDirector } from "../AudioDirector";
+import { describeGameEvent } from "../eventNarrative";
 import { Simulation } from "../../simulation/Simulation";
 import type { GameCommand } from "../../simulation/commands/GameCommand";
 import type { GameEvent } from "../../simulation/events/GameEvent";
@@ -977,7 +978,7 @@ export class MilestoneOneScene extends Phaser.Scene {
       this.updateUi(["Replay reached the live reign's current tick. Return to continue commanding."]);
       return;
     }
-    this.updateUi(result.events.map((event) => event.type).slice(-5));
+    this.updateUi(result.events.map((event) => this.describeEvent(event)).slice(-5));
   }
 
   private openMultiplayerLobby(): void {
@@ -1077,7 +1078,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.renderWorld();
     this.playCombatFeedback(snapshot.recentEvents);
     this.playMiracleFeedback(snapshot.recentEvents);
-    this.updateUi(snapshot.recentEvents.map((event) => event.type).slice(-5));
+    this.updateUi(snapshot.recentEvents.map((event) => this.describeEvent(event)).slice(-5));
   }
 
   private createLessonBanner(): void {
@@ -1710,7 +1711,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     const recentEvents = this.simulation
       .getEventLog()
       .slice(-6)
-      .map((event) => `${event.tick}: ${event.type.replaceAll("-", " ").toUpperCase()}`);
+      .map((event) => `${event.tick}: ${this.describeEvent(event)}`);
     this.bookPanelBody.setText(
       [
       `CURRENT SEAT: ${this.getSettlementDisplayName(settlement?.id)}`,
@@ -3916,6 +3917,38 @@ export class MilestoneOneScene extends Phaser.Scene {
     if (latestPlayerMessage?.includes(" ")) {
       this.announceAccessibility(latestPlayerMessage);
     }
+  }
+
+  private describeEvent(event: GameEvent): string {
+    const state = this.simulation.getState();
+    return describeGameEvent(event, {
+      settlementName: (id) => this.getSettlementDisplayName(id),
+      heirName: (id) => state.heirs[id ?? ""]?.name ?? "AN HEIR",
+      entityName: (id) => this.getEntityDisplayName(id)
+    });
+  }
+
+  private getEntityDisplayName(id: string | undefined): string {
+    if (!id) {
+      return "THE UNKNOWN";
+    }
+    const state = this.simulation.getState();
+    const battalion = state.battalions[id];
+    if (battalion) {
+      const owner = battalion.ownerEmpireId === "empire-player" ? "CROWN" : "RIVAL";
+      return `${owner} ${battalion.specialization.replaceAll("-", " ").toUpperCase()}`;
+    }
+    const building = state.buildings[id];
+    if (building) {
+      const owner = building.ownerEmpireId === "empire-player" ? "CROWN" : "RIVAL";
+      return `${owner} ${this.getBuildingLabel(building.kind).toUpperCase()}`;
+    }
+    const caravan = state.caravans[id];
+    if (caravan) {
+      const owner = caravan.ownerEmpireId === "empire-player" ? "CROWN" : "RIVAL";
+      return `${owner} ${caravan.kind === "ship" ? "WARSHIP" : "CARAVAN"}`;
+    }
+    return id.replaceAll("-", " ").toUpperCase();
   }
 
   private getModeLabel(): string {
