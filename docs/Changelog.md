@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.56.0 - 2026-08-01
+
+- Governing heirs now recognize unfinished infrastructure and deterministically reassign enough labor to complete foundations before pursuing other priorities.
+
 ## 1.55.0 - 2026-08-01
 
 - Made construction labor authoritative. Foundations now need assigned builders, each builder progresses one deterministic site per tick, and stalled sites emit an explainable event instead of silently completing.

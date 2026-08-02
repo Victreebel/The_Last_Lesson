@@ -1175,6 +1175,47 @@ export class Simulation {
         continue;
       }
 
+      const unfinishedBuildings = currentSettlement.buildingIds.filter((buildingId) => {
+        const building = this.state.buildings[buildingId];
+        return building && !building.complete;
+      }).length;
+      const requiredBuilders = Math.min(unfinishedBuildings, availableCitizens);
+      if (requiredBuilders > currentSettlement.population.builders) {
+        const remainingWorkers = Math.max(0, availableCitizens - requiredBuilders);
+        const farmers = Math.min(currentSettlement.population.farmers, remainingWorkers);
+        const lumberjacks = Math.min(currentSettlement.population.lumberjacks, Math.max(0, remainingWorkers - farmers));
+        const miners = Math.min(currentSettlement.population.miners, Math.max(0, remainingWorkers - farmers - lumberjacks));
+        const luxuryWorkers = Math.min(
+          currentSettlement.population.luxuryWorkers,
+          Math.max(0, remainingWorkers - farmers - lumberjacks - miners)
+        );
+        this.state = {
+          ...this.state,
+          settlements: {
+            ...this.state.settlements,
+            [currentSettlement.id]: {
+              ...currentSettlement,
+              population: {
+                ...currentSettlement.population,
+                builders: requiredBuilders,
+                farmers,
+                lumberjacks,
+                miners,
+                luxuryWorkers
+              }
+            }
+          }
+        };
+        this.recordHeirDecision(
+          currentHeir.id,
+          "Prioritize construction",
+          "Unfinished foundations required labor before the settlement could benefit from its planned infrastructure.",
+          66 + unfinishedBuildings * 6 + this.getDoctrineUtility(currentHeir, "Prioritize construction"),
+          tick
+        );
+        continue;
+      }
+
       const farmUtility =
         Math.max(0, 56 - currentSettlement.localFood) * 2 +
         Math.max(0, 8 - currentSettlement.population.farmers) * 10 +
