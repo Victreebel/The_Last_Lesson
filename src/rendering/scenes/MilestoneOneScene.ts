@@ -466,6 +466,10 @@ export class MilestoneOneScene extends Phaser.Scene {
     }
   }
 
+  private clearControlGroups(): void {
+    this.controlGroups.clear();
+  }
+
   update(): void {
     const camera = this.cameras.main;
     const speed = 8;
@@ -694,6 +698,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.speedControlLabel.setText("HOST SPEED");
     this.networkControlLabel.setText("ONLINE");
     this.clearSelection();
+    this.clearControlGroups();
 
     const authority = new RemoteAuthorityClient();
     this.remoteAuthority = authority;
@@ -1193,6 +1198,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.campaignSetupPending = false;
     this.campaignSetupPanel.setVisible(false);
     this.clearSelection();
+    this.clearControlGroups();
     this.selectedBuildingKind = null;
     this.mode = "select";
     this.clearPlacementPreview();
@@ -1321,6 +1327,7 @@ export class MilestoneOneScene extends Phaser.Scene {
       this.lessonBanner.setVisible(false);
       this.replayReview = undefined;
       this.clearSelection();
+      this.clearControlGroups();
       this.renderWorld();
       this.updateUi(["Local save restored."]);
     } catch {
@@ -1385,6 +1392,7 @@ export class MilestoneOneScene extends Phaser.Scene {
       this.paused = true;
       this.pauseControlLabel.setText("RESUME");
       this.clearSelection();
+      this.clearControlGroups();
       this.renderWorld();
       this.updateUi(["Returned to the live reign. Simulation remains paused."]);
       return;
@@ -1407,6 +1415,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.paused = true;
     this.pauseControlLabel.setText("PLAY REPLAY");
     this.clearSelection();
+    this.clearControlGroups();
     this.renderWorld();
     this.updateUi(["Replay review opened at tick 0. Resume or advance to study the reign."]);
   }
