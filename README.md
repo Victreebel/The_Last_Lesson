@@ -16,6 +16,7 @@ The current browser prototype is a playable single-player campaign: establish th
 - Heirs with inspectable doctrine, utility decisions, concerns, rewards, punishments, and live lesson feedback.
 - Multi-settlement Crown management through castle selection and the compact `REALM` navigator.
 - A campaign-opening rival doctrine choice: `DISCIPLE`, `RIVAL`, or `ARCHITECT` changes only the rival's opening grace and doctrine-learning pace, never grants hidden resources or combat bonuses.
+- Three deterministic Campaign Theatre openings: `CROWNFALL` for a balanced throne war, `RIVERGATE` for civic supply and naval play, and `ASHEN OATH` for captive management and religious defense.
 - Local save/load from the Book of Lessons, plus an automatic recovery save every five world ticks and a `CONTINUE LOCAL REIGN` entry point after refresh.
 - An authoritative end-of-reign debrief records campaign duration, thrones taken, lessons taught, heir guidance, and Faith held.
 - Responsive tactical presentation: phone-sized views reflow the header and command surface, preserve the campaign choice, and suppress minimap/intel chrome that cannot fit without obscuring play.

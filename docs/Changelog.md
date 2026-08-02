@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.36.0 - 2026-08-01
+
+- Added the Campaign Theatre with Crownfall, Rivergate, and Ashen Oath scenario openings before Rival Doctrine selection.
+- Scenarios are authoritative saved/replayed world state: Rivergate begins with civic transport capacity, while Ashen Oath begins with captives, a hovel, and a hostile religious road corridor.
+
 ## 1.35.0 - 2026-08-01
 
 - Added a transport-free `LocalAuthority` host that owns simulation time, command IDs, and immutable snapshots for deterministic local co-op and future network transport.

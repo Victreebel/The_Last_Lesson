@@ -33,10 +33,12 @@ describe("save games", () => {
     const save = createSaveGame(new Simulation(createInitialWorld(9002)));
     const legacy = JSON.parse(serializeSaveGame(save)) as { world: Record<string, unknown> };
     delete legacy.world.rivalDifficulty;
+    delete legacy.world.scenarioId;
 
     const restored = restoreSaveGame(deserializeSaveGame(JSON.stringify(legacy)));
 
     expect(restored.getState().rivalDifficulty).toBe("rival");
+    expect(restored.getState().scenarioId).toBe("crownfall");
     expect(() => restored.tick()).not.toThrow();
   });
 

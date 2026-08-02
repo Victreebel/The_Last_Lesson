@@ -27,6 +27,8 @@ import {
   type HeirState,
   type RivalDifficulty,
   RIVAL_DIFFICULTY_PROFILES,
+  type ScenarioId,
+  SCENARIO_PROFILES,
   type SettlementState,
   type TerrainKind,
   type TerrainZone,
@@ -164,7 +166,8 @@ interface HeirFeedbackControl {
 
 export class MilestoneOneScene extends Phaser.Scene {
   private campaignDifficulty: RivalDifficulty = "rival";
-  private campaignInitialWorld: WorldState = createInitialWorld(777, this.campaignDifficulty);
+  private campaignScenario: ScenarioId = "crownfall";
+  private campaignInitialWorld: WorldState = createInitialWorld(777, this.campaignDifficulty, this.campaignScenario);
   private simulation = new Simulation(structuredClone(this.campaignInitialWorld));
   private readonly audio = new AudioDirector();
   private commandSequence = 0;
@@ -728,34 +731,60 @@ export class MilestoneOneScene extends Phaser.Scene {
 
   private createCampaignSetupPanel(): void {
     const hasSavedReign = this.hasLocalSave();
-    const panelHeight = hasSavedReign ? 294 : 252;
+    const panelHeight = hasSavedReign ? 362 : 318;
     const background = this.add.rectangle(0, 0, 470, panelHeight, UI_COLORS.panelDeep, 0.98).setOrigin(0);
     background.setStrokeStyle(2, UI_COLORS.accent);
     background.setInteractive({ useHandCursor: false });
     background.on("pointerdown", (pointer: Phaser.Input.Pointer) => pointer.event.stopPropagation());
-    const title = this.add.text(20, 18, "RIVAL DOCTRINE", {
+    const title = this.add.text(20, 18, "CAMPAIGN THEATRE", {
       fontFamily: "Arial Black, Arial",
       fontSize: "19px",
       color: "#f2d77f"
     });
-    const subtitle = this.add.text(20, 50, "THE RIVAL LEARNS FROM ITS OWN REIGN.", {
+    const subtitle = this.add.text(20, 50, SCENARIO_PROFILES[this.campaignScenario].summary.toUpperCase(), {
       fontFamily: "Arial, sans-serif",
       fontSize: "11px",
       color: UI_COLORS.muted
     });
     const controls: Phaser.GameObjects.GameObject[] = [background, title, subtitle];
+    const scenarios: ScenarioId[] = ["crownfall", "rivergate", "ashen-oath"];
+    scenarios.forEach((scenario, index) => {
+      const profile = SCENARIO_PROFILES[scenario];
+      const x = 20 + index * 146;
+      const selected = scenario === this.campaignScenario;
+      const button = this.add.rectangle(x, 82, 136, 64, selected ? UI_COLORS.commandActive : UI_COLORS.command, 1).setOrigin(0);
+      button.setStrokeStyle(selected ? 2 : 1, selected ? UI_COLORS.accent : UI_COLORS.trim);
+      button.setInteractive({ useHandCursor: true });
+      button.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+        pointer.event.stopPropagation();
+        this.selectCampaignScenario(scenario);
+      });
+      const label = this.add.text(x + 10, 92, profile.label, {
+        fontFamily: "Arial Black, Arial",
+        fontSize: "10px",
+        color: UI_COLORS.text,
+        wordWrap: { width: 116 }
+      });
+      const detail = this.add.text(x + 10, 111, profile.summary.split(".")[0].toUpperCase(), {
+        fontFamily: "Arial, sans-serif",
+        fontSize: "8px",
+        color: UI_COLORS.muted,
+        wordWrap: { width: 116 }
+      });
+      controls.push(button, label, detail);
+    });
     const difficulties: RivalDifficulty[] = ["disciple", "rival", "architect"];
     difficulties.forEach((difficulty, index) => {
       const profile = RIVAL_DIFFICULTY_PROFILES[difficulty];
       const x = 20 + index * 146;
-      const button = this.add.rectangle(x, 88, 136, 116, UI_COLORS.command, 1).setOrigin(0);
+      const button = this.add.rectangle(x, 164, 136, 108, UI_COLORS.command, 1).setOrigin(0);
       button.setStrokeStyle(1, UI_COLORS.trim);
       button.setInteractive({ useHandCursor: true });
       button.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
         pointer.event.stopPropagation();
         this.startCampaign(difficulty);
       });
-      const label = this.add.text(x + 12, 106, profile.label, {
+      const label = this.add.text(x + 12, 181, profile.label, {
         fontFamily: "Arial Black, Arial",
         fontSize: "12px",
         color: UI_COLORS.text,
@@ -763,7 +792,7 @@ export class MilestoneOneScene extends Phaser.Scene {
       });
       const detail = this.add.text(
         x + 12,
-        148,
+        220,
         `GRACE ${profile.openingGraceTicks} TICKS\nLEARNING +${profile.doctrineConfidenceGain}`,
         {
           fontFamily: "Arial, sans-serif",
@@ -775,14 +804,14 @@ export class MilestoneOneScene extends Phaser.Scene {
       controls.push(button, label, detail);
     });
     if (hasSavedReign) {
-      const continueButton = this.add.rectangle(20, 220, 430, 42, UI_COLORS.commandActive, 1).setOrigin(0);
+      const continueButton = this.add.rectangle(20, 288, 430, 42, UI_COLORS.commandActive, 1).setOrigin(0);
       continueButton.setStrokeStyle(1, UI_COLORS.trim);
       continueButton.setInteractive({ useHandCursor: true });
       continueButton.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
         pointer.event.stopPropagation();
         this.loadLocalGame();
       });
-      const continueLabel = this.add.text(140, 234, "CONTINUE LOCAL REIGN", {
+      const continueLabel = this.add.text(140, 302, "CONTINUE LOCAL REIGN", {
         fontFamily: "Arial Black, Arial",
         fontSize: "11px",
         color: UI_COLORS.text
@@ -794,6 +823,16 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.campaignSetupPanel.setScrollFactor(0).setDepth(100).setVisible(true);
   }
 
+  private selectCampaignScenario(scenario: ScenarioId): void {
+    if (this.campaignScenario === scenario) {
+      return;
+    }
+    this.campaignScenario = scenario;
+    this.campaignSetupPanel.destroy(true);
+    this.createCampaignSetupPanel();
+    this.layoutUi();
+  }
+
   private startCampaign(difficulty: RivalDifficulty): void {
     this.campaignDifficulty = difficulty;
     this.campaignSetupPending = false;
@@ -802,7 +841,7 @@ export class MilestoneOneScene extends Phaser.Scene {
   }
 
   private restartCampaign(message = "A new reign begins."): void {
-    this.campaignInitialWorld = createInitialWorld(777, this.campaignDifficulty);
+    this.campaignInitialWorld = createInitialWorld(777, this.campaignDifficulty, this.campaignScenario);
     this.simulation = new Simulation(structuredClone(this.campaignInitialWorld));
     this.commandSequence = 0;
     this.paused = false;
@@ -905,6 +944,7 @@ export class MilestoneOneScene extends Phaser.Scene {
       }
       this.simulation = restoreSaveGame(deserializeSaveGame(serialized));
       this.campaignDifficulty = this.simulation.getState().rivalDifficulty;
+      this.campaignScenario = this.simulation.getState().scenarioId;
       this.restoreReplayOrigin();
       this.campaignSetupPending = false;
       this.campaignSetupPanel.setVisible(false);

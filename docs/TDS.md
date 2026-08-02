@@ -351,6 +351,16 @@ interface FogState {
 
 AI may only use information available to its empire.
 
+### 7.2 Authored Campaign Openings
+
+`WorldState.scenarioId` selects an authored opening profile before the match begins. Scenarios are authoritative save/replay data, not a renderer-only preset. The initial content set is:
+
+- `crownfall`: balanced economic opening and the default for legacy saves.
+- `rivergate`: completed Town Square, additional civic resources, and an opening that foregrounds supply and naval transport.
+- `ashen-oath`: captive population, an initial hovel, lower internal Faith, and a rival road corridor that amplifies religious pressure.
+
+Scenario content may alter opening state, structures, resources, and pressures, but must not change the fixed tick order or introduce non-deterministic rules. The campaign theatre selects a scenario first, then a Rival Doctrine difficulty profile.
+
 ---
 
 ## 8. Settlements and Buildings

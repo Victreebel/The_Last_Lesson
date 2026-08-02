@@ -28,6 +28,28 @@ export interface Position {
 
 export type RivalDifficulty = "disciple" | "rival" | "architect";
 
+export type ScenarioId = "crownfall" | "rivergate" | "ashen-oath";
+
+export interface ScenarioProfile {
+  readonly label: string;
+  readonly summary: string;
+}
+
+export const SCENARIO_PROFILES: Record<ScenarioId, ScenarioProfile> = {
+  crownfall: {
+    label: "CROWNFALL",
+    summary: "Balanced opening. Establish the Crown and break both rival thrones."
+  },
+  rivergate: {
+    label: "RIVERGATE",
+    summary: "A prepared civic port. Turn supply routes and warships into an advantage."
+  },
+  "ashen-oath": {
+    label: "ASHEN OATH",
+    summary: "Captives, rival roads, and religious pressure test the legitimacy of your rule."
+  }
+};
+
 export interface RivalDifficultyProfile {
   readonly label: string;
   readonly openingGraceTicks: number;
@@ -239,6 +261,7 @@ export interface HeirConcern {
 export interface WorldState {
   readonly tick: number;
   readonly seed: number;
+  readonly scenarioId: ScenarioId;
   readonly rivalDifficulty: RivalDifficulty;
   readonly victory: VictoryState;
   readonly terrainZones: TerrainZone[];
@@ -251,10 +274,16 @@ export interface WorldState {
   readonly doctrines: Record<DoctrineId, DoctrineRule>;
 }
 
-export function createInitialWorld(seed: number, rivalDifficulty: RivalDifficulty = "rival"): WorldState {
-  return {
+export function createInitialWorld(
+  seed: number,
+  rivalDifficulty: RivalDifficulty = "rival",
+  scenarioId: ScenarioId = "crownfall"
+): WorldState {
+  return applyScenario(
+    {
     tick: 0,
     seed,
+    scenarioId,
     rivalDifficulty,
     victory: {},
     terrainZones: [
@@ -529,6 +558,120 @@ export function createInitialWorld(seed: number, rivalDifficulty: RivalDifficult
       }
     },
     doctrines: {}
+    },
+    scenarioId
+  );
+}
+
+function applyScenario(world: WorldState, scenarioId: ScenarioId): WorldState {
+  if (scenarioId === "crownfall") {
+    return world;
+  }
+
+  const playerEmpire = world.empires["empire-player"];
+  const capital = world.settlements["settlement-capital"];
+  if (scenarioId === "rivergate") {
+    const townSquareId = "building-rivergate-town-square";
+    return {
+      ...world,
+      empires: {
+        ...world.empires,
+        "empire-player": {
+          ...playerEmpire,
+          resources: { ...playerEmpire.resources, wood: 56, iron: 4, faith: 8 }
+        }
+      },
+      settlements: {
+        ...world.settlements,
+        "settlement-capital": {
+          ...capital,
+          buildingIds: [...capital.buildingIds, townSquareId],
+          localFood: 48
+        }
+      },
+      buildings: {
+        ...world.buildings,
+        [townSquareId]: {
+          id: townSquareId,
+          ownerEmpireId: "empire-player",
+          settlementId: "settlement-capital",
+          kind: "town-square",
+          position: { x: 500, y: 400 },
+          defense: 120,
+          complete: true,
+          remainingBuildTicks: 0
+        }
+      }
+    };
+  }
+
+  const hovelId = "building-ashen-hovel";
+  const rivalRoadIds = ["building-ashen-road-1", "building-ashen-road-2", "building-ashen-road-3"];
+  return {
+    ...world,
+    empires: {
+      ...world.empires,
+      "empire-player": {
+        ...playerEmpire,
+        resources: { ...playerEmpire.resources, wood: 28, faith: 18 }
+      }
+    },
+    settlements: {
+      ...world.settlements,
+      "settlement-capital": {
+        ...capital,
+        buildingIds: [...capital.buildingIds, hovelId],
+        internalFaith: 34,
+        population: { ...capital.population, captives: 12, happiness: 62, loyalty: 68, devotion: 54 }
+      },
+      "settlement-rival": {
+        ...world.settlements["settlement-rival"],
+        buildingIds: [...world.settlements["settlement-rival"].buildingIds, ...rivalRoadIds]
+      }
+    },
+    buildings: {
+      ...world.buildings,
+      [hovelId]: {
+        id: hovelId,
+        ownerEmpireId: "empire-player",
+        settlementId: "settlement-capital",
+        kind: "hovel",
+        position: { x: 350, y: 330 },
+        defense: 80,
+        complete: true,
+        remainingBuildTicks: 0
+      },
+      "building-ashen-road-1": {
+        id: "building-ashen-road-1",
+        ownerEmpireId: "empire-rival",
+        settlementId: "settlement-rival",
+        kind: "road",
+        position: { x: 950, y: 365 },
+        defense: 40,
+        complete: true,
+        remainingBuildTicks: 0
+      },
+      "building-ashen-road-2": {
+        id: "building-ashen-road-2",
+        ownerEmpireId: "empire-rival",
+        settlementId: "settlement-rival",
+        kind: "road",
+        position: { x: 760, y: 340 },
+        defense: 40,
+        complete: true,
+        remainingBuildTicks: 0
+      },
+      "building-ashen-road-3": {
+        id: "building-ashen-road-3",
+        ownerEmpireId: "empire-rival",
+        settlementId: "settlement-rival",
+        kind: "road",
+        position: { x: 570, y: 320 },
+        defense: 40,
+        complete: true,
+        remainingBuildTicks: 0
+      }
+    }
   };
 }
 

@@ -2,7 +2,7 @@ import { Simulation } from "../Simulation";
 import type { SimulationConfig } from "../SimulationConfig";
 import type { GameCommand } from "../commands/GameCommand";
 import type { GameEvent } from "../events/GameEvent";
-import type { RivalDifficulty, WorldState } from "../state/WorldState";
+import type { RivalDifficulty, ScenarioId, WorldState } from "../state/WorldState";
 
 export const SAVE_FORMAT_VERSION = "1.1.0";
 
@@ -50,10 +50,16 @@ export function deserializeSaveGame(serialized: string): SaveGame {
     rivalDifficulty === "disciple" || rivalDifficulty === "architect" || rivalDifficulty === "rival"
       ? rivalDifficulty
       : "rival";
+  const scenarioId = (parsed.world as Partial<WorldState>).scenarioId;
+  const normalizedScenario: ScenarioId =
+    scenarioId === "rivergate" || scenarioId === "ashen-oath" || scenarioId === "crownfall"
+      ? scenarioId
+      : "crownfall";
   return {
     ...(parsed as SaveGame),
     world: {
       ...(parsed.world as WorldState),
+      scenarioId: normalizedScenario,
       rivalDifficulty: normalizedDifficulty,
       settlements: Object.fromEntries(
         Object.entries((parsed.world as WorldState).settlements).map(([settlementId, settlement]) => [
