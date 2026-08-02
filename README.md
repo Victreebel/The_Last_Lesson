@@ -74,6 +74,14 @@ It listens on `ws://127.0.0.1:8787` by default. Open `MULTI` from the top comman
 
 ## Quality Gates
 
+Run the complete local release check with:
+
+```sh
+pnpm check
+```
+
+GitHub Actions runs the same check for every pull request and `main` push, then retains the verified web build as the `the-last-lesson-web` artifact for fourteen days.
+
 ```sh
 pnpm build
 pnpm test

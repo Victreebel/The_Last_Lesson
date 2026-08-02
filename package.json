@@ -9,6 +9,7 @@
     "server:multiplayer": "tsx server/index.ts",
     "build": "tsc --noEmit && tsc --noEmit -p tsconfig.server.json && vite build",
     "test": "vitest run",
+    "check": "pnpm test && pnpm build",
     "test:watch": "vitest"
   },
   "dependencies": {

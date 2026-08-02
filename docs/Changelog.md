@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.82.0 - 2026-08-02
+
+- Added `pnpm check` as the canonical local release gate for the deterministic suite and production build.
+- GitHub verification now runs that same command and retains the tested `dist` bundle as a fourteen-day `the-last-lesson-web` artifact.
+
 ## 1.81.0 - 2026-08-02
 
 - Added deterministic opening-health coverage for Crownfall, Rivergate, Ashen Oath, and Stonewall. Each scenario must survive its first twelve unattended ticks with a living Crown settlement and no premature victory, and reproduce its full state and event history exactly from the same seed.
