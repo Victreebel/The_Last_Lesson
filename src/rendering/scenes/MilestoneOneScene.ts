@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { getEarnedScenarioHonor, SCENARIO_HONORS, type CampaignHonor } from "../../campaign/CampaignHonors";
 import { getCampaignChapter, getCampaignProgression } from "../../campaign/CampaignProgression";
+import { getImperialMandateProgress } from "../../campaign/ImperialMandate";
 import { storeMultiplayerReconnectToken, type MultiplayerConnectRequest } from "../../app/MultiplayerLobby";
 import type { CommandIntent } from "../../networking/LocalAuthority";
 import { RemoteAuthorityClient } from "../../networking/RemoteAuthorityClient";
@@ -2269,17 +2270,20 @@ export class MilestoneOneScene extends Phaser.Scene {
   private updateHeirPanel(): void {
     const settlement = this.getActiveSettlement();
     const heir = this.getActiveHeir();
+    const heirLessonIsMandated = getImperialMandateProgress(this.simulation.getState()).activeStep.id === "teach-heir";
     const doctrines = this.getHeirDoctrines(heir);
     const lastDoctrine = heir?.lastDoctrineId ? this.simulation.getState().doctrines[heir.lastDoctrineId] : undefined;
     const height = this.heirPanelExpanded ? 396 : 48;
 
     this.heirPanelBg.setSize(HEIR_PANEL_WIDTH, height);
     this.heirPanel.setSize(HEIR_PANEL_WIDTH, height);
+    this.heirPanelHeader.setFillStyle(heirLessonIsMandated ? UI_COLORS.commandActive : UI_COLORS.panelDeep, 0.98);
     this.heirPanelTitle.setText(
       this.heirPanelExpanded
         ? `HEIR // ${this.getSettlementDisplayName(settlement?.id)} [-]`
-        : `HEIR // ${this.getSettlementDisplayName(settlement?.id)} [+]`
+        : `HEIR // ${this.getSettlementDisplayName(settlement?.id)} [${heirLessonIsMandated ? "!" : "+"}]`
     );
+    this.heirPanelTitle.setColor(heirLessonIsMandated ? UI_COLORS.text : "#f2d77f");
     this.heirPanelBody.setVisible(this.heirPanelExpanded);
     this.heirFeedbackControls.forEach((control) => {
       control.button.setVisible(this.heirPanelExpanded);
@@ -3958,7 +3962,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.eventText.setText(
       victory
         ? `VICTORY // ${state.empires[victory]?.name.toUpperCase() ?? "THE WINNER"} HOLDS EVERY THRONE.`
-        : `MANDATE: ${this.getImperialMandate()}\nTHREAT: ${this.getThreatForecast(settlement)}\nLATEST INTEL: ${events.at(-1) ?? "NO NEW REPORTS."}`
+        : this.getTacticalUplinkMandate(settlement, events)
     );
     this.updateHeirPanel();
     this.updateLessonBanner();
@@ -4021,67 +4025,16 @@ export class MilestoneOneScene extends Phaser.Scene {
   }
 
   private getImperialMandate(): string {
-    const state = this.simulation.getState();
-    const playerSettlements = state.empires["empire-player"].settlementIds
-      .map((id) => state.settlements[id])
-      .filter((settlement): settlement is SettlementState => Boolean(settlement));
-    const hasFieldForce = Object.values(state.battalions).some(
-      (battalion) => battalion.ownerEmpireId === "empire-player"
-    );
+    return getImperialMandateProgress(this.simulation.getState()).activeStep.label;
+  }
 
-    if (state.scenarioId === "ashen-oath") {
-      const afflictedSettlement = playerSettlements.find((settlement) => (settlement.plagueTicks ?? 0) > 0);
-      if (afflictedSettlement) {
-        return `MEND ${this.getSettlementDisplayName(afflictedSettlement.id)}: END THE PLAGUE.`;
-      }
-      const captiveCount = playerSettlements.reduce((total, settlement) => total + settlement.population.captives, 0);
-      if (captiveCount > 0) {
-        return "SECURE THE CAPTIVES: ASSIMILATE OR RELEASE THEM.";
-      }
-    }
-
-    if (state.scenarioId === "rivergate") {
-      const hasCaravan = Object.values(state.caravans).some(
-        (caravan) => caravan.ownerEmpireId === "empire-player" && caravan.kind === "caravan"
-      );
-      if (!hasCaravan) {
-        return "COMMISSION A SUPPLY WAGON FROM THE TOWN SQUARE.";
-      }
-    }
-
-    if (state.scenarioId === "stonewall") {
-      if (!hasFieldForce) {
-        return "RAISE A BATTALION TO HOLD THE GATE.";
-      }
-      const gateIsGarrisoned = Object.values(state.buildings).some(
-        (building) =>
-          building.ownerEmpireId === "empire-player" &&
-          building.kind === "gate" &&
-          (building.garrisonBattalionIds?.length ?? 0) > 0
-      );
-      if (!gateIsGarrisoned) {
-        return "GARRISON A BATTALION IN THE GATE.";
-      }
-    }
-
-    const hasFarm = playerSettlements.some((settlement) =>
-      settlement.buildingIds.some((id) => state.buildings[id]?.kind === "farm" && state.buildings[id]?.complete)
-    );
-    if (!hasFarm) {
-      return "ESTABLISH A FARM ON FERTILE GROUND.";
-    }
-    if (!hasFieldForce) {
-      return "RAISE A BATTALION TO SECURE THE CROWN.";
-    }
-    const rivalObserved = Object.values(state.buildings).some(
-      (building) =>
-        building.ownerEmpireId === "empire-rival" &&
-        isPositionVisibleToEmpire(state, "empire-player", building.position)
-    );
-    if (!rivalObserved) {
-      return "SCOUT THE FRONTIER AND FIND THE RIVAL THRONE.";
-    }
-    return "BREAK THE RIVAL CASTLE AND TAKE THE THRONE.";
+  private getTacticalUplinkMandate(settlement: SettlementState, events: readonly string[]): string {
+    const mandate = getImperialMandateProgress(this.simulation.getState());
+    return [
+      `MANDATE ${Math.min(mandate.completedSteps + 1, mandate.steps.length)}/${mandate.steps.length}: ${mandate.activeStep.label}`,
+      `THREAT: ${this.getThreatForecast(settlement)}`,
+      `LATEST INTEL: ${events.at(-1) ?? "NO NEW REPORTS."}`
+    ].join("\n");
   }
 
   private getThreatForecast(settlement: SettlementState): string {

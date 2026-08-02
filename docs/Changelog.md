@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.3 - 2026-08-02
+
+- Turned the Imperial Mandate into a state-derived, scenario-aware first-session path with visible progress. Every theatre now leads through its distinct opening and the core economy, force, scouting, Heir-feedback, and conquest loop without adding tutorial flags to deterministic state.
+
 ## 2.6.2 - 2026-08-02
 
 - Made combat presentation specialization-aware without changing the deterministic combat system. Archer arrows, spear thrusts, close-combat strikes, and Warship cannon fire now read as different battlefield actions, with final impacts retained when a target is destroyed on the resolving tick.
