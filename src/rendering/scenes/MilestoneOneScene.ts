@@ -1574,10 +1574,11 @@ export class MilestoneOneScene extends Phaser.Scene {
         color: UI_COLORS.text,
         wordWrap: { width: 46 }
       });
-      const count = this.add.text(x + 10, y + 49, "", {
+      const count = this.add.text(x + 10, y + 43, "", {
         fontFamily: "Arial, sans-serif",
-        fontSize: "10px",
-        color: "#b6c5bb"
+        fontSize: "8px",
+        color: "#b6c5bb",
+        lineSpacing: 1
       });
       this.buildingsPanel.add([button, icon, label, count]);
       this.buildingTiles.set(option.kind, { button, icon, label, count });
@@ -1681,7 +1682,7 @@ export class MilestoneOneScene extends Phaser.Scene {
       tile.button.setFillStyle(isSelected ? UI_COLORS.commandActive : UI_COLORS.command, 1);
       tile.button.setStrokeStyle(isSelected ? 2 : 1, isSelected ? UI_COLORS.accent : UI_COLORS.trim);
       const cost = getBuildingCost(kind);
-      tile.count.setText(`DEPLOYED: ${counts[kind] ?? 0}  //  ${cost.wood}W ${cost.iron}I`);
+      tile.count.setText(`OWNED ${counts[kind] ?? 0}\nCOST ${cost.wood}W ${cost.iron}I`);
     }
 
     if (this.buildingsPanelExpanded) {

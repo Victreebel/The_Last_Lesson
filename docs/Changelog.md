@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.63.0 - 2026-08-01
+
+- Reworked the expanded construction-palette tile metadata into compact Owned and Cost lines, preventing resource costs from overflowing adjacent building choices.
+
 ## 1.62.0 - 2026-08-01
 
 - Added a nine-tick Stonewall militia regression test, proving the opening defender remains active through the scenario's initial defense window.
