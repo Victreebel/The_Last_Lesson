@@ -1446,7 +1446,7 @@ Simulation versions:
 The frozen gameplay architecture is implemented as a robust vertical slice. Remaining release work is product delivery rather than a new core-system design:
 
 - balance playtests across the four authored Campaign Theatre openings;
-- bespoke miracle presentation assets, plus remaining environment-art expansion;
+- remaining environment-art expansion and broader presentation-asset coverage;
 - onboarding and broader content tuning;
 - account identity, public matchmaking, persistence, and broader anti-cheat for internet multiplayer;
 - telemetry, accessibility audit, localization, storefront packaging, and separate public hosting for the authoritative multiplayer service.

@@ -82,6 +82,7 @@ Implemented:
 - Accessible pause/resume controls and verified responsive command-dock layout.
 - Interactive minimap for continuous strategic navigation and camera awareness.
 - Event-driven combat feedback for battle readability and tactical impact.
+- Data-driven miracle feedback with distinct harvest, inspiration, restoration, and divine-ward visual and audio treatments that stay outside authoritative simulation state.
 - A victory/defeat resolution screen that explains the crown outcome and starts a fresh deterministic reign without leaving the battlefield.
 - A rival governor that transitions from a protected opening into an explainable offensive expedition, providing a real strategic clock for every match.
 - Deterministic visibility for both the Crown and autonomous heirs, with hostile entities hidden until they are observed by a structure, battalion, or caravan.

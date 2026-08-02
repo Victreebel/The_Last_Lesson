@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.4 - 2026-08-02
+
+- Added data-driven, event-only miracle feedback. Bless Harvest, Inspire Army, Mend Settlement, and Divine Judgment now each have distinct world effects and audio cues while reduced-motion play retains the audible confirmation without forced animation.
+
 ## 2.6.3 - 2026-08-02
 
 - Turned the Imperial Mandate into a state-derived, scenario-aware first-session path with visible progress. Every theatre now leads through its distinct opening and the core economy, force, scouting, Heir-feedback, and conquest loop without adding tutorial flags to deterministic state.

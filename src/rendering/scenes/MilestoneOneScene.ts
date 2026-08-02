@@ -11,6 +11,7 @@ import type { ServerMessage } from "../../networking/protocol";
 import { AudioDirector } from "../AudioDirector";
 import { getCombatFeedbackPresentation } from "../combatPresentation";
 import { describeGameEvent, selectTacticalReportEvents } from "../eventNarrative";
+import { getMiracleFeedbackPresentation } from "../miraclePresentation";
 import { Simulation } from "../../simulation/Simulation";
 import type { GameCommand } from "../../simulation/commands/GameCommand";
 import type { GameEvent } from "../../simulation/events/GameEvent";
@@ -3501,14 +3502,15 @@ export class MilestoneOneScene extends Phaser.Scene {
   }
 
   private playMiracleFeedback(events: GameEvent[]): void {
-    if (this.reducedMotion) {
-      return;
-    }
     for (const event of events) {
-      if (event.type !== "miracle-cast") {
+      const feedback = getMiracleFeedbackPresentation(event);
+      if (!feedback) {
         continue;
       }
-      const miracle = String(event.payload.miracle ?? "");
+      this.audio.play(feedback.sound);
+      if (this.reducedMotion) {
+        continue;
+      }
       const battalionId = typeof event.payload.battalionId === "string" ? event.payload.battalionId : undefined;
       const settlementId = typeof event.payload.settlementId === "string" ? event.payload.settlementId : undefined;
       const settlement = settlementId ? this.simulation.getState().settlements[settlementId] : undefined;
@@ -3521,29 +3523,24 @@ export class MilestoneOneScene extends Phaser.Scene {
         continue;
       }
 
-      const style =
-        miracle === "bless-harvest"
-          ? { color: 0xb9d86d, label: "HARVEST BLESSED", radius: 30 }
-          : miracle === "inspire-battalion"
-            ? { color: 0xf2d77f, label: "ARMY INSPIRED", radius: 22 }
-            : miracle === "mend-settlement"
-              ? { color: 0x8ed4a5, label: "SETTLEMENT MENDED", radius: 34 }
-              : { color: 0x90c8df, label: "DIVINE WARD", radius: 38 };
-      const halo = this.add.circle(position.x, position.y, style.radius, style.color, 0.1);
-      halo.setStrokeStyle(3, style.color, 0.94).setDepth(32);
+      const halo = this.add.circle(position.x, position.y, feedback.radius, feedback.color, 0.1);
+      halo.setStrokeStyle(feedback.delivery === "judgment" ? 4 : 3, feedback.color, 0.94).setDepth(32);
       this.tweens.add({
         targets: halo,
-        scaleX: 2.4,
-        scaleY: 2.4,
+        scaleX: feedback.ringScale,
+        scaleY: feedback.ringScale,
         alpha: 0,
-        duration: 820,
+        duration: feedback.duration,
         ease: "Sine.easeOut",
         onComplete: () => halo.destroy()
       });
-      const title = this.add.text(position.x, position.y - style.radius - 24, style.label, {
+
+      this.playMiracleDelivery(position, feedback);
+
+      const title = this.add.text(position.x, position.y - feedback.radius - 24, feedback.label, {
         fontFamily: "Arial Black, Arial",
         fontSize: "10px",
-        color: `#${style.color.toString(16).padStart(6, "0")}`,
+        color: `#${feedback.accentColor.toString(16).padStart(6, "0")}`,
         stroke: "#10150f",
         strokeThickness: 3
       });
@@ -3552,10 +3549,108 @@ export class MilestoneOneScene extends Phaser.Scene {
         targets: title,
         y: title.y - 20,
         alpha: 0,
-        delay: 550,
+        delay: Math.round(feedback.duration * 0.52),
         duration: 450,
         ease: "Sine.easeIn",
         onComplete: () => title.destroy()
+      });
+    }
+  }
+
+  private playMiracleDelivery(
+    position: { x: number; y: number },
+    feedback: ReturnType<typeof getMiracleFeedbackPresentation>
+  ): void {
+    if (!feedback) {
+      return;
+    }
+    const particleRadius = feedback.radius + 10;
+    for (let index = 0; index < feedback.particleCount; index += 1) {
+      const angle = (index / feedback.particleCount) * Math.PI * 2;
+      const startRadius = feedback.delivery === "harvest" ? feedback.radius * 0.35 : particleRadius;
+      const particle = this.add.circle(
+        position.x + Math.cos(angle) * startRadius,
+        position.y + Math.sin(angle) * startRadius,
+        feedback.delivery === "harvest" ? 3 : 2,
+        feedback.accentColor,
+        0.92
+      );
+      particle.setDepth(33);
+      const endRadius = feedback.delivery === "harvest" ? particleRadius : feedback.radius * 0.25;
+      this.tweens.add({
+        targets: particle,
+        x: position.x + Math.cos(angle) * endRadius,
+        y: position.y + Math.sin(angle) * endRadius,
+        alpha: 0,
+        scaleX: feedback.delivery === "harvest" ? 0.5 : 1.9,
+        scaleY: feedback.delivery === "harvest" ? 0.5 : 1.9,
+        duration: feedback.duration,
+        ease: feedback.delivery === "harvest" ? "Sine.easeOut" : "Quad.easeIn",
+        onComplete: () => particle.destroy()
+      });
+    }
+
+    if (feedback.delivery === "inspiration") {
+      for (let index = 0; index < 4; index += 1) {
+        const angle = (index / 4) * Math.PI * 2;
+        const ray = this.add.line(
+          position.x,
+          position.y,
+          Math.cos(angle) * 8,
+          Math.sin(angle) * 8,
+          Math.cos(angle) * (feedback.radius + 18),
+          Math.sin(angle) * (feedback.radius + 18),
+          feedback.accentColor,
+          0.9
+        );
+        ray.setLineWidth(2).setDepth(33);
+        this.tweens.add({
+          targets: ray,
+          alpha: 0,
+          scaleX: 1.2,
+          scaleY: 1.2,
+          duration: feedback.duration,
+          ease: "Sine.easeOut",
+          onComplete: () => ray.destroy()
+        });
+      }
+      return;
+    }
+
+    if (feedback.delivery === "restoration") {
+      const cross = this.add.container(position.x, position.y);
+      const horizontal = this.add.rectangle(0, 0, feedback.radius, 4, feedback.accentColor, 0.9);
+      const vertical = this.add.rectangle(0, 0, 4, feedback.radius, feedback.accentColor, 0.9);
+      cross.add([horizontal, vertical]).setDepth(33);
+      this.tweens.add({
+        targets: cross,
+        alpha: 0,
+        scaleX: 1.7,
+        scaleY: 1.7,
+        duration: feedback.duration,
+        ease: "Sine.easeOut",
+        onComplete: () => cross.destroy()
+      });
+      return;
+    }
+
+    if (feedback.delivery === "judgment") {
+      const bolt = this.add.graphics().setDepth(34);
+      bolt.lineStyle(3, feedback.accentColor, 0.95);
+      bolt.beginPath();
+      bolt.moveTo(position.x - 10, position.y - 116);
+      bolt.lineTo(position.x + 7, position.y - 82);
+      bolt.lineTo(position.x - 6, position.y - 48);
+      bolt.lineTo(position.x + 4, position.y - 14);
+      bolt.lineTo(position.x, position.y);
+      bolt.strokePath();
+      this.tweens.add({
+        targets: bolt,
+        alpha: 0,
+        delay: 110,
+        duration: Math.round(feedback.duration * 0.62),
+        ease: "Quad.easeOut",
+        onComplete: () => bolt.destroy()
       });
     }
   }

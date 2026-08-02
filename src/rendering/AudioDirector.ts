@@ -1,9 +1,19 @@
-export type TacticalSound = "command" | "melee" | "ranged" | "naval" | "victory";
+export type TacticalSound =
+  | "command"
+  | "melee"
+  | "ranged"
+  | "naval"
+  | "miracle-harvest"
+  | "miracle-inspire"
+  | "miracle-mend"
+  | "miracle-judgment"
+  | "victory";
 
 /** Presentation-only Web Audio cues. The simulation never depends on this class. */
 export class AudioDirector {
   private context?: AudioContext;
   private lastCombatAt = 0;
+  private lastMiracleAt = 0;
   private enabled = true;
 
   setEnabled(enabled: boolean): void {
@@ -14,8 +24,11 @@ export class AudioDirector {
     if (!this.enabled) return;
     const now = Date.now();
     const isCombatSound = sound === "melee" || sound === "ranged" || sound === "naval";
+    const isMiracleSound = sound.startsWith("miracle-");
     if (isCombatSound && now - this.lastCombatAt < 140) return;
+    if (isMiracleSound && now - this.lastMiracleAt < 220) return;
     if (isCombatSound) this.lastCombatAt = now;
+    if (isMiracleSound) this.lastMiracleAt = now;
     try {
       const context = this.context ?? new AudioContext();
       this.context = context;
@@ -27,6 +40,10 @@ export class AudioDirector {
         melee: [116, 0.045, "sawtooth"],
         ranged: [246, 0.035, "triangle"],
         naval: [82, 0.06, "triangle"],
+        "miracle-harvest": [522, 0.04, "sine"],
+        "miracle-inspire": [392, 0.05, "triangle"],
+        "miracle-mend": [660, 0.045, "sine"],
+        "miracle-judgment": [174, 0.06, "square"],
         victory: [660, 0.09, "sine"]
       };
       const [frequency, volume, type] = settings[sound];
