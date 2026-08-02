@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.34.0 - 2026-08-01
+
+- Added Divine Judgment: an 18-Faith settlement ward that temporarily counters external religious pressure while raising local Faith, loyalty, and devotion.
+- Religious-pressure events now expose the active ward contribution, keeping divine counter-pressure fully explainable.
+
 ## 1.33.0 - 2026-08-01
 
 - Added `VERIFY REPLAY` to the Book of Lessons. It compares a fresh replay of the active reign against the authoritative state and event history without mutating either.

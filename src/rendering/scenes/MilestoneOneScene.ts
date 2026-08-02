@@ -999,7 +999,7 @@ export class MilestoneOneScene extends Phaser.Scene {
   }
 
   private createCommandDock(): void {
-    const background = this.add.rectangle(0, 0, 410, 380, UI_COLORS.panel, 0.96).setOrigin(0);
+    const background = this.add.rectangle(0, 0, 410, 434, UI_COLORS.panel, 0.96).setOrigin(0);
     background.setStrokeStyle(1, UI_COLORS.trim);
     background.setInteractive({ useHandCursor: false });
     background.on("pointerdown", (pointer: Phaser.Input.Pointer) => pointer.event.stopPropagation());
@@ -1039,6 +1039,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.addWideCommandButton(210, 258, "DISEMBARK", "SELECTED CARAVAN", () => this.disembarkCaravan());
     this.addWideCommandButton(14, 312, "GARRISON", "NEAREST DEFENSE WORKS", () => this.garrisonSelectedBattalions());
     this.addWideCommandButton(210, 312, "WARSHIP", "18W 4I / TOWN SQUARE", () => this.createShip());
+    this.addWideCommandButton(114, 366, "DIVINE JUDGMENT", "18 FAITH / RELIGIOUS WARD", () => this.castDivineJudgment());
   }
 
   private createMinimap(): void {
@@ -1471,7 +1472,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.intelPanel.setVisible(!narrow);
     this.intelPanel.setPosition(16, topHeight + 14);
     this.commandDock.setScale(narrow ? 0.86 : 1);
-    this.commandDock.setPosition(narrow ? 8 : 16, narrow ? Math.max(topHeight + 112, height - 350) : Math.max(topHeight + 220, height - 396));
+    this.commandDock.setPosition(narrow ? 8 : 16, narrow ? Math.max(topHeight + 112, height - 400) : Math.max(topHeight + 220, height - 450));
     this.minimapBounds = { x: Math.max(16, width - MINIMAP_WIDTH - 16), y: Math.max(topHeight + 210, height - MINIMAP_HEIGHT - 16) };
     this.minimapPanel.setVisible(!narrow);
     this.minimapGraphics.setVisible(!narrow);
@@ -2026,6 +2027,19 @@ export class MilestoneOneScene extends Phaser.Scene {
       });
     }
     this.updateUi([`Inspire Army petitioned for ${this.selectedBattalionIds.size} battalion(s).`]);
+  }
+
+  private castDivineJudgment(): void {
+    const settlement = this.getActiveControlledSettlement();
+    if (!settlement) {
+      this.updateUi(["Select a Crown castle before invoking Divine Judgment."]);
+      return;
+    }
+    this.issueCommand({
+      type: "cast-miracle",
+      payload: { empireId: "empire-player", kind: "divine-judgment", settlementId: settlement.id }
+    });
+    this.updateUi(["Divine Judgment petitioned. 18 Faith will shield this settlement from rival pressure."]);
   }
 
   private assimilateCaptives(): void {

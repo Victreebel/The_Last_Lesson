@@ -780,6 +780,48 @@ export class Simulation {
         return;
       }
 
+      if (command.payload.kind === "divine-judgment") {
+        const settlement = command.payload.settlementId
+          ? this.state.settlements[command.payload.settlementId]
+          : undefined;
+        if (!settlement || settlement.ownerEmpireId !== empire.id) {
+          this.eventWriter.emit(tick, "command-rejected", { commandId: command.id });
+          return;
+        }
+        this.state = {
+          ...this.state,
+          empires: {
+            ...this.state.empires,
+            [empire.id]: {
+              ...empire,
+              resources: { ...empire.resources, faith: empire.resources.faith - cost }
+            }
+          },
+          settlements: {
+            ...this.state.settlements,
+            [settlement.id]: {
+              ...settlement,
+              religiousWardTicks: 3,
+              internalFaith: Math.min(100, settlement.internalFaith + 8),
+              population: {
+                ...settlement.population,
+                loyalty: Math.min(100, settlement.population.loyalty + 4),
+                devotion: Math.min(100, settlement.population.devotion + 5)
+              }
+            }
+          }
+        };
+        this.eventWriter.emit(tick, "miracle-cast", {
+          commandId: command.id,
+          miracle: command.payload.kind,
+          settlementId: settlement.id,
+          faithCost: cost,
+          wardTicks: 3
+        });
+        this.observePlayerCommand(command, tick);
+        return;
+      }
+
       if (command.payload.kind === "bless-harvest") {
         const settlement = command.payload.settlementId
           ? this.state.settlements[command.payload.settlementId]
@@ -1743,7 +1785,12 @@ export class Simulation {
           },
           { castle: 0, roads: 0, caravans: 0 }
         );
-      const externalPressure = Math.min(100, pressureSources.castle + pressureSources.roads + pressureSources.caravans);
+      const rawExternalPressure = Math.min(
+        100,
+        pressureSources.castle + pressureSources.roads + pressureSources.caravans
+      );
+      const wardPressure = Math.min(18, settlement.religiousWardTicks * 6);
+      const externalPressure = Math.max(0, rawExternalPressure - wardPressure);
       const garrisonStrength = Object.values(this.state.battalions)
         .filter((battalion) => battalion.ownerEmpireId === settlement.ownerEmpireId)
         .reduce((total, battalion) => total + battalion.size, 0);
@@ -1769,6 +1816,7 @@ export class Simulation {
       const nextSettlement = {
         ...settlement,
         externalReligiousPressure: externalPressure,
+        religiousWardTicks: Math.max(0, settlement.religiousWardTicks - 1),
         pressures: {
           ...settlement.pressures,
           rebellion: rebellionPressure,
@@ -1784,6 +1832,7 @@ export class Simulation {
           castlePressure: pressureSources.castle,
           roadPressure: pressureSources.roads,
           caravanPressure: pressureSources.caravans,
+          wardPressure,
           rebellionPressure
         });
       }
@@ -2745,8 +2794,11 @@ function getSpecializationAdvantage(
   return 1;
 }
 
-function getMiracleCost(kind: "bless-harvest" | "inspire-battalion"): number {
-  return kind === "bless-harvest" ? 12 : 16;
+function getMiracleCost(kind: "bless-harvest" | "inspire-battalion" | "divine-judgment"): number {
+  if (kind === "bless-harvest") {
+    return 12;
+  }
+  return kind === "inspire-battalion" ? 16 : 18;
 }
 
 function getDoctrineObservation(command: GameCommand, state: WorldState): DoctrineObservation | undefined {
@@ -2872,7 +2924,11 @@ function getDoctrineObservation(command: GameCommand, state: WorldState): Doctri
         key: `miracle-${command.payload.kind}`,
         condition: "Faith reserves can support divine intervention",
         preferredAction:
-          command.payload.kind === "bless-harvest" ? "Bless harvests" : "Inspire battalions",
+          command.payload.kind === "bless-harvest"
+            ? "Bless harvests"
+            : command.payload.kind === "inspire-battalion"
+              ? "Inspire battalions"
+              : "Pronounce divine judgment",
         goal: "Strengthen divine rule"
       };
     case "reward-heir":

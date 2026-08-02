@@ -39,4 +39,17 @@ describe("save games", () => {
     expect(restored.getState().rivalDifficulty).toBe("rival");
     expect(() => restored.tick()).not.toThrow();
   });
+
+  it("defaults a legacy settlement's missing religious ward to zero", () => {
+    const save = createSaveGame(new Simulation(createInitialWorld(9003)));
+    const legacy = JSON.parse(serializeSaveGame(save)) as {
+      world: { settlements: Record<string, Record<string, unknown>> };
+    };
+    delete legacy.world.settlements["settlement-capital"].religiousWardTicks;
+
+    const restored = restoreSaveGame(deserializeSaveGame(JSON.stringify(legacy)));
+
+    expect(restored.getState().settlements["settlement-capital"].religiousWardTicks).toBe(0);
+    expect(() => restored.tick()).not.toThrow();
+  });
 });

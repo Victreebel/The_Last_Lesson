@@ -54,7 +54,18 @@ export function deserializeSaveGame(serialized: string): SaveGame {
     ...(parsed as SaveGame),
     world: {
       ...(parsed.world as WorldState),
-      rivalDifficulty: normalizedDifficulty
+      rivalDifficulty: normalizedDifficulty,
+      settlements: Object.fromEntries(
+        Object.entries((parsed.world as WorldState).settlements).map(([settlementId, settlement]) => [
+          settlementId,
+          {
+            ...settlement,
+            religiousWardTicks: Number.isInteger(settlement.religiousWardTicks)
+              ? settlement.religiousWardTicks
+              : 0
+          }
+        ])
+      )
     }
   };
 }

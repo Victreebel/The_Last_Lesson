@@ -123,6 +123,7 @@ export interface SettlementState {
   readonly localFood: number;
   readonly internalFaith: number;
   readonly externalReligiousPressure: number;
+  readonly religiousWardTicks: number;
   readonly pressures: SettlementPressures;
 }
 
@@ -346,6 +347,7 @@ export function createInitialWorld(seed: number, rivalDifficulty: RivalDifficult
         localFood: 60,
         internalFaith: 50,
         externalReligiousPressure: 0,
+        religiousWardTicks: 0,
         pressures: {
           food: 20,
           supply: 0,
@@ -386,6 +388,7 @@ export function createInitialWorld(seed: number, rivalDifficulty: RivalDifficult
         localFood: 60,
         internalFaith: 45,
         externalReligiousPressure: 0,
+        religiousWardTicks: 0,
         pressures: {
           food: 20,
           supply: 0,
@@ -426,6 +429,7 @@ export function createInitialWorld(seed: number, rivalDifficulty: RivalDifficult
         localFood: 54,
         internalFaith: 42,
         externalReligiousPressure: 0,
+        religiousWardTicks: 0,
         pressures: {
           food: 24,
           supply: 0,
