@@ -47,6 +47,7 @@ const BUILDING_OPTIONS: ReadonlyArray<{ readonly kind: BuildingKind; readonly la
   { kind: "military-quarters", label: "Military Quarters" },
   { kind: "mine", label: "Mine" },
   { kind: "lumber-mill", label: "Lumber Mill" },
+  { kind: "plantation", label: "Plantation" },
   { kind: "wall", label: "Wall" },
   { kind: "gate", label: "Gate" },
   { kind: "outpost", label: "Outpost" }
@@ -62,6 +63,7 @@ const BUILDING_COLORS: Record<BuildingKind, number> = {
   road: 0x866f55,
   mine: 0x6d7480,
   "lumber-mill": 0x735e40,
+  plantation: 0x9b7351,
   wall: 0x9a9788,
   gate: 0x566a74,
   outpost: 0xb2693f
@@ -77,6 +79,7 @@ const BUILDING_SIZES: Record<BuildingKind, number> = {
   road: 34,
   mine: 50,
   "lumber-mill": 50,
+  plantation: 52,
   wall: 54,
   gate: 54,
   outpost: 44
@@ -92,6 +95,7 @@ const BUILDING_DISPLAY_LABELS: Record<BuildingKind, string> = {
   road: "ROAD",
   mine: "MINE",
   "lumber-mill": "LUMBER\nMILL",
+  plantation: "PLANTATION",
   wall: "WALL",
   gate: "GATE",
   outpost: "OUTPOST"
@@ -124,7 +128,7 @@ const TERRAIN_DETAILS: Record<TerrainKind, string> = {
   fertile: "FARMS / FOOD",
   forest: "LUMBER MILLS / WOOD",
   "iron-vein": "MINES / IRON",
-  "luxury-grove": "VILLAS / LUXURY",
+  "luxury-grove": "PLANTATIONS / LUXURY",
   hills: "SLOW / DEFENSE +",
   water: "BLOCKS LAND UNITS",
   marsh: "SLOW / UNBUILDABLE"
@@ -282,7 +286,8 @@ export class MilestoneOneScene extends Phaser.Scene {
         farmers: 8,
         builders: 4,
         lumberjacks: 6,
-        miners: 0
+        miners: 0,
+        luxuryWorkers: 0
       }
     });
     this.renderWorld();
@@ -895,7 +900,14 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.clearPlacementPreview();
     this.issueCommand({
       type: "assign-labor",
-      payload: { settlementId: "settlement-capital", farmers: 8, builders: 4, lumberjacks: 6, miners: 0 }
+      payload: {
+        settlementId: "settlement-capital",
+        farmers: 8,
+        builders: 4,
+        lumberjacks: 6,
+        miners: 0,
+        luxuryWorkers: 0
+      }
     });
     this.renderWorld();
     this.updateUi([message]);
@@ -1138,10 +1150,11 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.addCommandButton(302, 42, "ADVANCE", "TICK", () => {
       this.advanceSimulation();
     });
-    this.addCommandButton(14, 96, "LABOR", "FOOD", () => this.setLaborFocus("farmers"));
-    this.addCommandButton(110, 96, "LABOR", "WOOD", () => this.setLaborFocus("lumberjacks"));
-    this.addCommandButton(206, 96, "LABOR", "IRON", () => this.setLaborFocus("miners"));
-    this.addCommandButton(302, 96, "LABOR", "BUILD", () => this.setLaborFocus("builders"));
+    this.addLaborButton(14, "FOOD", () => this.setLaborFocus("farmers"));
+    this.addLaborButton(90, "WOOD", () => this.setLaborFocus("lumberjacks"));
+    this.addLaborButton(166, "IRON", () => this.setLaborFocus("miners"));
+    this.addLaborButton(242, "BUILD", () => this.setLaborFocus("builders"));
+    this.addLaborButton(318, "LUX", () => this.setLaborFocus("luxuryWorkers"));
     this.addCommandButton(14, 150, "MILITIA", "FOOD 8", () => this.createBattalion("militia"));
     this.addCommandButton(110, 150, "SPEARS", "IRON 8", () => this.createBattalion("spears"));
     this.addCommandButton(206, 150, "ARCHERS", "WOOD 8", () => this.createBattalion("archers"));
@@ -1251,6 +1264,28 @@ export class MilestoneOneScene extends Phaser.Scene {
       color: UI_COLORS.text
     });
     const secondary = this.add.text(x + 8, y + 25, detail, {
+      fontFamily: "Arial, sans-serif",
+      fontSize: "9px",
+      color: "#b6c5bb"
+    });
+    this.commandDock.add([button, primary, secondary]);
+  }
+
+  private addLaborButton(x: number, detail: string, onClick: () => void): void {
+    const button = this.add.rectangle(x, 96, 70, 46, UI_COLORS.command, 1).setOrigin(0);
+    button.setStrokeStyle(1, UI_COLORS.trim);
+    button.setInteractive({ useHandCursor: true });
+    button.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+      pointer.event.stopPropagation();
+      this.audio.play("command");
+      onClick();
+    });
+    const primary = this.add.text(x + 7, 104, "LABOR", {
+      fontFamily: "Arial Black, Arial",
+      fontSize: "9px",
+      color: UI_COLORS.text
+    });
+    const secondary = this.add.text(x + 7, 121, detail, {
       fontFamily: "Arial, sans-serif",
       fontSize: "9px",
       color: "#b6c5bb"
@@ -2096,18 +2131,22 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.updateUi(["Warship queued. It launches on water and requires a Town Square, 18 wood, and 4 iron."]);
   }
 
-  private setLaborFocus(focus: "farmers" | "builders" | "lumberjacks" | "miners"): void {
+  private setLaborFocus(
+    focus: "farmers" | "builders" | "lumberjacks" | "miners" | "luxuryWorkers"
+  ): void {
     const settlement = this.getActiveControlledSettlement();
     if (!settlement) {
       this.updateUi(["Select a Crown castle before assigning labor."]);
       return;
     }
     const available = settlement.population.citizens - settlement.population.militarizedCitizens;
-    const roles: Array<"farmers" | "builders" | "lumberjacks" | "miners"> = [
+    const roles: Array<"farmers" | "builders" | "lumberjacks" | "miners" | "luxuryWorkers"> = [
       focus,
-      ...(["farmers", "builders", "lumberjacks", "miners"] as const).filter((role) => role !== focus)
+      ...(["farmers", "builders", "lumberjacks", "miners", "luxuryWorkers"] as const).filter(
+        (role) => role !== focus
+      )
     ];
-    const allocation = { farmers: 0, builders: 0, lumberjacks: 0, miners: 0 };
+    const allocation = { farmers: 0, builders: 0, lumberjacks: 0, miners: 0, luxuryWorkers: 0 };
     let remaining = available;
     for (const role of roles) {
       const assigned = Math.min(role === focus ? 12 : 4, remaining);
@@ -2641,15 +2680,15 @@ export class MilestoneOneScene extends Phaser.Scene {
     }
     this.resourceText.setText(
       this.scale.width < 640
-        ? `SEAT ${this.getSettlementDisplayName(settlement.id)}  //  TICK ${state.tick}\nFOOD ${settlement.localFood}  WOOD ${empire.resources.wood}  IRON ${empire.resources.iron}  FAITH ${empire.resources.faith}`
-        : `SEAT ${this.getSettlementDisplayName(settlement.id)}    FOOD ${settlement.localFood}    WOOD ${empire.resources.wood}    IRON ${empire.resources.iron}    FAITH ${empire.resources.faith}    TICK ${state.tick}`
+        ? `SEAT ${this.getSettlementDisplayName(settlement.id)}  //  TICK ${state.tick}\nFOOD ${settlement.localFood}  WOOD ${empire.resources.wood}  IRON ${empire.resources.iron}  LUX ${empire.resources.luxury}  FAITH ${empire.resources.faith}`
+        : `SEAT ${this.getSettlementDisplayName(settlement.id)}    FOOD ${settlement.localFood}    WOOD ${empire.resources.wood}    IRON ${empire.resources.iron}    LUX ${empire.resources.luxury}    FAITH ${empire.resources.faith}    TICK ${state.tick}`
     );
     this.statusText.setText(
       [
         `ORDER: ${this.getModeLabel()}`,
         `SELECTION: ${this.selectedCaravanId ? "SUPPLY CARAVAN" : this.selectedBattalionIds.size ? `${this.selectedBattalionIds.size} BATTALION(S)` : "NO UNIT SELECTED"}`,
         `POPULATION: ${settlement.population.citizens}/${this.getCitizenCapacity(settlement.id)}  //  MILITARY: ${settlement.population.militarizedCitizens}  //  GROWTH: ${settlement.population.growthProgress}/80`,
-        `LABOR: FARM ${settlement.population.farmers}  BUILD ${settlement.population.builders}  LUMBER ${settlement.population.lumberjacks}  MINE ${settlement.population.miners}`,
+        `LABOR: FARM ${settlement.population.farmers}  BUILD ${settlement.population.builders}  LUMBER ${settlement.population.lumberjacks}  MINE ${settlement.population.miners}  LUX ${settlement.population.luxuryWorkers}`,
         `CAPTIVES: ${settlement.population.captives}/${this.getCaptiveCapacity(settlement.id)}  //  REBELLION: ${settlement.pressures.rebellion}%`,
         `FAITH: ${settlement.internalFaith}  //  RIVAL PRESSURE: ${settlement.externalReligiousPressure}`
       ].join("\n")

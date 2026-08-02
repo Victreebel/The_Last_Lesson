@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.40.0 - 2026-08-01
+
+- Added Plantation development for Luxury Groves. Dedicated luxury labor produces global Luxury, with transparent local happiness and devotion gains that feed the existing Faith system.
+- Save format `1.2.0` adds luxury labor and migrates valid `1.1.0` saves with zero luxury workers.
+
 ## 1.39.0 - 2026-08-01
 
 - Added deterministic settlement defection. A settlement may transfer to the nearest rival throne only under catastrophic rebellion, strong external religious pressure, collapsed loyalty, and no local friendly battalion.

@@ -10,7 +10,8 @@ The current browser prototype is a playable single-player campaign: establish th
 - Versioned replay records that preserve an opening world, applied command log, and duration for deterministic verification and future player-facing replay review.
 - A tested local authoritative host foundation that accepts multiple co-op clients and broadcasts immutable deterministic snapshots; online transport remains a later production milestone.
 - Real-time battlefield camera, selection, movement, attack orders, garrisons, land caravans, and Warships.
-- Terrain-bound construction and harvesting: fertile farms, forest lumber mills, iron mines, roads, walls, gates, outposts, and housing.
+- Terrain-bound construction and harvesting: fertile farms, forest lumber mills, iron mines, luxury-grove plantations, roads, walls, gates, outposts, and housing.
+- Plantations generate global Luxury while improving their settlement's happiness and devotion, creating a peaceful route into stronger Faith generation.
 - Population, food, local growth, starvation, captives, rebellion, faith, religion, and miracles. Bless Harvest, Inspire Army, and Divine Judgment give Faith distinct economic, battlefield, and religious responses; road corridors and caravans also carry religious influence between empires. A catastrophic, ungarrisoned settlement can defect under overwhelming rival pressure, replacing its governor without killing them.
 - Battalion specializations, scout hounds, supply, morale, visibility, enemy scouting, combat feedback, and empire-scoped victory.
 - Heirs with inspectable doctrine, utility decisions, concerns, rewards, punishments, and live lesson feedback.

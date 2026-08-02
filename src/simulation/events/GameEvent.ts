@@ -8,6 +8,7 @@ export type EventType =
   | "starvation"
   | "wood-produced"
   | "iron-produced"
+  | "luxury-produced"
   | "faith-produced"
   | "miracle-cast"
   | "religious-pressure-changed"

@@ -488,6 +488,8 @@ Canonical resources:
 
 Food is local. Wood, iron, luxury, and hybrid resources are global unless later balance testing proves otherwise.
 
+Luxury Groves are developed with Plantations. Each active luxury worker produces one global Luxury per world tick, up to eight workers per completed Plantation. Luxury production improves local happiness and devotion, then indirectly strengthens Faith generation; it does not act as an unexplained direct stat upgrade.
+
 ### 10.2 Resource Philosophy
 
 Each resource answers one design question:

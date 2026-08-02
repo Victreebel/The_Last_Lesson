@@ -54,4 +54,19 @@ describe("save games", () => {
     expect(restored.getState().settlements["settlement-capital"].religiousWardTicks).toBe(0);
     expect(() => restored.tick()).not.toThrow();
   });
+
+  it("migrates version 1.1.0 saves without luxury labor", () => {
+    const save = createSaveGame(new Simulation(createInitialWorld(9004)));
+    const legacy = JSON.parse(serializeSaveGame(save)) as {
+      version: string;
+      world: { settlements: Record<string, { population: Record<string, unknown> }> };
+    };
+    legacy.version = "1.1.0";
+    delete legacy.world.settlements["settlement-capital"].population.luxuryWorkers;
+
+    const restored = restoreSaveGame(deserializeSaveGame(JSON.stringify(legacy)));
+
+    expect(restored.getState().settlements["settlement-capital"].population.luxuryWorkers).toBe(0);
+    expect(() => restored.tick()).not.toThrow();
+  });
 });

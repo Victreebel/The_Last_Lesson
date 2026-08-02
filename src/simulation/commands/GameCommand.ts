@@ -37,6 +37,7 @@ export interface AssignLaborPayload {
   readonly builders: number;
   readonly lumberjacks: number;
   readonly miners: number;
+  readonly luxuryWorkers?: number;
 }
 
 export interface PlaceBuildingPayload {

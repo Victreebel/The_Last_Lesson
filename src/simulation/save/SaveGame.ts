@@ -4,7 +4,8 @@ import type { GameCommand } from "../commands/GameCommand";
 import type { GameEvent } from "../events/GameEvent";
 import type { RivalDifficulty, ScenarioId, WorldState } from "../state/WorldState";
 
-export const SAVE_FORMAT_VERSION = "1.1.0";
+export const SAVE_FORMAT_VERSION = "1.2.0";
+const LEGACY_SAVE_FORMAT_VERSION = "1.1.0";
 
 export interface SaveGame {
   readonly format: "the-last-lesson-save";
@@ -36,7 +37,7 @@ export function deserializeSaveGame(serialized: string): SaveGame {
   const parsed = JSON.parse(serialized) as Partial<SaveGame>;
   if (
     parsed.format !== "the-last-lesson-save" ||
-    parsed.version !== SAVE_FORMAT_VERSION ||
+    (parsed.version !== SAVE_FORMAT_VERSION && parsed.version !== LEGACY_SAVE_FORMAT_VERSION) ||
     !parsed.world ||
     typeof parsed.eventSequence !== "number" ||
     !Array.isArray(parsed.pendingCommands) ||
@@ -56,7 +57,12 @@ export function deserializeSaveGame(serialized: string): SaveGame {
       ? scenarioId
       : "crownfall";
   return {
-    ...(parsed as SaveGame),
+    format: "the-last-lesson-save",
+    version: SAVE_FORMAT_VERSION,
+    eventSequence: parsed.eventSequence,
+    pendingCommands: parsed.pendingCommands as GameCommand[],
+    commandLog: parsed.commandLog as GameCommand[],
+    eventLog: parsed.eventLog as GameEvent[],
     world: {
       ...(parsed.world as WorldState),
       scenarioId: normalizedScenario,
@@ -66,6 +72,12 @@ export function deserializeSaveGame(serialized: string): SaveGame {
           settlementId,
           {
             ...settlement,
+            population: {
+              ...settlement.population,
+              luxuryWorkers: Number.isInteger(settlement.population.luxuryWorkers)
+                ? settlement.population.luxuryWorkers
+                : 0
+            },
             religiousWardTicks: Number.isInteger(settlement.religiousWardTicks)
               ? settlement.religiousWardTicks
               : 0

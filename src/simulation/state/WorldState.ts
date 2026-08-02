@@ -126,6 +126,7 @@ export interface CitizenPopulation {
   readonly builders: number;
   readonly lumberjacks: number;
   readonly miners: number;
+  readonly luxuryWorkers: number;
   readonly happiness: number;
   readonly loyalty: number;
   readonly devotion: number;
@@ -159,6 +160,7 @@ export type BuildingKind =
   | "road"
   | "mine"
   | "lumber-mill"
+  | "plantation"
   | "wall"
   | "gate"
   | "outpost";
@@ -367,6 +369,7 @@ export function createInitialWorld(
           builders: 0,
           lumberjacks: 0,
           miners: 0,
+          luxuryWorkers: 0,
           happiness: 70,
           loyalty: 80,
           devotion: 65,
@@ -408,6 +411,7 @@ export function createInitialWorld(
           builders: 4,
           lumberjacks: 4,
           miners: 0,
+          luxuryWorkers: 0,
           happiness: 65,
           loyalty: 75,
           devotion: 55,
@@ -449,6 +453,7 @@ export function createInitialWorld(
           builders: 2,
           lumberjacks: 4,
           miners: 0,
+          luxuryWorkers: 0,
           happiness: 62,
           loyalty: 72,
           devotion: 50,
@@ -719,6 +724,9 @@ export function isBuildingTerrainCompatible(kind: BuildingKind, terrain: Terrain
   if (kind === "mine") {
     return terrain === "iron-vein";
   }
+  if (kind === "plantation") {
+    return terrain === "luxury-grove";
+  }
   if (kind === "villa") {
     return terrain === "grassland" || terrain === "fertile" || terrain === "luxury-grove";
   }
@@ -740,6 +748,7 @@ export function getBuildingCost(kind: BuildingKind): ResourceCost {
       return { wood: 14, iron: 0 };
     case "mine":
     case "lumber-mill":
+    case "plantation":
     case "outpost":
       return { wood: 10, iron: 0 };
     case "road":

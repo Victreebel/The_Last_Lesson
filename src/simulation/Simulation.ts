@@ -156,7 +156,8 @@ export class Simulation {
         command.payload.farmers +
         command.payload.builders +
         command.payload.lumberjacks +
-        command.payload.miners;
+        command.payload.miners +
+        (command.payload.luxuryWorkers ?? 0);
       const available = settlement.population.citizens - settlement.population.militarizedCitizens;
 
       if (assigned > available) {
@@ -175,7 +176,8 @@ export class Simulation {
               farmers: command.payload.farmers,
               builders: command.payload.builders,
               lumberjacks: command.payload.lumberjacks,
-              miners: command.payload.miners
+              miners: command.payload.miners,
+              luxuryWorkers: command.payload.luxuryWorkers ?? 0
             }
           }
         }
@@ -1209,6 +1211,16 @@ export class Simulation {
                     0,
                     remainingWorkers - settlement.population.builders - settlement.population.lumberjacks
                   )
+                ),
+                luxuryWorkers: Math.min(
+                  settlement.population.luxuryWorkers,
+                  Math.max(
+                    0,
+                    remainingWorkers -
+                      settlement.population.builders -
+                      settlement.population.lumberjacks -
+                      settlement.population.miners
+                  )
                 )
               }
             }
@@ -1592,9 +1604,12 @@ export class Simulation {
       const lumberCapacity =
         operationalBuildings.filter((building) => building.kind === "lumber-mill").length * 8;
       const mineCapacity = operationalBuildings.filter((building) => building.kind === "mine").length * 8;
+      const plantationCapacity =
+        operationalBuildings.filter((building) => building.kind === "plantation").length * 8;
       const foodProduced = Math.min(settlement.population.farmers, farmCapacity) * 2;
       const woodProduced = Math.min(settlement.population.lumberjacks, lumberCapacity);
       const ironProduced = Math.min(settlement.population.miners, mineCapacity);
+      const luxuryProduced = Math.min(settlement.population.luxuryWorkers, plantationCapacity);
       const empire = this.state.empires[settlement.ownerEmpireId];
 
       this.state = {
@@ -1606,7 +1621,8 @@ export class Simulation {
             resources: {
               ...empire.resources,
               wood: empire.resources.wood + woodProduced,
-              iron: empire.resources.iron + ironProduced
+              iron: empire.resources.iron + ironProduced,
+              luxury: empire.resources.luxury + luxuryProduced
             }
           }
         },
@@ -1614,7 +1630,15 @@ export class Simulation {
           ...this.state.settlements,
           [settlement.id]: {
             ...settlement,
-            localFood: settlement.localFood + foodProduced
+            localFood: settlement.localFood + foodProduced,
+            population:
+              luxuryProduced > 0
+                ? {
+                    ...settlement.population,
+                    happiness: Math.min(100, settlement.population.happiness + Math.min(2, luxuryProduced)),
+                    devotion: Math.min(100, settlement.population.devotion + 1)
+                  }
+                : settlement.population
           }
         }
       };
@@ -1637,6 +1661,14 @@ export class Simulation {
         this.eventWriter.emit(tick, "iron-produced", {
           settlementId: settlement.id,
           amount: ironProduced
+        });
+      }
+      if (luxuryProduced > 0) {
+        this.eventWriter.emit(tick, "luxury-produced", {
+          settlementId: settlement.id,
+          amount: luxuryProduced,
+          happinessGain: Math.min(2, luxuryProduced),
+          devotionGain: 1
         });
       }
     }
@@ -2782,6 +2814,7 @@ function getBuildingStats(kind: BuildingState["kind"]): { defense: number; build
     case "villa":
     case "lumber-mill":
     case "mine":
+    case "plantation":
       return { defense: 75, buildTicks: 3 };
     case "wall":
       return { defense: 250, buildTicks: 4 };
@@ -2897,7 +2930,8 @@ function getDoctrineObservation(command: GameCommand, state: WorldState): Doctri
         ["farm", command.payload.farmers],
         ["build", command.payload.builders],
         ["lumber", command.payload.lumberjacks],
-        ["mine", command.payload.miners]
+        ["mine", command.payload.miners],
+        ["luxury", command.payload.luxuryWorkers ?? 0]
       ] as const;
       const [focus] = [...assignments].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0];
       return {
