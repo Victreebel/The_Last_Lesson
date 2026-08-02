@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.51.0 - 2026-08-01
+
+- Added explicit Retreat to Crown orders. Retreat clears a battalion's target, routes it to its home Castle, carries a small morale cost, and becomes an observable military lesson.
+
 ## 1.50.0 - 2026-08-01
 
 - Added derived battalion battlefield traits. Repeated terrain combat produces Forest Veterans, Hill Fighters, or Marsh Runners with improved traversal; repeated structure attacks produce Siege Specialists with a bounded siege-only bonus.

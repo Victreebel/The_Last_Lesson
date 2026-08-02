@@ -478,6 +478,55 @@ export class Simulation {
       return;
     }
 
+    if (command.type === "retreat-battalion") {
+      const battalion = this.state.battalions[command.payload.battalionId];
+      const home = battalion ? this.state.settlements[battalion.settlementId] : undefined;
+      const castle = home ? this.state.buildings[home.centralBuildingId] : undefined;
+      if (!battalion || !castle || battalion.embarkedInCaravanId) {
+        this.eventWriter.emit(tick, "command-rejected", { commandId: command.id });
+        return;
+      }
+      const garrison = battalion.garrisonedInBuildingId
+        ? this.state.buildings[battalion.garrisonedInBuildingId]
+        : undefined;
+      this.state = {
+        ...this.state,
+        buildings: garrison
+          ? {
+              ...this.state.buildings,
+              [garrison.id]: {
+                ...garrison,
+                garrisonBattalionIds: (garrison.garrisonBattalionIds ?? []).filter((id) => id !== battalion.id)
+              }
+            }
+          : this.state.buildings,
+        battalions: {
+          ...this.state.battalions,
+          [battalion.id]: {
+            ...battalion,
+            targetId: undefined,
+            garrisonedInBuildingId: undefined,
+            destination: castle.position,
+            morale: Math.max(0, battalion.morale - 2)
+          }
+        }
+      };
+      if (garrison) {
+        this.eventWriter.emit(tick, "battalion-ungarrisoned", {
+          battalionId: battalion.id,
+          buildingId: garrison.id,
+          reason: "retreat-order"
+        });
+      }
+      this.eventWriter.emit(tick, "battalion-retreated", {
+        battalionId: battalion.id,
+        settlementId: battalion.settlementId,
+        moraleCost: 2
+      });
+      this.observePlayerCommand(command, tick);
+      return;
+    }
+
     if (command.type === "move-caravan") {
       const caravan = this.state.caravans[command.payload.caravanId];
       const terrain = terrainAtPosition(this.state, command.payload.destination);
@@ -3286,6 +3335,14 @@ function getDoctrineObservation(command: GameCommand, state: WorldState): Doctri
         condition: "A battalion receives a destination",
         preferredAction: "Reposition battalions",
         goal: "Control the battlefield"
+      };
+    case "retreat-battalion":
+      return {
+        domain: "military",
+        key: "retreat-to-crown",
+        condition: "A field force is exposed",
+        preferredAction: "Retreat to the Crown",
+        goal: "Preserve the army"
       };
     case "move-caravan":
       return {

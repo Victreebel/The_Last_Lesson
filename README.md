@@ -37,7 +37,7 @@ Open the URL printed by Vite, normally `http://127.0.0.1:5173/`.
 
 - Arrow keys: pan the tactical camera.
 - Click or drag: select Crown forces.
-- Right-click or use the command dock: issue movement, attack, embarkation, and supply orders.
+- Right-click or use the command dock: issue movement, attack, retreat, embarkation, and supply orders.
 - `BUILD`: choose a structure, then click terrain; drag to lay roads and walls.
 - `HOUNDS`: train a fast four-hound scout pack from a Town Square. It costs food and wood, reveals farther than a battalion, and uses no citizens.
 - Click a Crown Castle or choose a seat in `REALM`: change the active governor and settlement command context.

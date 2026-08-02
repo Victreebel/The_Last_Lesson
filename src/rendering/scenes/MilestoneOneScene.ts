@@ -1153,9 +1153,7 @@ export class MilestoneOneScene extends Phaser.Scene {
       this.mode = "attack";
       this.updateUi(["Select a battalion, then designate a target."]);
     }, UI_COLORS.danger);
-    this.addCommandButton(302, 42, "ADVANCE", "TICK", () => {
-      this.advanceSimulation();
-    });
+    this.addCommandButton(302, 42, "RETREAT", "TO CROWN", () => this.retreatSelectedBattalions(), UI_COLORS.danger);
     this.addLaborButton(14, "FOOD", () => this.setLaborFocus("farmers"));
     this.addLaborButton(90, "WOOD", () => this.setLaborFocus("lumberjacks"));
     this.addLaborButton(166, "IRON", () => this.setLaborFocus("miners"));
@@ -2026,6 +2024,18 @@ export class MilestoneOneScene extends Phaser.Scene {
       });
     }
     this.updateUi([`Move order issued to ${this.selectedBattalionIds.size} battalion(s).`]);
+  }
+
+  private retreatSelectedBattalions(): void {
+    if (this.selectedBattalionIds.size === 0) {
+      this.updateUi(["Select a battalion before ordering a retreat."]);
+      return;
+    }
+    for (const battalionId of this.selectedBattalionIds) {
+      this.issueCommand({ type: "retreat-battalion", payload: { battalionId } });
+    }
+    this.mode = "select";
+    this.updateUi([`Retreat ordered for ${this.selectedBattalionIds.size} battalion(s).`]);
   }
 
   private issueCaravanMoveOrder(point: Phaser.Math.Vector2): void {

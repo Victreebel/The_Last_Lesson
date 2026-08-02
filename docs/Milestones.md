@@ -113,6 +113,7 @@ Implemented:
 - Decisive battalion victories now create bounded, explainable morale and devotion shifts for the victor, its local allies, and surviving defenders.
 - Supplied battalions now recover morale from peaceful, adequately housed, happy, loyal, and religiously secure home settlements, tying civic legitimacy directly to military readiness.
 - Battalions now derive terrain and siege traits from actual engagements. Forest, hills, and marsh expertise improves contextual movement; repeated structure attacks create a bounded siege specialization.
+- The command dock now includes an explicit Retreat to Crown order. It cancels an engagement, returns selected field forces to their home Castle, carries a small morale cost, and produces an observable lesson.
 
 ## Milestone 4: Persistence Foundation
 
