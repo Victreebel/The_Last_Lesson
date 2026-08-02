@@ -15,6 +15,7 @@ The current browser prototype is a playable single-player campaign: establish th
 - Multi-settlement Crown management through castle selection and the compact `REALM` navigator.
 - A campaign-opening rival doctrine choice: `DISCIPLE`, `RIVAL`, or `ARCHITECT` changes only the rival's opening grace and doctrine-learning pace, never grants hidden resources or combat bonuses.
 - Local save/load from the Book of Lessons, plus an automatic recovery save every five world ticks and a `CONTINUE LOCAL REIGN` entry point after refresh.
+- Responsive tactical presentation: phone-sized views reflow the header and command surface, preserve the campaign choice, and suppress minimap/intel chrome that cannot fit without obscuring play.
 
 ## Run Locally
 

@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.29.0 - 2026-08-01
+
+- Reworked the narrow tactical layout for phone-sized viewports: the header reflows, resources wrap, governor/build controls share the available width, campaign panels scale to fit, and the command dock remains reachable.
+- Minimap and Tactical Uplink chrome now yield on narrow screens rather than colliding with the command surface. Both remain available at larger widths.
+
 ## 1.28.0 - 2026-08-01
 
 - Added local recovery saves every five world ticks. They are renderer-owned persistence only and cannot interrupt or mutate simulation execution.

@@ -1351,14 +1351,20 @@ export class MilestoneOneScene extends Phaser.Scene {
   private layoutUi(): void {
     const { width, height } = this.scale;
     const compact = width < 900;
-    const topHeight = compact ? 94 : 58;
-    const scale = Math.min(1, Math.max(0.72, (width - 24) / BUILD_PANEL_WIDTH));
+    const narrow = width < 640;
+    const topHeight = narrow ? 122 : compact ? 94 : 58;
+    const scale = narrow ? 0.6 : Math.min(1, Math.max(0.72, (width - 24) / BUILD_PANEL_WIDTH));
     const buildPanelX = width - 16 - BUILD_PANEL_WIDTH * scale;
     const heirPanelX = buildPanelX - 12 - HEIR_PANEL_WIDTH * scale;
 
     this.topHud.setSize(width, topHeight);
     this.gameTitleText.setPosition(18, 10);
-    this.lessonBanner.setPosition(Math.max(16, Math.round((width - 420) / 2)), Math.max(topHeight + 14, height - 62));
+    const lessonScale = narrow ? Math.min(1, (width - 32) / 420) : 1;
+    this.lessonBanner.setScale(lessonScale);
+    this.lessonBanner.setPosition(
+      Math.max(16, Math.round((width - 420 * lessonScale) / 2)),
+      Math.max(topHeight + 14, height - 62 * lessonScale)
+    );
     const pauseX = compact ? width - 82 : 436;
     const pauseY = compact ? 36 : 14;
     this.pauseControlButton.setPosition(pauseX, pauseY);
@@ -1366,38 +1372,53 @@ export class MilestoneOneScene extends Phaser.Scene {
     const speedX = compact ? width - 168 : 510;
     this.speedControlButton.setPosition(speedX, pauseY);
     this.speedControlLabel.setPosition(speedX + 9, pauseY + 9);
-    this.resourceText.setPosition(compact ? 18 : 600, compact ? 47 : 19);
-    this.bookControl.setPosition(0, 0);
-    this.realmControl.setPosition(0, 0);
+    this.resourceText.setPosition(compact ? 18 : 600, narrow ? 88 : compact ? 47 : 19);
+    this.bookControl.setScale(narrow ? 0.7 : 1);
+    this.realmControl.setScale(narrow ? 0.7 : 1);
+    this.bookControl.setPosition(narrow ? -115 : 0, narrow ? 48 : 0);
+    this.realmControl.setPosition(narrow ? -113 : 0, narrow ? 48 : 0);
+    const bookScale = narrow ? Math.min(1, (width - 32) / 470) : 1;
+    const realmScale = narrow ? Math.min(1, (width - 32) / 384) : 1;
+    const victoryScale = narrow ? Math.min(1, (width - 32) / 420) : 1;
+    const campaignScale = narrow ? Math.min(1, (width - 32) / 470) : 1;
+    this.bookPanel.setScale(bookScale);
+    this.realmPanel.setScale(realmScale);
+    this.victoryPanel.setScale(victoryScale);
+    this.campaignSetupPanel.setScale(campaignScale);
     this.bookPanel.setPosition(
-      Math.max(16, Math.round((width - 470) / 2)),
+      Math.max(16, Math.round((width - 470 * bookScale) / 2)),
       Math.max(topHeight + 18, Math.round((height - 410) / 2))
     );
     this.realmPanel.setPosition(
-      Math.max(16, Math.round((width - 384) / 2)),
+      Math.max(16, Math.round((width - 384 * realmScale) / 2)),
       Math.max(topHeight + 18, Math.round((height - 238) / 2))
     );
     this.victoryPanel.setPosition(
-      Math.max(16, Math.round((width - 420) / 2)),
+      Math.max(16, Math.round((width - 420 * victoryScale) / 2)),
       Math.max(topHeight + 18, Math.round((height - 206) / 2))
     );
     this.campaignSetupPanel.setPosition(
-      Math.max(16, Math.round((width - 470) / 2)),
-      Math.max(topHeight + 18, Math.round((height - this.campaignSetupPanel.height) / 2))
+      Math.max(16, Math.round((width - 470 * campaignScale) / 2)),
+      Math.max(topHeight + 18, Math.round((height - this.campaignSetupPanel.height * campaignScale) / 2))
     );
+    this.intelPanel.setVisible(!narrow);
     this.intelPanel.setPosition(16, topHeight + 14);
-    this.commandDock.setPosition(16, Math.max(topHeight + 220, height - 396));
+    this.commandDock.setScale(narrow ? 0.86 : 1);
+    this.commandDock.setPosition(narrow ? 8 : 16, narrow ? Math.max(topHeight + 112, height - 350) : Math.max(topHeight + 220, height - 396));
     this.minimapBounds = { x: Math.max(16, width - MINIMAP_WIDTH - 16), y: Math.max(topHeight + 210, height - MINIMAP_HEIGHT - 16) };
+    this.minimapPanel.setVisible(!narrow);
+    this.minimapGraphics.setVisible(!narrow);
+    this.minimapTitle.setVisible(!narrow);
     this.minimapPanel.setPosition(this.minimapBounds.x, this.minimapBounds.y);
     this.minimapTitle.setPosition(this.minimapBounds.x + 10, this.minimapBounds.y + 8);
     this.updateMinimap();
     if (this.heirPanel) {
       this.heirPanel.setScale(scale);
-      this.heirPanel.setPosition(Math.max(16, heirPanelX), topHeight + 14);
+      this.heirPanel.setPosition(narrow ? 10 : Math.max(16, heirPanelX), topHeight + 14);
     }
     if (this.buildingsPanel) {
       this.buildingsPanel.setScale(scale);
-      this.buildingsPanel.setPosition(buildPanelX, topHeight + 14);
+      this.buildingsPanel.setPosition(narrow ? 194 : buildPanelX, topHeight + 14);
     }
   }
 
@@ -2409,7 +2430,9 @@ export class MilestoneOneScene extends Phaser.Scene {
       return;
     }
     this.resourceText.setText(
-      `SEAT ${this.getSettlementDisplayName(settlement.id)}    FOOD ${settlement.localFood}    WOOD ${empire.resources.wood}    IRON ${empire.resources.iron}    FAITH ${empire.resources.faith}    TICK ${state.tick}`
+      this.scale.width < 640
+        ? `SEAT ${this.getSettlementDisplayName(settlement.id)}  //  TICK ${state.tick}\nFOOD ${settlement.localFood}  WOOD ${empire.resources.wood}  IRON ${empire.resources.iron}  FAITH ${empire.resources.faith}`
+        : `SEAT ${this.getSettlementDisplayName(settlement.id)}    FOOD ${settlement.localFood}    WOOD ${empire.resources.wood}    IRON ${empire.resources.iron}    FAITH ${empire.resources.faith}    TICK ${state.tick}`
     );
     this.statusText.setText(
       [
