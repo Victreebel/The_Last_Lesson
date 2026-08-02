@@ -128,6 +128,7 @@ Implemented:
 - The Tactical Uplink now projects the selected Rival Doctrine opening countdown before hostile contact, making the campaign's fair early pressure legible without revealing fogged battlefield state.
 - The static single-player build now has a GitHub Pages release pipeline. It independently runs the release gate, builds with the repository subpath, and deploys the verified artifact when Pages is enabled for the repository.
 - The static release now generates runtime WebP battlefield and tactical-atlas art from repository-held PNG sources before every build, reducing the initial art payload from approximately 5.2 MB to 0.75 MB without changing the painterly tactical presentation.
+- Campaign Theatre victories can now seal optional local Honors tied to each theatre's core tactical lesson, adding replay goals without affecting deterministic campaign rules or multiplayer authority.
 
 ## Milestone 4: Persistence Foundation
 

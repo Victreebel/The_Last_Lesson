@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.0.0 - 2026-08-02
+
+- Added one optional, deterministic Campaign Honor to every theatre: Veterans' Lesson, Tidecaller, Civic Reckoning, and Unbroken Gate. Honors reward the specific tactical system each opening teaches and appear in the debrief, Campaign Theatre, and Book of Lessons.
+- Honors persist only as local presentation progress. They do not grant bonuses or enter authoritative state, saves, replays, multiplayer snapshots, or balance calculations.
+
 ## 1.99.0 - 2026-08-02
 
 - Split Phaser into a stable production chunk separate from campaign code. Returning players can now reuse the engine from browser and offline caches when a new game build changes only application code.

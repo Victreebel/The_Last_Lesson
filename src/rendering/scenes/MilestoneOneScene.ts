@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { getEarnedScenarioHonor, SCENARIO_HONORS, type CampaignHonor } from "../../campaign/CampaignHonors";
 import type { MultiplayerConnectRequest } from "../../app/MultiplayerLobby";
 import type { CommandIntent } from "../../networking/LocalAuthority";
 import { RemoteAuthorityClient } from "../../networking/RemoteAuthorityClient";
@@ -220,6 +221,7 @@ const LOCAL_REPLAY_ORIGIN_KEY = "the-last-lesson.replay-origin.v1";
 const LOCAL_AUDIO_ENABLED_KEY = "the-last-lesson.audio-enabled.v1";
 const LOCAL_REDUCED_MOTION_KEY = "the-last-lesson.reduced-motion.v1";
 const LOCAL_CAMPAIGN_CHRONICLE_KEY = "the-last-lesson.campaign-chronicle.v1";
+const LOCAL_CAMPAIGN_HONORS_KEY = "the-last-lesson.campaign-honors.v1";
 
 interface BuildingTile {
   readonly button: Phaser.GameObjects.Rectangle;
@@ -243,6 +245,7 @@ export class MilestoneOneScene extends Phaser.Scene {
   private campaignDifficulty: RivalDifficulty = "rival";
   private campaignScenario: ScenarioId = "crownfall";
   private campaignChronicle: Partial<Record<ScenarioId, number>> = {};
+  private campaignHonors: Partial<Record<ScenarioId, true>> = {};
   private recordedCampaignVictoryScenario?: ScenarioId;
   private campaignInitialWorld: WorldState = createInitialWorld(777, this.campaignDifficulty, this.campaignScenario);
   private simulation = new Simulation(structuredClone(this.campaignInitialWorld));
@@ -359,6 +362,7 @@ export class MilestoneOneScene extends Phaser.Scene {
 
     this.drawTerrain();
     this.restoreCampaignChronicle();
+    this.restoreCampaignHonors();
     this.createUi();
     this.paused = true;
     this.pauseControlLabel.setText("SELECT");
@@ -841,6 +845,43 @@ export class MilestoneOneScene extends Phaser.Scene {
 
   private getCampaignConquests(scenario: ScenarioId): number {
     return this.campaignChronicle[scenario] ?? 0;
+  }
+
+  private restoreCampaignHonors(): void {
+    try {
+      const parsed: unknown = JSON.parse(window.localStorage.getItem(LOCAL_CAMPAIGN_HONORS_KEY) ?? "{}");
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        return;
+      }
+      const record = parsed as Record<string, unknown>;
+      const scenarios: readonly ScenarioId[] = ["crownfall", "rivergate", "ashen-oath", "stonewall"];
+      this.campaignHonors = scenarios.reduce<Partial<Record<ScenarioId, true>>>((honors, scenario) => {
+        if (record[scenario] === true) {
+          honors[scenario] = true;
+        }
+        return honors;
+      }, {});
+    } catch {
+      this.campaignHonors = {};
+    }
+  }
+
+  private getCampaignHonor(scenario: ScenarioId): CampaignHonor | undefined {
+    return this.campaignHonors[scenario] ? SCENARIO_HONORS[scenario] : undefined;
+  }
+
+  private recordCampaignHonor(state: WorldState): CampaignHonor | undefined {
+    const honor = getEarnedScenarioHonor(state);
+    if (!honor || this.campaignHonors[state.scenarioId]) {
+      return this.getCampaignHonor(state.scenarioId);
+    }
+    this.campaignHonors = { ...this.campaignHonors, [state.scenarioId]: true };
+    try {
+      window.localStorage.setItem(LOCAL_CAMPAIGN_HONORS_KEY, JSON.stringify(this.campaignHonors));
+    } catch {
+      // Campaign honors are optional local presentation progress.
+    }
+    return honor;
   }
 
   private recordCampaignVictory(scenario: ScenarioId): void {
@@ -1357,6 +1398,7 @@ export class MilestoneOneScene extends Phaser.Scene {
       const y = 82 + Math.floor(index / 2) * 70;
       const selected = scenario === this.campaignScenario;
       const conquests = this.getCampaignConquests(scenario);
+      const honor = this.getCampaignHonor(scenario);
       const button = this.add.rectangle(x, y, 206, 56, selected ? UI_COLORS.commandActive : UI_COLORS.command, 1).setOrigin(0);
       button.setStrokeStyle(selected ? 2 : 1, selected ? UI_COLORS.accent : UI_COLORS.trim);
       button.setInteractive({ useHandCursor: true });
@@ -1370,7 +1412,7 @@ export class MilestoneOneScene extends Phaser.Scene {
         color: conquests ? "#f2d77f" : UI_COLORS.text,
         wordWrap: { width: 184 }
       });
-      const detail = this.add.text(x + 10, y + 27, profile.summary.split(".")[0].toUpperCase(), {
+      const detail = this.add.text(x + 10, y + 27, honor ? `HONOR // ${honor.label}` : profile.summary.split(".")[0].toUpperCase(), {
         fontFamily: "Arial, sans-serif",
         fontSize: "8px",
         color: UI_COLORS.muted,
@@ -1531,8 +1573,10 @@ export class MilestoneOneScene extends Phaser.Scene {
       return;
     }
     const playerWon = report.winnerEmpireId === "empire-player";
+    let campaignHonor: CampaignHonor | undefined;
     if (playerWon) {
       this.recordCampaignVictory(state.scenarioId);
+      campaignHonor = this.recordCampaignHonor(state);
     }
     const campaignConquests = this.getCampaignConquests(state.scenarioId);
     this.victoryTitle.setText(playerWon ? "THE CROWN ASCENDS" : "THE CROWN HAS FALLEN");
@@ -1544,7 +1588,10 @@ export class MilestoneOneScene extends Phaser.Scene {
             `REIGN ${formatReignDuration(report.durationSeconds)}  //  THRONES ${report.thronesCaptured}`,
             `LESSONS ${report.lessonsTaught}  //  HEIRS GUIDED ${report.heirsGuided}`,
             `FAITH HELD ${report.faithHeld}`,
-            `CHRONICLE: ${SCENARIO_PROFILES[state.scenarioId].label.toUpperCase()} CROWNED ${campaignConquests}`
+            `CHRONICLE: ${SCENARIO_PROFILES[state.scenarioId].label.toUpperCase()} CROWNED ${campaignConquests}`,
+            campaignHonor
+              ? `HONOR: ${campaignHonor.label}`
+              : `HONOR UNSEALED: ${SCENARIO_HONORS[state.scenarioId].label}`
           ].join("\\n")
         : [
             "The rival crown holds every throne. A different doctrine must rise.",
@@ -1578,6 +1625,7 @@ export class MilestoneOneScene extends Phaser.Scene {
       `CURRENT HEIR: ${heir?.name.toUpperCase() ?? "UNASSIGNED"}`,
       `STATE: ${heir?.mode.toUpperCase() ?? "NONE"}  //  TRUST: ${heir?.trust ?? 0}`,
       `RIVAL DOCTRINE: ${RIVAL_DIFFICULTY_PROFILES[state.rivalDifficulty].label}`,
+      `THEATRE HONOR: ${this.getCampaignHonor(state.scenarioId)?.label ?? `UNSEALED // ${SCENARIO_HONORS[state.scenarioId].condition.toUpperCase()}`}`,
       `FAITH: ${settlement?.internalFaith ?? 0}  //  RIVAL PRESSURE: ${settlement?.externalReligiousPressure ?? 0}`,
         "",
         "CONVICTIONS:",
