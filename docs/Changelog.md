@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.99.0 - 2026-08-02
+
+- Split Phaser into a stable production chunk separate from campaign code. Returning players can now reuse the engine from browser and offline caches when a new game build changes only application code.
+
 ## 1.98.0 - 2026-08-02
 
 - Reduced the initial painterly art payload by converting the battlefield and both tactical atlases from 5.2 MB of runtime PNGs to approximately 0.75 MB of reproducible WebP assets.
