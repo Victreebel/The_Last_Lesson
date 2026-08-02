@@ -114,4 +114,27 @@ describe("scenario opening health", () => {
         .some((event) => event.type === "starvation" && event.payload.settlementId === capital.id)
     ).toBe(false);
   });
+
+  it.each(SCENARIOS)("turns %s into a survivable, active early siege after an economic opening", (scenarioId) => {
+    const simulation = new Simulation(createInitialWorld(9500, "rival", scenarioId));
+    queueOpeningFarmPlan(simulation);
+
+    simulation.runTicks(180);
+
+    const state = simulation.getState();
+    const capital = state.settlements["settlement-capital"];
+    const throne = state.buildings[capital.centralBuildingId];
+
+    expect(state.victory.winnerEmpireId).toBeUndefined();
+    expect(capital.population.citizens).toBeGreaterThan(0);
+    expect(capital.population.health).toBeGreaterThan(0);
+    expect(capital.localFood).toBeGreaterThan(0);
+    expect(throne?.defense).toBeGreaterThan(0);
+    expect(throne?.defense).toBeLessThan(500);
+    expect(
+      simulation
+        .getEventLog()
+        .some((event) => event.type === "attack-ordered" && event.payload.targetId === capital.centralBuildingId)
+    ).toBe(true);
+  });
 });

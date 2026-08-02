@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.91.0 - 2026-08-02
+
+- Added a 180-tick Campaign Theatre pacing regression for Crownfall, Rivergate, Ashen Oath, and Stonewall. After the standard economic opening, the Crown must remain alive and supplied while the Rival Crown has begun a measurable siege against its throne.
+- This guards the intended early campaign clock: the map cannot silently become a sandbox, and the rival cannot erase an economically sound opening before the player can respond.
+
 ## 1.90.0 - 2026-08-02
 
 - Hardened runtime entity creation for multi-settlement reigns. Same-tick building, battalion, caravan, and Warship production now resolves a deterministic settlement-scoped suffix only when its legacy-shaped base ID is already occupied.

@@ -124,6 +124,7 @@ Implemented:
 - Rival settlements now open with sustainable terrain-valid farms on labeled fertile fields. Scenario-health coverage verifies 72 ticks of viable rival economies and the Crown's standard opening-farm response across every authored theatre.
 - Military mobilization now consumes civilian labor capacity. The simulation reconciles labor after recruitment and civilian losses, while governors retain a minimum farm workforce before fielding an additional battalion. Governor-generated battalion IDs are settlement-scoped so simultaneous recruitment remains safe and inspectable.
 - Runtime production now protects same-tick multi-settlement commands from entity-ID collisions. A deterministic settlement-scoped suffix preserves separately created buildings, battalions, caravans, and Warships without changing existing single-settlement replay identifiers.
+- Campaign-health coverage now also validates the 180-tick campaign clock in all four theatres: a standard economic opening remains viable while a rival expedition has begun to damage the Crown throne, creating pressure without an unattended early defeat.
 
 ## Milestone 4: Persistence Foundation
 
