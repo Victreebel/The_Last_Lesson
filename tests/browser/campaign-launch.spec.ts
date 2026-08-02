@@ -166,6 +166,24 @@ test("rejects a malformed portable archive without replacing the reign", async (
   await expect(page.locator("#the-last-lesson-portable-save-input")).toHaveCount(0);
 });
 
+test("pauses a local reign when the tactical map is hidden", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto("/");
+  await beginCrownfallRivalReign(page);
+
+  await page.evaluate(() => {
+    Object.defineProperty(document, "visibilityState", {
+      configurable: true,
+      get: () => "hidden"
+    });
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  await expect(page.locator("#the-last-lesson-announcements")).toContainText("paused while the field map was out of view");
+
+  await page.locator("canvas").press("Space");
+  await expect(page.locator("#the-last-lesson-announcements")).toContainText("Simulation resumed");
+});
+
 test("retains the installed campaign shell through an offline reload", async ({ page, context }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto("/");

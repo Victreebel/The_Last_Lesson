@@ -351,6 +351,19 @@ export class MilestoneOneScene extends Phaser.Scene {
   private selectionDragActive = false;
   private suppressNextPointerUp = false;
   private cursors?: Phaser.Types.Input.Keyboard.CursorKeys;
+  private readonly handleVisibilityChange = (): void => {
+    if (
+      document.visibilityState !== "hidden" ||
+      this.remoteAuthority ||
+      this.campaignSetupPending ||
+      this.paused
+    ) {
+      return;
+    }
+    this.paused = true;
+    this.pauseControlLabel.setText("RESUME");
+    this.updateUi(["Reign paused while the field map was out of view."]);
+  };
 
   constructor() {
     super("MilestoneOneScene");
@@ -380,9 +393,11 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => this.handlePointerDown(pointer));
     this.input.on("pointermove", (pointer: Phaser.Input.Pointer) => this.handlePointerMove(pointer));
     this.input.on("pointerup", (pointer: Phaser.Input.Pointer) => this.handlePointerUp(pointer));
+    document.addEventListener("visibilitychange", this.handleVisibilityChange);
     this.game.events.on("join-multiplayer", this.connectToMultiplayer, this);
     this.events.once("shutdown", () => {
       this.game.events.off("join-multiplayer", this.connectToMultiplayer, this);
+      document.removeEventListener("visibilitychange", this.handleVisibilityChange);
       this.disconnectFromMultiplayer();
       this.accessibilityAnnouncements?.replaceChildren();
       this.accessibilityAnnouncements = undefined;

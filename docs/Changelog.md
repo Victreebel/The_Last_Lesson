@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.4.2 - 2026-08-02
+
+- Local active reigns now pause when the tactical browser tab is hidden and require an intentional resume on return. This protects real-time campaigns from advancing while the player is away without altering simulation state or host-owned multiplayer time.
+
 ## 2.4.1 - 2026-08-02
 
 - Hardened portable `.tll` restoration in the Book of Lessons: the temporary browser file picker now cleans itself up after either selection or cancellation and carries an accessible archive label.

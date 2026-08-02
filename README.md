@@ -77,6 +77,7 @@ For container deployment, health checks, and the required `wss://` production bo
 - `REVIEW REIGN`: replay the command history from tick zero in read-only mode, then return exactly to the live paused campaign.
 - Space or `PAUSE`: pause/resume the live simulation.
 - `SPEED`: cycle the live presentation clock through 1x, 2x, and 3x without changing deterministic simulation rules.
+- A local reign pauses when its browser tab is hidden; resume deliberately on return. Multiplayer time remains host-owned.
 
 ## Quality Gates
 
