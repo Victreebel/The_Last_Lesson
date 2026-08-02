@@ -40,6 +40,16 @@ pnpm build
 pnpm preview
 ```
 
+## Multiplayer Host
+
+The game now includes a real authoritative WebSocket transport on top of the deterministic simulation. Start a local host with:
+
+```sh
+pnpm server:multiplayer
+```
+
+It listens on `ws://127.0.0.1:8787` by default. The browser-side `RemoteAuthorityClient` and the host use a shared serialized contract: clients join a named room, submit untimestamped intents, and receive host-owned snapshots. Transport identity, matchmaking, and player-facing lobby UI remain the next delivery layer; the server itself already owns ticks, command IDs, simulation state, and room cleanup.
+
 ## Core Controls
 
 - Arrow keys: pan the tactical camera.
@@ -62,7 +72,7 @@ pnpm build
 pnpm test
 ```
 
-The test suite covers deterministic simulation, saves, captures, doctrine learning, faith/religion, population, terrain, combat specialization, logistics, naval transport, garrisons, captive policy, visibility, and campaign scale.
+The test suite covers deterministic simulation, saves, captures, doctrine learning, faith/religion, population, terrain, combat specialization, logistics, naval transport, garrisons, captive policy, visibility, campaign scale, and real WebSocket authority transport.
 
 GitHub Actions runs this same test-and-build gate for every pull request and every push to `main`.
 

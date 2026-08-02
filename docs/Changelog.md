@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.66.0 - 2026-08-01
+
+- Added a real `ws`-based authoritative multiplayer host, named-room lifecycle, shared serialized join/intent/snapshot protocol, browser-side remote authority client, and `pnpm server:multiplayer` command.
+- Added live WebSocket tests proving that the host owns room setup, command IDs, tick assignment, snapshot delivery, and malformed-message rejection.
+
 ## 1.65.0 - 2026-08-01
 
 - Added a GitHub Actions quality gate that installs with the locked dependency graph, runs the full deterministic suite, and builds the browser release on every pull request and main-branch push.
