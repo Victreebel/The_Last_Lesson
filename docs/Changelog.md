@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.75.0 - 2026-08-02
+
+- Replaced gray-box building presentation with a painterly isometric atlas for castles, civic structures, resource works, housing, roads, walls, gates, moats, and outposts.
+- Kept building art strictly presentation-side: labels, terrain placement rules, visibility, owner tint, hitboxes, saves, replays, and multiplayer state remain unchanged.
+- Center the camera on the active Crown seat when starting, restarting, or restoring a local reign.
+
 ## 1.74.0 - 2026-08-02
 
 - Added deterministic `attack-move-battalion` commands. An advancing battalion acquires visible hostile units, convoys, or complete structures inside its acquisition radius, engages them, and resumes its saved march destination once the target is gone.

@@ -19,11 +19,11 @@ Goal: prove basic play.
 
 Includes camera, selection, building placement, resource production, battalion creation, movement, and basic combat.
 
-Status: complete and expanded in gray-box form.
+Status: complete and expanded into a painterly, labeled tactical prototype.
 
 Implemented:
 
-- Phaser world view with grid terrain and simple settlement structures.
+- Phaser world view with grid terrain, explicit terrain symbols, and a painterly isometric building atlas.
 - Camera panning with arrow keys.
 - UI controls for farm placement, battalion creation, movement, attacking, and manual ticks.
 - Simulation-backed food, wood, iron, and faith readouts.
@@ -43,7 +43,7 @@ Acceptance:
 
 Known limitations:
 
-- Art is intentionally gray-box.
+- Building art is painterly, but battalions and combat impacts remain functional tactical presentation.
 - Combat has no projectile or attack cadence presentation yet.
 - Art, audio, and production-ready combat feedback remain future work.
 - Selection feedback is intentionally functional rather than final.

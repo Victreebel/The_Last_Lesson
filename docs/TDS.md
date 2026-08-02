@@ -1438,7 +1438,7 @@ Simulation versions:
 The frozen gameplay architecture is implemented as a robust vertical slice. Remaining release work is product delivery rather than a new core-system design:
 
 - balance playtests across the four authored Campaign Theatre openings;
-- bespoke painterly environment, building, battalion, and miracle presentation assets;
+- bespoke battalion and miracle presentation assets, plus remaining environment-art expansion;
 - campaign progression, onboarding, and broader content tuning;
 - account identity, public matchmaking, reconnect tokens, rate limiting, and broader anti-cheat for internet multiplayer;
 - deployment, telemetry, accessibility audit, localization, and storefront packaging.
@@ -1490,6 +1490,7 @@ The following compatible systems are now implemented in the prototype and are th
 - The same selected Crown Castle establishes the active command seat for player-issued settlement actions. Placement, labor assignment, unit and transport production, captive assimilation, local Faith miracles, HUD population data, and building counts must read and write that settlement rather than assuming the opening capital.
 - The renderer provides a compact Realm roster that enumerates player-owned settlements from the authoritative Empire state. Selecting an entry centers the camera on its Castle and establishes the same active command seat as clicking that Castle; it is a renderer-only navigation layer and does not mutate deterministic simulation state.
 - The renderer consumes doctrine-observed, doctrine-reinforced, and doctrine-disciplined events to display a transient Lesson banner with the heir, preferred action, and confidence. The banner de-duplicates by event ID and remains presentation-only, preserving deterministic saves and replays.
+- The renderer slices `public/assets/building-atlas-v1.png` into a stable painterly presentation for every canonical building kind. Each art cell shares the existing building's world position, explicit label, selection rectangle, owner tint, and visibility rule. Atlas slicing and camera framing are presentation-only and must not mutate `WorldState`, affect command processing, or enter saves and replays.
 - Captive policy exposes a deterministic player choice: `assimilate-captives` requires a completed Town Square and converts captives into citizens, while `release-captives` removes captives immediately and increases happiness, loyalty, devotion, and internal Faith. Both commands create explainable social doctrines through the shared learning pipeline.
 - The Tactical Uplink derives a compact threat forecast from authoritative active-settlement state. Food shortage, captive rebellion, external religious pressure, and observed hostile proximity are evaluated in that order. This forecast is presentation-only and cannot alter simulation state.
 - The renderer may schedule the fixed deterministic world tick at selectable 1x, 2x, or 3x presentation speed. Speed is never stored in the authoritative world state and must not alter tick order, command semantics, event order, save format, state hashing, or replay outcomes.

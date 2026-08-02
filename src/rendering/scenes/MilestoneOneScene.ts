@@ -97,6 +97,42 @@ const BUILDING_SIZES: Record<BuildingKind, number> = {
   outpost: 44
 };
 
+const BUILDING_ART_FRAMES: Record<BuildingKind, readonly [number, number]> = {
+  castle: [0, 0],
+  "military-quarters": [1, 0],
+  "town-square": [2, 0],
+  farm: [3, 0],
+  villa: [0, 1],
+  hovel: [1, 1],
+  road: [2, 1],
+  mine: [3, 1],
+  "lumber-mill": [0, 2],
+  plantation: [1, 2],
+  moat: [2, 2],
+  wall: [3, 2],
+  gate: [0, 3],
+  outpost: [1, 3]
+};
+
+const BUILDING_ART_TILE_SIZE: Record<BuildingKind, number> = {
+  castle: 158,
+  "military-quarters": 132,
+  "town-square": 132,
+  farm: 130,
+  villa: 128,
+  hovel: 112,
+  road: 104,
+  mine: 114,
+  "lumber-mill": 120,
+  plantation: 122,
+  moat: 118,
+  wall: 118,
+  gate: 122,
+  outpost: 120
+};
+
+const BUILDING_ATLAS_CELL_SIZE = 313.5;
+
 const BUILDING_DISPLAY_LABELS: Record<BuildingKind, string> = {
   castle: "CASTLE",
   "military-quarters": "MILITARY\nQUARTERS",
@@ -267,6 +303,7 @@ export class MilestoneOneScene extends Phaser.Scene {
   private readonly buildingTiles = new Map<BuildingKind, BuildingTile>();
   private worldLayer!: Phaser.GameObjects.Container;
   private readonly buildingSprites = new Map<string, Phaser.GameObjects.Rectangle>();
+  private readonly buildingArtSprites = new Map<string, Phaser.GameObjects.Image>();
   private readonly buildingLabelSprites = new Map<string, Phaser.GameObjects.Text>();
   private readonly battalionSprites = new Map<string, Phaser.GameObjects.Container>();
   private readonly caravanSprites = new Map<string, Phaser.GameObjects.Container>();
@@ -282,10 +319,12 @@ export class MilestoneOneScene extends Phaser.Scene {
 
   preload(): void {
     this.load.image("painted-world", "assets/painterly-battlefield-v1.png");
+    this.load.image("building-atlas", "assets/building-atlas-v1.png");
   }
 
   create(): void {
-    this.cameras.main.setBounds(0, 0, 1400, 900);
+    // Reserve lateral camera room for the permanent command panels without moving authoritative world coordinates.
+    this.cameras.main.setBounds(-280, 0, 1680, 900);
     this.worldLayer = this.add.container(0, 0);
     this.cursors = this.input.keyboard?.createCursorKeys();
     this.bindKeyboardControls();
@@ -307,6 +346,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.configureSimulationClock();
 
     this.assignOpeningLabor();
+    this.centerCameraOnSettlement(this.inspectedSettlementId);
     this.renderWorld();
     this.updateUi(["The Crown is established."]);
   }
@@ -1048,13 +1088,19 @@ export class MilestoneOneScene extends Phaser.Scene {
 
     this.inspectedSettlementId = settlement.id;
     if (focusCamera) {
-      const castle = state.buildings[settlement.centralBuildingId];
-      if (castle) {
-        this.cameras.main.centerOn(castle.position.x, castle.position.y);
-      }
+      this.centerCameraOnSettlement(settlement.id);
     }
     this.realmPanelExpanded = false;
     this.updateUi([`Command seat focused on ${this.getSettlementDisplayName(settlement.id)}.`]);
+  }
+
+  private centerCameraOnSettlement(settlementId: string): void {
+    const state = this.simulation.getState();
+    const settlement = state.settlements[settlementId];
+    const castle = settlement ? state.buildings[settlement.centralBuildingId] : undefined;
+    if (castle) {
+      this.cameras.main.centerOn(castle.position.x, castle.position.y);
+    }
   }
 
   private createVictoryPanel(): void {
@@ -1231,6 +1277,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.mode = "select";
     this.clearPlacementPreview();
     this.assignOpeningLabor();
+    this.centerCameraOnSettlement(this.inspectedSettlementId);
     this.renderWorld();
     this.updateUi([message]);
   }
@@ -1356,6 +1403,7 @@ export class MilestoneOneScene extends Phaser.Scene {
       this.replayReview = undefined;
       this.clearSelection();
       this.clearControlGroups();
+      this.centerCameraOnSettlement(this.inspectedSettlementId);
       this.renderWorld();
       this.updateUi(["Local save restored."]);
     } catch {
@@ -2809,6 +2857,8 @@ export class MilestoneOneScene extends Phaser.Scene {
       if (!state.buildings[id]) {
         sprite.destroy();
         this.buildingSprites.delete(id);
+        this.buildingArtSprites.get(id)?.destroy();
+        this.buildingArtSprites.delete(id);
         this.buildingLabelSprites.get(id)?.destroy();
         this.buildingLabelSprites.delete(id);
       }
@@ -2832,7 +2882,26 @@ export class MilestoneOneScene extends Phaser.Scene {
   private renderBuilding(building: BuildingState): void {
     const color = building.ownerEmpireId === "empire-player" ? BUILDING_COLORS[building.kind] : 0x914946;
     let sprite = this.buildingSprites.get(building.id);
+    let art = this.buildingArtSprites.get(building.id);
     let label = this.buildingLabelSprites.get(building.id);
+
+    if (!art) {
+      const [column, row] = BUILDING_ART_FRAMES[building.kind];
+      const tileSize = BUILDING_ART_TILE_SIZE[building.kind];
+      art = this.add.image(building.position.x, building.position.y, "building-atlas");
+      art.setCrop(
+        column * BUILDING_ATLAS_CELL_SIZE,
+        row * BUILDING_ATLAS_CELL_SIZE,
+        BUILDING_ATLAS_CELL_SIZE,
+        BUILDING_ATLAS_CELL_SIZE
+      );
+      // Phaser scales against the source image before applying a crop. The atlas has four cells per axis.
+      art.setDisplaySize(tileSize * 4, tileSize * 4);
+      // Crop coordinates remain relative to the full atlas, so anchor at the selected cell's center.
+      art.setOrigin((column + 0.5) / 4, (row + 0.5) / 4);
+      this.worldLayer.add(art);
+      this.buildingArtSprites.set(building.id, art);
+    }
 
     if (!sprite) {
       const size = BUILDING_SIZES[building.kind];
@@ -2894,12 +2963,20 @@ export class MilestoneOneScene extends Phaser.Scene {
     }
 
     sprite.setPosition(building.position.x, building.position.y);
-    sprite.setFillStyle(building.complete ? color : 0x6a6041, 1);
+    sprite.setFillStyle(building.complete ? color : 0x6a6041, building.complete ? 0.12 : 0.28);
     const visible =
       building.ownerEmpireId === "empire-player" ||
       isPositionVisibleToEmpire(this.simulation.getState(), "empire-player", building.position);
     sprite.setVisible(visible);
-    label.setPosition(building.position.x, building.position.y - BUILDING_SIZES[building.kind] / 2 - 5);
+    art.setPosition(building.position.x, building.position.y);
+    art.setAlpha(building.complete ? (building.ownerEmpireId === "empire-player" ? 1 : 0.82) : 0.42);
+    if (building.ownerEmpireId === "empire-player") {
+      art.clearTint();
+    } else {
+      art.setTint(0xe4b2ad);
+    }
+    art.setVisible(visible);
+    label.setPosition(building.position.x, building.position.y - BUILDING_ART_TILE_SIZE[building.kind] / 2 - 5);
     label.setText(this.getBuildingWorldLabel(building));
     label.setVisible(visible);
   }
