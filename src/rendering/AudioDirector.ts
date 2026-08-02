@@ -1,4 +1,4 @@
-export type TacticalSound = "command" | "combat" | "naval" | "victory";
+export type TacticalSound = "command" | "melee" | "ranged" | "naval" | "victory";
 
 /** Presentation-only Web Audio cues. The simulation never depends on this class. */
 export class AudioDirector {
@@ -13,8 +13,9 @@ export class AudioDirector {
   play(sound: TacticalSound): void {
     if (!this.enabled) return;
     const now = Date.now();
-    if ((sound === "combat" || sound === "naval") && now - this.lastCombatAt < 140) return;
-    if (sound === "combat" || sound === "naval") this.lastCombatAt = now;
+    const isCombatSound = sound === "melee" || sound === "ranged" || sound === "naval";
+    if (isCombatSound && now - this.lastCombatAt < 140) return;
+    if (isCombatSound) this.lastCombatAt = now;
     try {
       const context = this.context ?? new AudioContext();
       this.context = context;
@@ -22,8 +23,11 @@ export class AudioDirector {
       const oscillator = context.createOscillator();
       const gain = context.createGain();
       const settings: Record<TacticalSound, readonly [number, number, OscillatorType]> = {
-        command: [440, 0.035, "square"], combat: [116, 0.045, "sawtooth"],
-        naval: [82, 0.06, "triangle"], victory: [660, 0.09, "sine"]
+        command: [440, 0.035, "square"],
+        melee: [116, 0.045, "sawtooth"],
+        ranged: [246, 0.035, "triangle"],
+        naval: [82, 0.06, "triangle"],
+        victory: [660, 0.09, "sine"]
       };
       const [frequency, volume, type] = settings[sound];
       oscillator.type = type;

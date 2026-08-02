@@ -8,6 +8,7 @@ import type { RemoteConnectionState } from "../../networking/RemoteAuthorityClie
 import type { AuthoritySnapshot } from "../../networking/LocalAuthority";
 import type { ServerMessage } from "../../networking/protocol";
 import { AudioDirector } from "../AudioDirector";
+import { getCombatFeedbackPresentation } from "../combatPresentation";
 import { describeGameEvent, selectTacticalReportEvents } from "../eventNarrative";
 import { Simulation } from "../../simulation/Simulation";
 import type { GameCommand } from "../../simulation/commands/GameCommand";
@@ -972,8 +973,8 @@ export class MilestoneOneScene extends Phaser.Scene {
     if (!this.replayReview) {
       this.recordAutoSave(result.tick);
     }
-    this.renderWorld();
     this.playCombatFeedback(result.events);
+    this.renderWorld();
     this.playMiracleFeedback(result.events);
     if (this.replayReview && result.tick >= this.replayReview.targetTick) {
       this.paused = true;
@@ -1093,8 +1094,8 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.inspectedSettlementId = this.getActiveControlledSettlement()?.id ?? "settlement-capital";
     this.lastLessonEventId = undefined;
     this.lessonBanner.setVisible(false);
-    this.renderWorld();
     this.playCombatFeedback(snapshot.recentEvents);
+    this.renderWorld();
     this.playMiracleFeedback(snapshot.recentEvents);
     this.updateUi(this.getTacticalReports(snapshot.recentEvents));
   }
@@ -3395,12 +3396,11 @@ export class MilestoneOneScene extends Phaser.Scene {
 
   private playCombatFeedback(events: GameEvent[]): void {
     for (const event of events) {
-      const isBattalionStrike = event.type === "damage-dealt";
-      const isShipStrike = event.type === "ship-fired";
-      if (!isBattalionStrike && !isShipStrike) {
+      const feedback = getCombatFeedbackPresentation(event);
+      if (!feedback) {
         continue;
       }
-      this.audio.play(isShipStrike ? "naval" : "combat");
+      this.audio.play(feedback.sound);
       if (this.reducedMotion) {
         continue;
       }
@@ -3411,37 +3411,52 @@ export class MilestoneOneScene extends Phaser.Scene {
       if (!attacker || !target) {
         continue;
       }
-      const projectile = this.add.circle(
-        attacker.x,
-        attacker.y,
-        isShipStrike ? 5 : 3,
-        isShipStrike ? 0x9cc8d5 : 0xf0d36f,
-        0.95
-      );
-      projectile.setDepth(30);
-      this.tweens.add({
-        targets: projectile,
-        x: target.x,
-        y: target.y,
-        alpha: 0,
-        duration: isShipStrike ? 320 : 180,
-        ease: "Quad.easeOut",
-        onComplete: () => projectile.destroy()
-      });
+
+      if (feedback.delivery === "projectile") {
+        const trajectory = Phaser.Math.Angle.Between(attacker.x, attacker.y, target.x, target.y);
+        const projectile =
+          feedback.projectile === "arrow"
+            ? this.add.rectangle(attacker.x, attacker.y, 18, 2, feedback.color, 0.98).setRotation(trajectory)
+            : this.add.circle(attacker.x, attacker.y, 5, feedback.color, 0.95);
+        projectile.setDepth(30);
+        this.tweens.add({
+          targets: projectile,
+          x: target.x,
+          y: target.y,
+          alpha: 0,
+          duration: feedback.projectileDuration,
+          ease: "Quad.easeOut",
+          onComplete: () => projectile.destroy()
+        });
+      } else {
+        const trajectory = Phaser.Math.Angle.Between(attacker.x, attacker.y, target.x, target.y);
+        const length = feedback.delivery === "thrust" ? 34 : 22;
+        const strike = this.add.line(target.x, target.y, -length / 2, 0, length / 2, 0, feedback.color, 0.92);
+        strike.setLineWidth(feedback.delivery === "thrust" ? 3 : 5).setRotation(trajectory).setDepth(30);
+        this.tweens.add({
+          targets: strike,
+          alpha: 0,
+          scaleX: 1.35,
+          scaleY: 1.35,
+          duration: 180,
+          ease: "Sine.easeOut",
+          onComplete: () => strike.destroy()
+        });
+      }
       const impact = this.add.circle(
         target.x,
         target.y,
-        isShipStrike ? 14 : 9,
-        isShipStrike ? 0x9cc8d5 : 0xf0d36f,
+        feedback.impactRadius,
+        feedback.color,
         0.22
       );
-      impact.setStrokeStyle(isShipStrike ? 3 : 2, isShipStrike ? 0xc9edf5 : 0xffe1a4, 0.9).setDepth(30);
+      impact.setStrokeStyle(feedback.projectile === "cannonball" ? 3 : 2, feedback.impactColor, 0.9).setDepth(30);
       this.tweens.add({
         targets: impact,
-        scaleX: isShipStrike ? 3 : 2.4,
-        scaleY: isShipStrike ? 3 : 2.4,
+        scaleX: feedback.impactScale,
+        scaleY: feedback.impactScale,
         alpha: 0,
-        duration: isShipStrike ? 420 : 280,
+        duration: feedback.impactDuration,
         ease: "Quad.easeOut",
         onComplete: () => impact.destroy()
       });
@@ -3451,8 +3466,8 @@ export class MilestoneOneScene extends Phaser.Scene {
       }
       const marker = this.add.text(target.x, target.y - 18, `-${damage}`, {
         fontFamily: "Arial Black, Arial",
-        fontSize: isShipStrike ? "15px" : "12px",
-        color: isShipStrike ? "#b8e2ef" : "#f4cf88",
+        fontSize: feedback.damageFontSize,
+        color: `#${feedback.impactColor.toString(16).padStart(6, "0")}`,
         stroke: "#141817",
         strokeThickness: 3
       });
@@ -3470,7 +3485,15 @@ export class MilestoneOneScene extends Phaser.Scene {
 
   private getEntityPosition(entityId: string): { x: number; y: number } | undefined {
     const state = this.simulation.getState();
-    return state.battalions[entityId]?.position ?? state.buildings[entityId]?.position ?? state.caravans[entityId]?.position;
+    const authoritativePosition =
+      state.battalions[entityId]?.position ?? state.buildings[entityId]?.position ?? state.caravans[entityId]?.position;
+    if (authoritativePosition) {
+      return authoritativePosition;
+    }
+
+    const renderedEntity =
+      this.battalionSprites.get(entityId) ?? this.buildingSprites.get(entityId) ?? this.caravanSprites.get(entityId);
+    return renderedEntity ? { x: renderedEntity.x, y: renderedEntity.y } : undefined;
   }
 
   private playMiracleFeedback(events: GameEvent[]): void {

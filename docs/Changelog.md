@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.2 - 2026-08-02
+
+- Made combat presentation specialization-aware without changing the deterministic combat system. Archer arrows, spear thrusts, close-combat strikes, and Warship cannon fire now read as different battlefield actions, with final impacts retained when a target is destroyed on the resolving tick.
+
 ## 2.6.1 - 2026-08-02
 
 - Promoted the existing captive Civic Record into the Book of Lessons and authoritative end-of-reign report. The record remains factual rather than becoming a morality meter, keeping every reign's captive policy visible beside its military, learning, and Faith outcomes.

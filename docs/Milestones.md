@@ -43,9 +43,8 @@ Acceptance:
 
 Known limitations:
 
-- Buildings and battalions use painterly assets, but combat impacts remain functional tactical presentation.
-- Combat has no projectile or attack cadence presentation yet.
-- Art, audio, and production-ready combat feedback remain future work.
+- Buildings and battalions use painterly assets, while combat effects remain intentionally lightweight rather than bespoke animated art.
+- Art and audio still need wider content coverage beyond the tactical feedback baseline.
 - Selection feedback is intentionally functional rather than final.
 
 ## Milestone 2: Heir and Conquest Foundation
