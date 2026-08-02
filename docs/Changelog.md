@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.78.0 - 2026-08-02
+
+- Added contextual hover guidance to command-dock controls, surfacing a command's intent and cost only while it is being inspected.
+- Kept the guidance layer presentation-only and compact so it improves first-session clarity without replacing the dense RTS command surface.
+
 ## 1.77.0 - 2026-08-02
 
 - Added expanding target impact pulses to existing projectile and damage-number feedback for battalion and Warship strikes.

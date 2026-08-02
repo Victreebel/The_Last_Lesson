@@ -298,6 +298,8 @@ export class MilestoneOneScene extends Phaser.Scene {
   private minimapTitle!: Phaser.GameObjects.Text;
   private minimapBounds = { x: 0, y: 0 };
   private commandDock!: Phaser.GameObjects.Container;
+  private commandTooltip!: Phaser.GameObjects.Container;
+  private commandTooltipLabel!: Phaser.GameObjects.Text;
   private heirPanel!: Phaser.GameObjects.Container;
   private heirPanelBg!: Phaser.GameObjects.Rectangle;
   private heirPanelHeader!: Phaser.GameObjects.Rectangle;
@@ -623,6 +625,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.createVictoryPanel();
     this.createCampaignSetupPanel();
     this.createIntelPanel();
+    this.createCommandTooltip();
     this.createCommandDock();
     this.createMinimap();
     this.createHeirPanel();
@@ -1575,6 +1578,30 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.addWideCommandButton(110, 366, "DIVINE JUDGMENT", "18 FAITH / RELIGIOUS WARD", () => this.castDivineJudgment());
   }
 
+  private createCommandTooltip(): void {
+    const background = this.add.rectangle(0, 0, 248, 42, UI_COLORS.panelDeep, 0.97).setOrigin(0);
+    background.setStrokeStyle(1, UI_COLORS.accent);
+    this.commandTooltipLabel = this.add.text(10, 8, "", {
+      fontFamily: "Arial, sans-serif",
+      fontSize: "10px",
+      color: UI_COLORS.text,
+      wordWrap: { width: 228 }
+    });
+    this.commandTooltip = this.add.container(0, 0, [background, this.commandTooltipLabel]);
+    this.commandTooltip.setScrollFactor(0).setDepth(80).setVisible(false);
+  }
+
+  private showCommandTooltip(pointer: Phaser.Input.Pointer, message: string): void {
+    const x = Phaser.Math.Clamp(pointer.x + 12, 8, Math.max(8, this.scale.width - 256));
+    const y = Phaser.Math.Clamp(pointer.y - 50, 64, Math.max(64, this.scale.height - 50));
+    this.commandTooltipLabel.setText(message);
+    this.commandTooltip.setPosition(x, y).setVisible(true);
+  }
+
+  private hideCommandTooltip(): void {
+    this.commandTooltip.setVisible(false);
+  }
+
   private createMinimap(): void {
     this.minimapPanel = this.add.rectangle(0, 0, MINIMAP_WIDTH, MINIMAP_HEIGHT, UI_COLORS.panelDeep, 0.95).setOrigin(0);
     this.minimapPanel.setStrokeStyle(1, UI_COLORS.trim);
@@ -1663,6 +1690,8 @@ export class MilestoneOneScene extends Phaser.Scene {
       this.audio.play("command");
       onClick();
     });
+    button.on("pointerover", (pointer: Phaser.Input.Pointer) => this.showCommandTooltip(pointer, `${label}: ${detail}`));
+    button.on("pointerout", () => this.hideCommandTooltip());
     const primary = this.add.text(x + 8, y + 8, label, {
       fontFamily: "Arial Black, Arial",
       fontSize: "10px",
@@ -1685,6 +1714,8 @@ export class MilestoneOneScene extends Phaser.Scene {
       this.audio.play("command");
       onClick();
     });
+    button.on("pointerover", (pointer: Phaser.Input.Pointer) => this.showCommandTooltip(pointer, `LABOR: prioritize ${detail.toLowerCase()} work.`));
+    button.on("pointerout", () => this.hideCommandTooltip());
     const primary = this.add.text(x + 7, 104, "LABOR", {
       fontFamily: "Arial Black, Arial",
       fontSize: "9px",
@@ -1712,6 +1743,8 @@ export class MilestoneOneScene extends Phaser.Scene {
       pointer.event.stopPropagation();
       onClick();
     });
+    button.on("pointerover", (pointer: Phaser.Input.Pointer) => this.showCommandTooltip(pointer, `${label}: ${detail}`));
+    button.on("pointerout", () => this.hideCommandTooltip());
     const primary = this.add.text(x + 10, y + 8, label, {
       fontFamily: "Arial Black, Arial",
       fontSize: "10px",
