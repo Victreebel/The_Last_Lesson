@@ -217,6 +217,8 @@ export interface BattalionState {
   readonly settlementId: SettlementId;
   readonly position: Position;
   readonly destination?: Position;
+  /** The final march point retained while an attack-move engages nearby enemies. */
+  readonly attackMoveDestination?: Position;
   readonly targetId?: BattalionId | BuildingId | CaravanId;
   readonly embarkedInCaravanId?: CaravanId;
   readonly garrisonedInBuildingId?: BuildingId;

@@ -103,6 +103,7 @@ export class Simulation {
       this.updateConstruction(nextTick);
       this.updatePopulation(nextTick);
       this.updateSickness(nextTick);
+      this.updateAttackMoveTargets(nextTick);
       this.updateBattalionMovement(nextTick);
       this.updateCaravanMovement(nextTick);
       this.updateCaravanDeliveries(nextTick);
@@ -468,6 +469,7 @@ export class Simulation {
             ...battalion,
             garrisonedInBuildingId: undefined,
             destination: command.payload.destination,
+            attackMoveDestination: undefined,
             targetId: undefined
           }
         }
@@ -477,6 +479,50 @@ export class Simulation {
           battalionId: battalion.id,
           buildingId: garrison.id,
           reason: "move-order"
+        });
+      }
+      this.eventWriter.emit(tick, "command-applied", { commandId: command.id });
+      this.observePlayerCommand(command, tick);
+      return;
+    }
+
+    if (command.type === "attack-move-battalion") {
+      const battalion = this.state.battalions[command.payload.battalionId];
+      if (!battalion || battalion.embarkedInCaravanId) {
+        this.eventWriter.emit(tick, "command-rejected", { commandId: command.id });
+        return;
+      }
+      const garrison = battalion.garrisonedInBuildingId
+        ? this.state.buildings[battalion.garrisonedInBuildingId]
+        : undefined;
+      const nextBuildings = garrison
+        ? {
+            ...this.state.buildings,
+            [garrison.id]: {
+              ...garrison,
+              garrisonBattalionIds: (garrison.garrisonBattalionIds ?? []).filter((id) => id !== battalion.id)
+            }
+          }
+        : this.state.buildings;
+      this.state = {
+        ...this.state,
+        buildings: nextBuildings,
+        battalions: {
+          ...this.state.battalions,
+          [battalion.id]: {
+            ...battalion,
+            garrisonedInBuildingId: undefined,
+            destination: command.payload.destination,
+            attackMoveDestination: command.payload.destination,
+            targetId: undefined
+          }
+        }
+      };
+      if (garrison) {
+        this.eventWriter.emit(tick, "battalion-ungarrisoned", {
+          battalionId: battalion.id,
+          buildingId: garrison.id,
+          reason: "attack-move-order"
         });
       }
       this.eventWriter.emit(tick, "command-applied", { commandId: command.id });
@@ -511,6 +557,7 @@ export class Simulation {
           [battalion.id]: {
             ...battalion,
             targetId: undefined,
+            attackMoveDestination: undefined,
             garrisonedInBuildingId: undefined,
             destination: castle.position,
             morale: Math.max(0, battalion.morale - 2)
@@ -586,6 +633,7 @@ export class Simulation {
             ...battalion,
             embarkedInCaravanId: caravan.id,
             position: caravan.position,
+            attackMoveDestination: undefined,
             destination: undefined
           }
         }
@@ -664,6 +712,7 @@ export class Simulation {
             ...battalion,
             garrisonedInBuildingId: building.id,
             position: building.position,
+            attackMoveDestination: undefined,
             destination: undefined
           }
         }
@@ -720,6 +769,7 @@ export class Simulation {
           [battalion.id]: {
             ...battalion,
             targetId: command.payload.targetId,
+            attackMoveDestination: undefined,
             destination: target.position
           }
         }
@@ -2333,6 +2383,57 @@ export class Simulation {
     }
   }
 
+  private updateAttackMoveTargets(tick: number): void {
+    let battalions = this.state.battalions;
+    for (const candidate of Object.values(battalions).sort((left, right) => left.id.localeCompare(right.id))) {
+      const battalion = battalions[candidate.id];
+      if (
+        !battalion ||
+        !battalion.attackMoveDestination ||
+        battalion.targetId ||
+        battalion.embarkedInCaravanId ||
+        battalion.garrisonedInBuildingId
+      ) {
+        continue;
+      }
+      const target = this.findAttackMoveTarget(battalion);
+      if (!target) {
+        continue;
+      }
+      battalions = {
+        ...battalions,
+        [battalion.id]: {
+          ...battalion,
+          targetId: target.id,
+          destination: target.position
+        }
+      };
+      this.eventWriter.emit(tick, "attack-move-engaged", {
+        battalionId: battalion.id,
+        targetId: target.id,
+        destination: battalion.attackMoveDestination
+      });
+    }
+    this.state = { ...this.state, battalions };
+  }
+
+  private findAttackMoveTarget(battalion: BattalionState): BattalionState | BuildingState | CaravanState | undefined {
+    const acquisitionRange = Math.max(96, battalion.range + 88);
+    const candidates = [
+      ...Object.values(this.state.battalions),
+      ...Object.values(this.state.caravans),
+      ...Object.values(this.state.buildings).filter((building) => building.complete)
+    ].filter(
+      (target): target is BattalionState | BuildingState | CaravanState =>
+        target.ownerEmpireId !== battalion.ownerEmpireId &&
+        isPositionVisibleToEmpire(this.state, battalion.ownerEmpireId, target.position) &&
+        distance(battalion.position, target.position) <= acquisitionRange
+    );
+    return candidates.sort(
+      (left, right) => distance(battalion.position, left.position) - distance(battalion.position, right.position) || left.id.localeCompare(right.id)
+    )[0];
+  }
+
   private updateBattalionMovement(tick: number): void {
     const updatedBattalions: Record<string, BattalionState> = {};
 
@@ -2375,7 +2476,8 @@ export class Simulation {
       updatedBattalions[battalion.id] = {
         ...battalion,
         position: nextPosition,
-        destination: arrived ? undefined : battalion.destination
+        destination: arrived ? undefined : battalion.destination,
+        attackMoveDestination: arrived && !battalion.targetId ? undefined : battalion.attackMoveDestination
       };
 
       this.eventWriter.emit(tick, "battalion-moved", {
@@ -2663,6 +2765,21 @@ export class Simulation {
         continue;
       }
 
+      const targetBattalion = battalions[battalion.targetId];
+      const targetBuilding = buildings[battalion.targetId];
+      const targetCaravan = caravans[battalion.targetId];
+      if (!targetBattalion && !targetBuilding && !targetCaravan) {
+        battalions = {
+          ...battalions,
+          [battalion.id]: {
+            ...battalion,
+            targetId: undefined,
+            destination: battalion.attackMoveDestination ?? battalion.destination
+          }
+        };
+        continue;
+      }
+
       if (battalion.attackCooldownRemaining > 0) {
         battalions = {
           ...battalions,
@@ -2670,17 +2787,6 @@ export class Simulation {
             ...battalion,
             attackCooldownRemaining: battalion.attackCooldownRemaining - 1
           }
-        };
-        continue;
-      }
-
-      const targetBattalion = battalions[battalion.targetId];
-      const targetBuilding = buildings[battalion.targetId];
-      const targetCaravan = caravans[battalion.targetId];
-      if (!targetBattalion && !targetBuilding && !targetCaravan) {
-        battalions = {
-          ...battalions,
-          [battalion.id]: { ...battalion, targetId: undefined }
         };
         continue;
       }
@@ -3486,6 +3592,14 @@ function getDoctrineObservation(command: GameCommand, state: WorldState): Doctri
         condition: "A battalion receives a destination",
         preferredAction: "Reposition battalions",
         goal: "Control the battlefield"
+      };
+    case "attack-move-battalion":
+      return {
+        domain: "military",
+        key: "advance-and-engage",
+        condition: "A battalion advances through contested terrain",
+        preferredAction: "Advance and engage",
+        goal: "Secure the battlefield"
       };
     case "retreat-battalion":
       return {

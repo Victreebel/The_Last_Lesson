@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.74.0 - 2026-08-02
+
+- Added deterministic `attack-move-battalion` commands. An advancing battalion acquires visible hostile units, convoys, or complete structures inside its acquisition radius, engages them, and resumes its saved march destination once the target is gone.
+- Added the `F` advance targeting mode and two simulation regressions covering route resumption and direct-order cancellation.
+- Corrected combat target validation to clear destroyed targets before cooldown processing, eliminating an unnecessary stale-target delay for every direct combat order.
+
 ## 1.73.0 - 2026-08-02
 
 - Added classic RTS control groups: bind selected Crown battalions with `Ctrl`/`Cmd` plus `1` through `9`, then recall the surviving group with its number key.

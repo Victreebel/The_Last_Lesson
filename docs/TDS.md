@@ -79,6 +79,7 @@ The scene exposes the same command state through pointer controls and keyboard c
 | --- | --- |
 | `B`, `H`, `R`, `L` | Toggle Build, Heir, Realm, and Book panels. Realm and Book remain mutually exclusive. |
 | `M`, `A` | Enter movement or attack targeting mode. |
+| `F` | Enter advance mode. Selected battalions receive deterministic attack-move orders that retain a final destination while engaging visible nearby enemies. |
 | `Ctrl`/`Cmd` + `1` through `9` | Bind the selected Crown battalions to a presentation-only control group; press the number to select its surviving members, or press it twice to center the camera on them. |
 | `Space` | Toggle the local presentation clock when the player is the authority. |
 | `Esc` | Cancel placement first; otherwise close panels; otherwise clear selection. |

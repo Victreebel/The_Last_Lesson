@@ -36,6 +36,7 @@ export type EventType =
   | "supply-changed"
   | "morale-recovered"
   | "attack-ordered"
+  | "attack-move-engaged"
   | "captives-taken"
   | "captives-assimilated"
   | "captives-released"

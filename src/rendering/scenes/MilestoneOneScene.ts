@@ -45,7 +45,7 @@ import {
   type WorldState
 } from "../../simulation/state/WorldState";
 
-type ToolMode = "select" | "building" | "move" | "attack";
+type ToolMode = "select" | "building" | "move" | "attack" | "attack-move";
 
 const BUILDING_OPTIONS: ReadonlyArray<{ readonly kind: BuildingKind; readonly label: string }> = [
   { kind: "villa", label: "Villa" },
@@ -332,6 +332,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     bind("L", () => this.toggleBookOfLessons());
     bind("M", () => this.enterMoveMode());
     bind("A", () => this.enterAttackMode());
+    bind("F", () => this.enterAttackMoveMode());
     bind("ESC", () => this.cancelActiveCommand());
     keyboard.on("keydown", (event: KeyboardEvent) => {
       if (event.repeat || !this.canUseGameShortcut()) {
@@ -369,6 +370,11 @@ export class MilestoneOneScene extends Phaser.Scene {
   private enterAttackMode(): void {
     this.mode = "attack";
     this.updateUi(["Select a battalion, then designate a target."]);
+  }
+
+  private enterAttackMoveMode(): void {
+    this.mode = "attack-move";
+    this.updateUi(["Select battalions, then designate an advance route."]);
   }
 
   private cancelActiveCommand(): void {
@@ -2122,6 +2128,12 @@ export class MilestoneOneScene extends Phaser.Scene {
       return;
     }
 
+    if (this.mode === "attack-move") {
+      this.issueAttackMoveOrder(worldPoint);
+      this.mode = "select";
+      return;
+    }
+
     if (this.selectionDragActive) {
       this.finishBoxSelection(start, worldPoint, this.isShiftHeld(pointer));
       return;
@@ -2362,6 +2374,21 @@ export class MilestoneOneScene extends Phaser.Scene {
       });
     }
     this.updateUi([`Move order issued to ${this.selectedBattalionIds.size} battalion(s).`]);
+  }
+
+  private issueAttackMoveOrder(point: Phaser.Math.Vector2): void {
+    if (this.selectedBattalionIds.size === 0) {
+      this.updateUi(["Select a battalion before ordering an advance."]);
+      return;
+    }
+    const destination = this.snapToGrid(point);
+    for (const battalionId of this.selectedBattalionIds) {
+      this.issueCommand({
+        type: "attack-move-battalion",
+        payload: { battalionId, destination: { x: destination.x, y: destination.y } }
+      });
+    }
+    this.updateUi([`Advance ordered for ${this.selectedBattalionIds.size} battalion(s).`]);
   }
 
   private retreatSelectedBattalions(): void {
@@ -2834,6 +2861,12 @@ export class MilestoneOneScene extends Phaser.Scene {
           return;
         }
 
+        if (currentBuilding.ownerEmpireId !== "empire-player" && this.mode === "attack-move") {
+          this.issueAttackMoveOrder(new Phaser.Math.Vector2(currentBuilding.position.x, currentBuilding.position.y));
+          this.mode = "select";
+          return;
+        }
+
         if (currentBuilding.ownerEmpireId === "empire-player" && this.mode === "attack") {
           this.updateUi(["Cannot target a structure held by the Crown."]);
           return;
@@ -2902,6 +2935,15 @@ export class MilestoneOneScene extends Phaser.Scene {
           this.selectedBattalionIds.size > 0
         ) {
           this.issueAttackOrder(battalion.id);
+          return;
+        }
+        if (
+          battalion.ownerEmpireId !== "empire-player" &&
+          this.mode === "attack-move" &&
+          this.selectedBattalionIds.size > 0
+        ) {
+          this.issueAttackMoveOrder(new Phaser.Math.Vector2(battalion.position.x, battalion.position.y));
+          this.mode = "select";
           return;
         }
         if (battalion.ownerEmpireId !== "empire-player") {
@@ -2975,6 +3017,15 @@ export class MilestoneOneScene extends Phaser.Scene {
           } else {
             this.updateUi(["Select a Crown battalion or Warship before designating a convoy target."]);
           }
+          return;
+        }
+        if (
+          caravan.ownerEmpireId !== "empire-player" &&
+          this.mode === "attack-move" &&
+          this.selectedBattalionIds.size > 0
+        ) {
+          this.issueAttackMoveOrder(new Phaser.Math.Vector2(caravan.position.x, caravan.position.y));
+          this.mode = "select";
           return;
         }
         if (caravan.ownerEmpireId !== "empire-player") {
@@ -3086,6 +3137,9 @@ export class MilestoneOneScene extends Phaser.Scene {
   private getModeLabel(): string {
     if (this.mode === "building" && this.selectedBuildingKind) {
       return `DEPLOY ${this.getBuildingLabel(this.selectedBuildingKind).toUpperCase()}`;
+    }
+    if (this.mode === "attack-move") {
+      return "ADVANCE";
     }
 
     return this.mode.toUpperCase();

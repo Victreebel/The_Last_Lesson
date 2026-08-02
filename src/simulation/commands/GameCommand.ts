@@ -9,6 +9,7 @@ export type CommandType =
   | "create-caravan"
   | "create-ship"
   | "move-battalion"
+  | "attack-move-battalion"
   | "retreat-battalion"
   | "move-caravan"
   | "embark-battalion"
@@ -133,6 +134,7 @@ export type GameCommand =
   | GameCommandBase<"create-caravan", CreateCaravanPayload>
   | GameCommandBase<"create-ship", CreateShipPayload>
   | GameCommandBase<"move-battalion", MoveBattalionPayload>
+  | GameCommandBase<"attack-move-battalion", MoveBattalionPayload>
   | GameCommandBase<"retreat-battalion", RetreatBattalionPayload>
   | GameCommandBase<"move-caravan", MoveCaravanPayload>
   | GameCommandBase<"embark-battalion", EmbarkBattalionPayload>
