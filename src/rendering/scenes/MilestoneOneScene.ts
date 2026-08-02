@@ -344,9 +344,9 @@ export class MilestoneOneScene extends Phaser.Scene {
   }
 
   preload(): void {
-    this.load.image("painted-world", "assets/painterly-battlefield-v1.png");
-    this.load.image("building-atlas", "assets/building-atlas-v1.png");
-    this.load.image("unit-atlas", "assets/unit-atlas-v1.png");
+    this.load.image("painted-world", "assets/painterly-battlefield-v1.webp");
+    this.load.image("building-atlas", "assets/building-atlas-v1.webp");
+    this.load.image("unit-atlas", "assets/unit-atlas-v1.webp");
   }
 
   create(): void {

@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.98.0 - 2026-08-02
+
+- Reduced the initial painterly art payload by converting the battlefield and both tactical atlases from 5.2 MB of runtime PNGs to approximately 0.75 MB of reproducible WebP assets.
+- Moved original PNGs outside the public deploy root, generated a compact social preview, and advanced the offline cache so installed campaigns refresh to the optimized asset set cleanly.
+
 ## 1.97.0 - 2026-08-02
 
 - Made the static single-player release installable on supported browsers with a dedicated painterly Crown-and-Book application crest, web manifest, and offline service worker.

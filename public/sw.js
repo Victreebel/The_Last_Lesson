@@ -1,4 +1,4 @@
-const CACHE_NAME = "the-last-lesson-static-v1";
+const CACHE_NAME = "the-last-lesson-static-v2";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
