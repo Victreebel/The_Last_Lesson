@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.26.0 - 2026-08-01
+
+- Added a compact `SPEED` control to the tactical header. It cycles the playable browser simulation between 1x, 2x, and 3x while preserving the fixed deterministic tick logic, save data, event order, and replay contract.
+
 ## 1.25.0 - 2026-08-01
 
 - Added a live threat forecast to the Tactical Uplink. It prioritizes low food, captive unrest, religious pressure, and observed hostile proximity for the active command seat.

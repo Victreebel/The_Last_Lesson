@@ -94,6 +94,7 @@ Implemented:
 - Immediate lesson feedback that translates authoritative doctrine events into an in-world heir/action/confidence banner, making teaching readable at the moment it occurs.
 - Captive policy choice between population-oriented assimilation and stability-oriented release, including deterministic effects on happiness, loyalty, devotion, and internal Faith.
 - Tactical Uplink threat forecast that summarizes the active settlement's most urgent food, rebellion, religious, or observed military risk.
+- Adjustable 1x/2x/3x live presentation speed for accelerating tactical downtime without changing deterministic tick rules.
 
 ## Milestone 4: Persistence Foundation
 

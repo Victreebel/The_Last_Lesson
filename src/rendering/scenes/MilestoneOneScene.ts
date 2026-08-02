@@ -127,6 +127,7 @@ const PLACEMENT_GRID_SIZE = 32;
 const DRAG_THRESHOLD = 10;
 const MINIMAP_WIDTH = 230;
 const MINIMAP_HEIGHT = 158;
+const WORLD_TICK_MILLISECONDS = 5000;
 const UI_COLORS = {
   panel: 0x12191a,
   panelDeep: 0x0b1011,
@@ -158,6 +159,8 @@ export class MilestoneOneScene extends Phaser.Scene {
   private readonly audio = new AudioDirector();
   private commandSequence = 0;
   private paused = false;
+  private gameSpeed: 1 | 2 | 3 = 1;
+  private simulationClock?: Phaser.Time.TimerEvent;
   private inspectedSettlementId = "settlement-capital";
   private selectedBattalionId: string | null = null;
   private selectedCaravanId: string | null = null;
@@ -171,6 +174,9 @@ export class MilestoneOneScene extends Phaser.Scene {
   private pauseControl!: Phaser.GameObjects.Container;
   private pauseControlButton!: Phaser.GameObjects.Rectangle;
   private pauseControlLabel!: Phaser.GameObjects.Text;
+  private speedControl!: Phaser.GameObjects.Container;
+  private speedControlButton!: Phaser.GameObjects.Rectangle;
+  private speedControlLabel!: Phaser.GameObjects.Text;
   private bookControl!: Phaser.GameObjects.Container;
   private bookControlLabel!: Phaser.GameObjects.Text;
   private bookPanel!: Phaser.GameObjects.Container;
@@ -241,19 +247,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.input.on("pointermove", (pointer: Phaser.Input.Pointer) => this.handlePointerMove(pointer));
     this.input.on("pointerup", (pointer: Phaser.Input.Pointer) => this.handlePointerUp(pointer));
 
-    this.time.addEvent({
-      delay: 5000,
-      loop: true,
-      callback: () => {
-        if (this.paused) {
-          return;
-        }
-        const result = this.simulation.tick();
-        this.renderWorld();
-        this.playCombatFeedback(result.events);
-        this.updateUi(result.events.map((event) => event.type).slice(-5));
-      }
-    });
+    this.configureSimulationClock();
 
     this.issueCommand({
       type: "assign-labor",
@@ -376,7 +370,22 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.pauseControl = this.add.container(0, 0, [this.pauseControlButton, this.pauseControlLabel]);
     this.pauseControl.setScrollFactor(0).setDepth(41);
 
-    this.resourceText = this.add.text(516, 18, "", {
+    this.speedControlButton = this.add.rectangle(510, 14, 76, 30, UI_COLORS.command, 1).setOrigin(0);
+    this.speedControlButton.setStrokeStyle(1, UI_COLORS.trim);
+    this.speedControlButton.setInteractive({ useHandCursor: true });
+    this.speedControlButton.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+      pointer.event.stopPropagation();
+      this.cycleGameSpeed();
+    });
+    this.speedControlLabel = this.add.text(519, 23, "SPEED 1X", {
+      fontFamily: "Arial Black, Arial",
+      fontSize: "9px",
+      color: UI_COLORS.text
+    });
+    this.speedControl = this.add.container(0, 0, [this.speedControlButton, this.speedControlLabel]);
+    this.speedControl.setScrollFactor(0).setDepth(41);
+
+    this.resourceText = this.add.text(600, 18, "", {
       fontFamily: "Arial, sans-serif",
       fontSize: "13px",
       color: UI_COLORS.text
@@ -388,6 +397,33 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.paused = !this.paused;
     this.pauseControlLabel.setText(this.paused ? "RESUME" : "PAUSE");
     this.updateUi([this.paused ? "Simulation paused." : "Simulation resumed."]);
+  }
+
+  private cycleGameSpeed(): void {
+    this.gameSpeed = this.gameSpeed === 3 ? 1 : ((this.gameSpeed + 1) as 1 | 2 | 3);
+    this.speedControlLabel.setText(`SPEED ${this.gameSpeed}X`);
+    this.configureSimulationClock();
+    this.updateUi([`Simulation speed set to ${this.gameSpeed}X.`]);
+  }
+
+  private configureSimulationClock(): void {
+    this.simulationClock?.remove(false);
+    this.simulationClock = this.time.addEvent({
+      delay: WORLD_TICK_MILLISECONDS / this.gameSpeed,
+      loop: true,
+      callback: () => {
+        if (!this.paused) {
+          this.advanceSimulation();
+        }
+      }
+    });
+  }
+
+  private advanceSimulation(): void {
+    const result = this.simulation.tick();
+    this.renderWorld();
+    this.playCombatFeedback(result.events);
+    this.updateUi(result.events.map((event) => event.type).slice(-5));
   }
 
   private createLessonBanner(): void {
@@ -803,10 +839,7 @@ export class MilestoneOneScene extends Phaser.Scene {
       this.updateUi(["Select a battalion, then designate a target."]);
     }, UI_COLORS.danger);
     this.addCommandButton(302, 42, "ADVANCE", "TICK", () => {
-      const result = this.simulation.tick();
-      this.renderWorld();
-      this.playCombatFeedback(result.events);
-      this.updateUi(result.events.map((event) => event.type).slice(-4));
+      this.advanceSimulation();
     });
     this.addCommandButton(14, 96, "LABOR", "FOOD", () => this.setLaborFocus("farmers"));
     this.addCommandButton(110, 96, "LABOR", "WOOD", () => this.setLaborFocus("lumberjacks"));
@@ -1214,7 +1247,10 @@ export class MilestoneOneScene extends Phaser.Scene {
     const pauseY = compact ? 36 : 14;
     this.pauseControlButton.setPosition(pauseX, pauseY);
     this.pauseControlLabel.setPosition(pauseX + 10, pauseY + 9);
-    this.resourceText.setPosition(compact ? 18 : 516, compact ? 47 : 19);
+    const speedX = compact ? width - 168 : 510;
+    this.speedControlButton.setPosition(speedX, pauseY);
+    this.speedControlLabel.setPosition(speedX + 9, pauseY + 9);
+    this.resourceText.setPosition(compact ? 18 : 600, compact ? 47 : 19);
     this.bookControl.setPosition(0, 0);
     this.realmControl.setPosition(0, 0);
     this.bookPanel.setPosition(
