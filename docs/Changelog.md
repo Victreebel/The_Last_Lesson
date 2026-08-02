@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.92.0 - 2026-08-02
+
+- Corrected the tactical HUD stacking rule for the expanded Build palette. The minimap now moves beneath the palette when space permits and hides cleanly when the viewport cannot hold both, preventing construction controls from obscuring strategic navigation.
+- This remains presentation-only: selection, placement, simulation timing, saves, replays, and multiplayer authority are unchanged.
+
 ## 1.91.0 - 2026-08-02
 
 - Added a 180-tick Campaign Theatre pacing regression for Crownfall, Rivergate, Ashen Oath, and Stonewall. After the standard economic opening, the Crown must remain alive and supplied while the Rival Crown has begun a measurable siege against its throne.

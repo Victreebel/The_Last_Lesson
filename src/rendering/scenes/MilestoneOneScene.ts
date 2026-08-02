@@ -2252,10 +2252,15 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.intelPanel.setPosition(16, topHeight + 14);
     this.commandDock.setScale(narrow ? 0.86 : 1);
     this.commandDock.setPosition(narrow ? 8 : 16, narrow ? Math.max(topHeight + 112, height - 400) : Math.max(topHeight + 220, height - 450));
-    this.minimapBounds = { x: Math.max(16, width - MINIMAP_WIDTH - 16), y: Math.max(topHeight + 210, height - MINIMAP_HEIGHT - 16) };
-    this.minimapPanel.setVisible(!narrow);
-    this.minimapGraphics.setVisible(!narrow);
-    this.minimapTitle.setVisible(!narrow);
+    const buildPanelHeight = this.buildingsPanelExpanded ? 76 + Math.ceil(BUILDING_OPTIONS.length / 3) * 76 + 8 : 48;
+    const minimapY = this.buildingsPanelExpanded
+      ? Math.max(topHeight + 210, topHeight + 14 + buildPanelHeight * scale + 12)
+      : Math.max(topHeight + 210, height - MINIMAP_HEIGHT - 16);
+    const minimapVisible = !narrow && minimapY + MINIMAP_HEIGHT <= height - 16;
+    this.minimapBounds = { x: Math.max(16, width - MINIMAP_WIDTH - 16), y: minimapY };
+    this.minimapPanel.setVisible(minimapVisible);
+    this.minimapGraphics.setVisible(minimapVisible);
+    this.minimapTitle.setVisible(minimapVisible);
     this.minimapPanel.setPosition(this.minimapBounds.x, this.minimapBounds.y);
     this.minimapTitle.setPosition(this.minimapBounds.x + 10, this.minimapBounds.y + 8);
     this.updateMinimap();
