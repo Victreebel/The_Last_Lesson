@@ -33,6 +33,7 @@ interface ConnectedClient {
 class MultiplayerRoom {
   private readonly authority: LocalAuthority;
   private readonly clients = new Map<string, WebSocket>();
+  private readonly clientEmpires = new Map<string, string>();
   private readonly reconnectTokens = new Map<string, string>();
   private readonly intentTimestamps = new Map<string, number[]>();
   private interval?: ReturnType<typeof setInterval>;
@@ -50,8 +51,12 @@ class MultiplayerRoom {
 
   join(join: JoinMatchMessage, socket: WebSocket): { snapshot: AuthoritySnapshot; reconnectToken: string } {
     const knownToken = this.reconnectTokens.get(join.clientId);
+    const knownEmpireId = this.clientEmpires.get(join.clientId);
     if (knownToken && join.reconnectToken !== knownToken) {
       throw new Error("This Crown identity requires its reconnect token to reclaim the room.");
+    }
+    if (knownEmpireId && join.empireId !== knownEmpireId) {
+      throw new Error("This multiplayer identity is permanently bound to its original empire in this room.");
     }
     const previousSocket = this.clients.get(join.clientId);
     if (previousSocket && previousSocket !== socket) {
@@ -61,6 +66,7 @@ class MultiplayerRoom {
     const snapshot = this.authority.connect({ clientId: join.clientId, empireId: join.empireId });
     this.ensureTicking();
     const reconnectToken = knownToken ?? createReconnectToken();
+    this.clientEmpires.set(join.clientId, join.empireId);
     this.reconnectTokens.set(join.clientId, reconnectToken);
     return { snapshot, reconnectToken };
   }
@@ -110,6 +116,7 @@ class MultiplayerRoom {
       socket.close();
     }
     this.clients.clear();
+    this.clientEmpires.clear();
     this.intentTimestamps.clear();
     this.reconnectTokens.clear();
   }

@@ -169,6 +169,23 @@ describe("multiplayer WebSocket transport", () => {
       message: "This Crown identity requires its reconnect token to reclaim the room."
     });
 
+    const empireSwitcher = new WebSocket(`ws://127.0.0.1:${port}`);
+    await waitForOpen(empireSwitcher);
+    const switchedEmpire = waitForMessage(empireSwitcher);
+    empireSwitcher.send(
+      JSON.stringify({
+        type: "join-match",
+        roomId: "protected-crown",
+        clientId: "player-one",
+        empireId: "empire-rival",
+        reconnectToken: firstJoin.reconnectToken
+      })
+    );
+    await expect(switchedEmpire).resolves.toEqual({
+      type: "protocol-error",
+      message: "This multiplayer identity is permanently bound to its original empire in this room."
+    });
+
     const returningClient = new WebSocket(`ws://127.0.0.1:${port}`);
     await waitForOpen(returningClient);
     const reclaimed = waitForMessage(returningClient);
@@ -191,6 +208,7 @@ describe("multiplayer WebSocket transport", () => {
     returningClient.send(JSON.stringify({ type: "request-snapshot" }));
     await expect(snapshot).resolves.toMatchObject({ type: "snapshot" });
     intruder.close();
+    empireSwitcher.close();
     returningClient.close();
   });
 
