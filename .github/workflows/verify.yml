@@ -26,10 +26,17 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm check
+      - run: pnpm package:storefront
       - run: docker build --tag the-last-lesson-host:ci .
       - uses: actions/upload-artifact@v6
         with:
           name: the-last-lesson-web
           path: dist
+          if-no-files-found: error
+          retention-days: 14
+      - uses: actions/upload-artifact@v6
+        with:
+          name: the-last-lesson-storefront
+          path: release/the-last-lesson-web.zip
           if-no-files-found: error
           retention-days: 14

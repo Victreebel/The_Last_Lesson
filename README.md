@@ -110,6 +110,8 @@ pnpm package:storefront
 
 This produces `release/the-last-lesson-web.zip`, with `index.html` at its root and relative asset paths for browser-game storefronts. The archive includes the install manifest and offline worker; it is the single-player campaign package, while online co-op still needs an authoritative WebSocket host.
 
+The package validates itself after creation. To verify an already-built archive independently, run `pnpm verify:storefront`. GitHub Actions retains the exact verified storefront archive as `the-last-lesson-storefront` for fourteen days. See [Storefront Release](docs/StorefrontRelease.md) for the upload gate.
+
 ```sh
 pnpm build
 pnpm test
@@ -131,3 +133,4 @@ GitHub Actions runs this same test-and-build gate for every pull request and eve
 - [Technical Design Specification](docs/TDS.md)
 - [Milestone History](docs/Milestones.md)
 - [Changelog](docs/Changelog.md)
+- [Storefront Release](docs/StorefrontRelease.md)

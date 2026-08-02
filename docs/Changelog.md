@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.7 - 2026-08-02
+
+- Hardened the storefront delivery path. The HTML5 upload archive now validates its portable entry point, PWA files, optimized tactical assets, runtime chunks, and every local reference; GitHub Verify builds, validates, and retains the exact `the-last-lesson-storefront` package.
+
 ## 2.6.6 - 2026-08-02
 
 - Added terrain-specific environmental signatures to the tactical map. Every terrain zone now pairs its existing label and symbol with a distinct deterministic texture treatment, improving terrain recognition and color-independent readability without changing authoritative terrain rules.
