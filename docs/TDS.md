@@ -1455,7 +1455,7 @@ Each addition must preserve deterministic command replay and the simulation/pres
 
 ## 30. Current Readiness Statement
 
-The Last Lesson is in active vertical-slice production. Its frozen architecture, deterministic simulation, teaching loop, authored scenarios, save/replay path, and playable local-network co-op have been implemented and verified. The browser entry point now also exposes a named, focusable application canvas, a screen-reader-only control briefing, and deliberate-command announcements without coupling assistive presentation to simulation events. New work should prioritize player onboarding, content depth, balance, and release delivery over unbounded new mechanics.
+The Last Lesson is in active vertical-slice production. Its frozen architecture, deterministic simulation, teaching loop, authored scenarios, save/replay path, and playable local-network co-op have been implemented and verified. The browser entry point now also exposes a named, focusable application canvas, a screen-reader-only control briefing, and deliberate-command announcements without coupling assistive presentation to simulation events. The static release exposes a scoped install manifest and service worker: navigations are refreshed from the network when available, while the installed shell and same-origin game assets use cache-first offline retrieval. Service-worker state is presentation delivery only and must never participate in simulation, save, replay, or multiplayer authority. New work should prioritize player onboarding, content depth, balance, and release delivery over unbounded new mechanics.
 
 ---
 

@@ -92,6 +92,8 @@ Every verified `main` push also runs a GitHub Pages deployment workflow with the
 
 GitHub Pages serves the complete single-player experience. Multiplayer still requires a separately hosted WebSocket authority, so public matchmaking and account-backed online play remain a later delivery milestone.
 
+The static campaign is installable on supported browsers. After the first successful load, its game shell and requested local assets are cached for offline single-player use; a browser must reconnect before joining a multiplayer host.
+
 ```sh
 pnpm build
 pnpm test

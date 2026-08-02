@@ -1,0 +1,24 @@
+{
+  "name": "The Last Lesson",
+  "short_name": "Last Lesson",
+  "description": "A real-time strategy game where every order teaches the heirs who will govern your empire.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#090d0e",
+  "theme_color": "#12191a",
+  "icons": [
+    {
+      "src": "icons/the-last-lesson-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/the-last-lesson-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

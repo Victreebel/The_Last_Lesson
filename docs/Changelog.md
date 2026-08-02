@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.97.0 - 2026-08-02
+
+- Made the static single-player release installable on supported browsers with a dedicated painterly Crown-and-Book application crest, web manifest, and offline service worker.
+- The service worker uses fresh navigation requests and cache-first local assets, keeping future releases reachable while preserving an offline campaign after its first successful load. Multiplayer remains intentionally online-only.
+
 ## 1.96.0 - 2026-08-02
 
 - Added baseline accessibility semantics around the canvas strategy interface: a focusable, named application surface, screen-reader-only campaign and keyboard briefing, a JavaScript fallback, and polite announcements for deliberate player commands.
