@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.79.0 - 2026-08-02
+
+- Added field feedback for Bless Harvest, Inspire Army, and Divine Judgment using authoritative `miracle-cast` events: a short expanding halo and named invocation at the affected settlement or battalion.
+- Kept miracle feedback presentation-only, so Faith costs, effects, command timing, saves, replays, and multiplayer authority are unchanged.
+
 ## 1.78.0 - 2026-08-02
 
 - Added contextual hover guidance to command-dock controls, surfacing a command's intent and cost only while it is being inspected.

@@ -754,6 +754,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     }
     this.renderWorld();
     this.playCombatFeedback(result.events);
+    this.playMiracleFeedback(result.events);
     if (this.replayReview && result.tick >= this.replayReview.targetTick) {
       this.paused = true;
       this.pauseControlLabel.setText("REPLAY END");
@@ -859,6 +860,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.lessonBanner.setVisible(false);
     this.renderWorld();
     this.playCombatFeedback(snapshot.recentEvents);
+    this.playMiracleFeedback(snapshot.recentEvents);
     this.updateUi(snapshot.recentEvents.map((event) => event.type).slice(-5));
   }
 
@@ -2890,6 +2892,61 @@ export class MilestoneOneScene extends Phaser.Scene {
   private getEntityPosition(entityId: string): { x: number; y: number } | undefined {
     const state = this.simulation.getState();
     return state.battalions[entityId]?.position ?? state.buildings[entityId]?.position ?? state.caravans[entityId]?.position;
+  }
+
+  private playMiracleFeedback(events: GameEvent[]): void {
+    for (const event of events) {
+      if (event.type !== "miracle-cast") {
+        continue;
+      }
+      const miracle = String(event.payload.miracle ?? "");
+      const battalionId = typeof event.payload.battalionId === "string" ? event.payload.battalionId : undefined;
+      const settlementId = typeof event.payload.settlementId === "string" ? event.payload.settlementId : undefined;
+      const settlement = settlementId ? this.simulation.getState().settlements[settlementId] : undefined;
+      const position = battalionId
+        ? this.getEntityPosition(battalionId)
+        : settlement
+          ? this.getEntityPosition(settlement.centralBuildingId)
+          : undefined;
+      if (!position) {
+        continue;
+      }
+
+      const style =
+        miracle === "bless-harvest"
+          ? { color: 0xb9d86d, label: "HARVEST BLESSED", radius: 30 }
+          : miracle === "inspire-battalion"
+            ? { color: 0xf2d77f, label: "ARMY INSPIRED", radius: 22 }
+            : { color: 0x90c8df, label: "DIVINE WARD", radius: 38 };
+      const halo = this.add.circle(position.x, position.y, style.radius, style.color, 0.1);
+      halo.setStrokeStyle(3, style.color, 0.94).setDepth(32);
+      this.tweens.add({
+        targets: halo,
+        scaleX: 2.4,
+        scaleY: 2.4,
+        alpha: 0,
+        duration: 820,
+        ease: "Sine.easeOut",
+        onComplete: () => halo.destroy()
+      });
+      const title = this.add.text(position.x, position.y - style.radius - 24, style.label, {
+        fontFamily: "Arial Black, Arial",
+        fontSize: "10px",
+        color: `#${style.color.toString(16).padStart(6, "0")}`,
+        stroke: "#10150f",
+        strokeThickness: 3
+      });
+      title.setOrigin(0.5).setDepth(33);
+      this.tweens.add({
+        targets: title,
+        y: title.y - 20,
+        alpha: 0,
+        delay: 550,
+        duration: 450,
+        ease: "Sine.easeIn",
+        onComplete: () => title.destroy()
+      });
+    }
   }
 
   private renderWorld(): void {
