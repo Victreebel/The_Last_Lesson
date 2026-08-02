@@ -1972,7 +1972,8 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.addWideCommandButton(14, 312, "GARRISON", "NEAREST DEFENSE WORKS", () => this.garrisonSelectedBattalions());
     this.addWideCommandButton(210, 312, "WARSHIP", "18W 4I / TOWN SQUARE", () => this.createShip());
     this.addCommandButton(14, 366, "HOUNDS", "8F 4W", () => this.createBattalion("hounds"));
-    this.addWideCommandButton(110, 366, "DIVINE JUDGMENT", "18 FAITH / RELIGIOUS WARD", () => this.castDivineJudgment());
+    this.addCommandButton(110, 366, "MEND", "14 FAITH", () => this.castMendSettlement());
+    this.addWideCommandButton(206, 366, "DIVINE JUDGMENT", "18 FAITH / RELIGIOUS WARD", () => this.castDivineJudgment());
   }
 
   private createCommandTooltip(): void {
@@ -3169,6 +3170,19 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.updateUi(["Divine Judgment petitioned. 18 Faith will shield this settlement from rival pressure."]);
   }
 
+  private castMendSettlement(): void {
+    const settlement = this.getActiveControlledSettlement();
+    if (!settlement) {
+      this.updateUi(["Select a Crown castle before invoking Mend Settlement."]);
+      return;
+    }
+    this.issueCommand({
+      type: "cast-miracle",
+      payload: { empireId: "empire-player", kind: "mend-settlement", settlementId: settlement.id }
+    });
+    this.updateUi(["Mend Settlement petitioned. 14 Faith will restore civic health and end plague."]);
+  }
+
   private assimilateCaptives(): void {
     const settlement = this.getActiveControlledSettlement();
     if (!settlement) {
@@ -3411,7 +3425,9 @@ export class MilestoneOneScene extends Phaser.Scene {
           ? { color: 0xb9d86d, label: "HARVEST BLESSED", radius: 30 }
           : miracle === "inspire-battalion"
             ? { color: 0xf2d77f, label: "ARMY INSPIRED", radius: 22 }
-            : { color: 0x90c8df, label: "DIVINE WARD", radius: 38 };
+            : miracle === "mend-settlement"
+              ? { color: 0x8ed4a5, label: "SETTLEMENT MENDED", radius: 34 }
+              : { color: 0x90c8df, label: "DIVINE WARD", radius: 38 };
       const halo = this.add.circle(position.x, position.y, style.radius, style.color, 0.1);
       halo.setStrokeStyle(3, style.color, 0.94).setDepth(32);
       this.tweens.add({

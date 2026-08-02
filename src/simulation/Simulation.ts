@@ -1,5 +1,5 @@
 import { defaultSimulationConfig, type SimulationConfig } from "./SimulationConfig";
-import type { GameCommand } from "./commands/GameCommand";
+import type { GameCommand, MiracleKind } from "./commands/GameCommand";
 import { EventWriter } from "./events/EventWriter";
 import type { GameEvent } from "./events/GameEvent";
 import { stableHash } from "./hash/stableHash";
@@ -954,6 +954,57 @@ export class Simulation {
           settlementId: settlement.id,
           faithCost: cost,
           wardTicks: 3
+        });
+        this.observePlayerCommand(command, tick);
+        return;
+      }
+
+      if (command.payload.kind === "mend-settlement") {
+        const settlement = command.payload.settlementId
+          ? this.state.settlements[command.payload.settlementId]
+          : undefined;
+        if (
+          !settlement ||
+          settlement.ownerEmpireId !== empire.id ||
+          (settlement.population.health >= 100 && (settlement.plagueTicks ?? 0) === 0)
+        ) {
+          this.eventWriter.emit(tick, "command-rejected", { commandId: command.id });
+          return;
+        }
+        const restoredHealth = Math.min(100, settlement.population.health + 30);
+        const plagueCleansed = (settlement.plagueTicks ?? 0) > 0;
+        this.state = {
+          ...this.state,
+          empires: {
+            ...this.state.empires,
+            [empire.id]: {
+              ...empire,
+              resources: { ...empire.resources, faith: empire.resources.faith - cost }
+            }
+          },
+          settlements: {
+            ...this.state.settlements,
+            [settlement.id]: {
+              ...settlement,
+              plagueTicks: 0,
+              internalFaith: Math.min(100, settlement.internalFaith + 6),
+              population: {
+                ...settlement.population,
+                health: restoredHealth,
+                happiness: Math.min(100, settlement.population.happiness + 4),
+                loyalty: Math.min(100, settlement.population.loyalty + 5),
+                devotion: Math.min(100, settlement.population.devotion + 7)
+              }
+            }
+          }
+        };
+        this.eventWriter.emit(tick, "miracle-cast", {
+          commandId: command.id,
+          miracle: command.payload.kind,
+          settlementId: settlement.id,
+          faithCost: cost,
+          restoredHealth: restoredHealth - settlement.population.health,
+          plagueCleansed
         });
         this.observePlayerCommand(command, tick);
         return;
@@ -3599,9 +3650,12 @@ function getSpecializationAdvantage(
   return 1;
 }
 
-function getMiracleCost(kind: "bless-harvest" | "inspire-battalion" | "divine-judgment"): number {
+function getMiracleCost(kind: MiracleKind): number {
   if (kind === "bless-harvest") {
     return 12;
+  }
+  if (kind === "mend-settlement") {
+    return 14;
   }
   return kind === "inspire-battalion" ? 16 : 18;
 }
@@ -3753,8 +3807,10 @@ function getDoctrineObservation(command: GameCommand, state: WorldState): Doctri
             ? "Bless harvests"
             : command.payload.kind === "inspire-battalion"
               ? "Inspire battalions"
-              : "Pronounce divine judgment",
-        goal: "Strengthen divine rule"
+              : command.payload.kind === "mend-settlement"
+                ? "Mend settlements"
+                : "Pronounce divine judgment",
+        goal: command.payload.kind === "mend-settlement" ? "Restore civic resilience" : "Strengthen divine rule"
       };
     case "reward-heir":
     case "punish-heir":

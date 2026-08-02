@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.5.0 - 2026-08-02
+
+- Added `MEND SETTLEMENT`, a 14-Faith civic recovery miracle. It restores health, clears an active plague, and reinforces loyalty, devotion, and internal Faith without restoring lost population or infrastructure.
+- The rite uses the existing deterministic command, event, doctrine, replay, save, multiplayer, and miracle-presentation contracts; focused simulation coverage verifies both the cure and its resource cost.
+
 ## 2.4.3 - 2026-08-02
 
 - The tactical application now publishes its keyboard shortcuts through `aria-keyshortcuts` and defaults motion effects to the browser's reduced-motion preference until the player selects a local override.

@@ -93,6 +93,49 @@ describe("faith and religion", () => {
     expect(pressureEvent?.payload.wardPressure).toBe(18);
   });
 
+  it("uses Mend Settlement to clear plague and restore civic health", () => {
+    const initial = createInitialWorld(989898);
+    const simulation = new Simulation({
+      ...initial,
+      empires: {
+        ...initial.empires,
+        "empire-player": {
+          ...initial.empires["empire-player"],
+          resources: { ...initial.empires["empire-player"].resources, faith: 20 }
+        }
+      },
+      settlements: {
+        ...initial.settlements,
+        "settlement-capital": {
+          ...initial.settlements["settlement-capital"],
+          plagueTicks: 2,
+          population: { ...initial.settlements["settlement-capital"].population, health: 35 }
+        }
+      }
+    });
+    simulation.enqueueCommand({
+      id: "mend-capital",
+      issuedBy: "player-1",
+      tick: 1,
+      type: "cast-miracle",
+      payload: {
+        empireId: "empire-player",
+        kind: "mend-settlement",
+        settlementId: "settlement-capital"
+      }
+    });
+
+    const result = simulation.tick();
+    const capital = simulation.getState().settlements["settlement-capital"];
+    const mendEvent = result.events.find((event) => event.type === "miracle-cast");
+
+    expect(capital.plagueTicks).toBe(0);
+    expect(capital.population.health).toBeGreaterThan(60);
+    expect(capital.population.loyalty).toBeGreaterThan(initial.settlements["settlement-capital"].population.loyalty);
+    expect(simulation.getState().empires["empire-player"].resources.faith).toBeLessThan(20);
+    expect(mendEvent?.payload).toMatchObject({ miracle: "mend-settlement", plagueCleansed: true });
+  });
+
   it("counts only locally assigned military morale toward a settlement's faith", () => {
     const initial = createInitialWorld(676767);
     const remoteBattalion = initial.battalions["battalion-rival-1"];

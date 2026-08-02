@@ -23,7 +23,7 @@ export type CommandType =
   | "punish-heir"
   | "cast-miracle";
 
-export type MiracleKind = "bless-harvest" | "inspire-battalion" | "divine-judgment";
+export type MiracleKind = "bless-harvest" | "inspire-battalion" | "mend-settlement" | "divine-judgment";
 
 export interface GameCommandBase<TType extends CommandType, TPayload> {
   readonly id: CommandId;

@@ -886,8 +886,10 @@ Miracles consume Faith. They should change decisions, not replace them.
 
 Initial miracles:
 
-1. Bless Harvest
-2. Divine Judgment
+1. Bless Harvest: spend 12 Faith to replenish a settlement's local food and reinforce its civic devotion.
+2. Inspire Army: spend 16 Faith to restore a selected friendly battalion's morale and devotion.
+3. Mend Settlement: spend 14 Faith to restore 30 civic health, end an active plague, and strengthen local loyalty, devotion, and internal Faith. It cannot create population or restore destroyed infrastructure.
+4. Divine Judgment: spend 18 Faith to establish a temporary religious ward against external pressure.
 
 ### 16.1 Miracle Definition
 
