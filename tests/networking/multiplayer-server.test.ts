@@ -114,11 +114,15 @@ describe("multiplayer WebSocket transport", () => {
       JSON.stringify({
         type: "join-match",
         roomId: "resume-crown",
-        clientId: "player-returning",
+        clientId: "player-one",
         empireId: "empire-player"
       })
     );
-    await expect(rejoined).resolves.toMatchObject({ type: "joined-match", snapshot: { tick: 1 } });
+    await expect(rejoined).resolves.toMatchObject({
+      type: "joined-match",
+      clientId: "player-one",
+      snapshot: { tick: 1, connectedClients: [{ clientId: "player-one", empireId: "empire-player" }] }
+    });
 
     returningClient.close();
   });

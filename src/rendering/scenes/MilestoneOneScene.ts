@@ -265,6 +265,7 @@ export class MilestoneOneScene extends Phaser.Scene {
   private remoteUnsubscribe?: () => void;
   private remoteStatusUnsubscribe?: () => void;
   private remoteRoomId?: string;
+  private remoteReconnectRequest?: MultiplayerConnectRequest;
   private readonly audio = new AudioDirector();
   private commandSequence = 0;
   private paused = false;
@@ -982,6 +983,10 @@ export class MilestoneOneScene extends Phaser.Scene {
   }
 
   private openMultiplayerLobby(): void {
+    if (this.networkControlLabel.text === "REJOIN" && this.remoteReconnectRequest) {
+      this.connectToMultiplayer(this.remoteReconnectRequest);
+      return;
+    }
     this.game.events.emit("open-multiplayer-lobby", {
       scenarioId: this.campaignScenario,
       rivalDifficulty: this.campaignDifficulty
@@ -990,6 +995,7 @@ export class MilestoneOneScene extends Phaser.Scene {
 
   private connectToMultiplayer(request: MultiplayerConnectRequest): void {
     this.disconnectFromMultiplayer();
+    this.remoteReconnectRequest = request;
     this.campaignScenario = request.scenarioId;
     this.campaignDifficulty = request.rivalDifficulty;
     this.campaignSetupPending = false;
@@ -1028,6 +1034,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.remoteAuthority?.disconnect();
     this.remoteAuthority = undefined;
     this.remoteRoomId = undefined;
+    this.remoteReconnectRequest = undefined;
     if (this.networkControlLabel) {
       this.networkControlLabel.setText("MULTI");
     }
@@ -1062,10 +1069,14 @@ export class MilestoneOneScene extends Phaser.Scene {
       return;
     }
     // Do not resume a disconnected match locally: the host owns its only valid state.
-    this.networkControlLabel.setText("REJOIN");
+    this.networkControlLabel.setText(this.remoteReconnectRequest ? "REJOIN" : "MULTI");
     this.pauseControlLabel.setText("FROZEN");
     this.speedControlLabel.setText("FROZEN");
-    this.updateUi(["Multiplayer host disconnected. The reign is frozen; use REJOIN to reconnect."]);
+    this.updateUi([
+      this.remoteReconnectRequest
+        ? "Multiplayer host disconnected. The reign is frozen; use REJOIN to recover the room."
+        : "Multiplayer host disconnected. The reign is frozen."
+    ]);
   }
 
   private applyRemoteSnapshot(snapshot: AuthoritySnapshot): void {

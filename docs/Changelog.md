@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.5.7 - 2026-08-02
+
+- Added persistent browser-local Crown identities for multiplayer rooms and made `REJOIN` reconnect directly to the retained authoritative room after a socket loss.
+- Added regression coverage for stable local identity generation and same-identity room recovery without adding account, token, or alternate authority state.
+
+## 2.5.6 - 2026-08-02
+
+- Replaced raw internal event identifiers in the Tactical Uplink and Book of Lessons with a deterministic, player-facing Chronicle.
+- Prioritized decisive tactical reports in the Uplink so a miracle, civic crisis, lesson, or battlefield reversal cannot be immediately buried by routine production events; the Book still retains the unfiltered timeline.
+
 ## 2.5.5 - 2026-08-02
 
 - Made building, Realm, Heir, and end-of-reign controls consistently consume their pointer release before battlefield selection can run.

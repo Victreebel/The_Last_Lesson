@@ -13,6 +13,32 @@ export interface MultiplayerLobbyDefaults {
   readonly rivalDifficulty: RivalDifficulty;
 }
 
+interface KeyValueStore {
+  getItem(key: string): string | null;
+  setItem(key: string, value: string): void;
+}
+
+const LOCAL_MULTIPLAYER_CLIENT_ID_KEY = "the-last-lesson.multiplayer-client-id.v1";
+const CLIENT_ID_PATTERN = /^crown-[a-z0-9-]{6,64}$/i;
+
+/**
+ * A browser-local identity lets a returning player reclaim an idle room
+ * without introducing an account system or authority-side authentication.
+ */
+export function getPersistentMultiplayerClientId(store: KeyValueStore | undefined = getBrowserStore()): string {
+  const existing = store?.getItem(LOCAL_MULTIPLAYER_CLIENT_ID_KEY);
+  if (existing && CLIENT_ID_PATTERN.test(existing)) {
+    return existing;
+  }
+  const clientId = createClientId();
+  try {
+    store?.setItem(LOCAL_MULTIPLAYER_CLIENT_ID_KEY, clientId);
+  } catch {
+    // Private browser contexts may reject persistence; a session identity still works.
+  }
+  return clientId;
+}
+
 /** DOM form for connection data; simulation and rendering remain Phaser-owned. */
 export class MultiplayerLobby {
   private readonly overlay: HTMLDivElement;
@@ -67,7 +93,7 @@ export class MultiplayerLobby {
       this.onConnect({
         url: this.urlInput.value.trim(),
         roomId: this.roomInput.value.trim(),
-        clientId: createClientId(),
+        clientId: getPersistentMultiplayerClientId(),
         scenarioId: this.scenarioSelect.value as ScenarioId,
         rivalDifficulty: this.difficultySelect.value as RivalDifficulty
       });
@@ -96,4 +122,12 @@ export class MultiplayerLobby {
 function createClientId(): string {
   const suffix = globalThis.crypto?.randomUUID?.().replaceAll("-", "").slice(0, 12) ?? Math.random().toString(36).slice(2, 14);
   return `crown-${suffix}`;
+}
+
+function getBrowserStore(): KeyValueStore | undefined {
+  try {
+    return globalThis.localStorage;
+  } catch {
+    return undefined;
+  }
 }
