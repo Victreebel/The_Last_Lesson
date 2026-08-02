@@ -28,7 +28,7 @@ export interface Position {
 
 export type RivalDifficulty = "disciple" | "rival" | "architect";
 
-export type ScenarioId = "crownfall" | "rivergate" | "ashen-oath";
+export type ScenarioId = "crownfall" | "rivergate" | "ashen-oath" | "stonewall";
 
 export interface ScenarioProfile {
   readonly label: string;
@@ -47,6 +47,10 @@ export const SCENARIO_PROFILES: Record<ScenarioId, ScenarioProfile> = {
   "ashen-oath": {
     label: "ASHEN OATH",
     summary: "Captives, rival roads, and religious pressure test the legitimacy of your rule."
+  },
+  stonewall: {
+    label: "STONEWALL",
+    summary: "A fortified frontier. Hold the gate, protect supply, then break the siege."
   }
 };
 
@@ -651,6 +655,35 @@ function applyScenario(world: WorldState, scenarioId: ScenarioId): WorldState {
           complete: true,
           remainingBuildTicks: 0
         }
+      }
+    };
+  }
+
+  if (scenarioId === "stonewall") {
+    const wallIds = ["building-stonewall-wall-1", "building-stonewall-gate", "building-stonewall-wall-2"];
+    return {
+      ...world,
+      empires: {
+        ...world.empires,
+        "empire-player": {
+          ...playerEmpire,
+          resources: { ...playerEmpire.resources, wood: 42, iron: 10, faith: 6 }
+        }
+      },
+      settlements: {
+        ...world.settlements,
+        "settlement-capital": {
+          ...capital,
+          buildingIds: [...capital.buildingIds, ...wallIds],
+          localFood: 72,
+          population: { ...capital.population, builders: 2, farmers: 6 }
+        }
+      },
+      buildings: {
+        ...world.buildings,
+        "building-stonewall-wall-1": { id: "building-stonewall-wall-1", ownerEmpireId: "empire-player", settlementId: "settlement-capital", kind: "wall", position: { x: 500, y: 260 }, defense: 200, complete: true, remainingBuildTicks: 0 },
+        "building-stonewall-gate": { id: "building-stonewall-gate", ownerEmpireId: "empire-player", settlementId: "settlement-capital", kind: "gate", position: { x: 500, y: 320 }, defense: 150, complete: true, remainingBuildTicks: 0 },
+        "building-stonewall-wall-2": { id: "building-stonewall-wall-2", ownerEmpireId: "empire-player", settlementId: "settlement-capital", kind: "wall", position: { x: 500, y: 380 }, defense: 200, complete: true, remainingBuildTicks: 0 }
       }
     };
   }

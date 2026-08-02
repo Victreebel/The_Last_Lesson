@@ -780,7 +780,7 @@ export class MilestoneOneScene extends Phaser.Scene {
 
   private createCampaignSetupPanel(): void {
     const hasSavedReign = this.hasLocalSave();
-    const panelHeight = hasSavedReign ? 362 : 318;
+    const panelHeight = hasSavedReign ? 446 : 402;
     const background = this.add.rectangle(0, 0, 470, panelHeight, UI_COLORS.panelDeep, 0.98).setOrigin(0);
     background.setStrokeStyle(2, UI_COLORS.accent);
     background.setInteractive({ useHandCursor: false });
@@ -796,29 +796,30 @@ export class MilestoneOneScene extends Phaser.Scene {
       color: UI_COLORS.muted
     });
     const controls: Phaser.GameObjects.GameObject[] = [background, title, subtitle];
-    const scenarios: ScenarioId[] = ["crownfall", "rivergate", "ashen-oath"];
+    const scenarios: ScenarioId[] = ["crownfall", "rivergate", "ashen-oath", "stonewall"];
     scenarios.forEach((scenario, index) => {
       const profile = SCENARIO_PROFILES[scenario];
-      const x = 20 + index * 146;
+      const x = 20 + (index % 2) * 214;
+      const y = 82 + Math.floor(index / 2) * 70;
       const selected = scenario === this.campaignScenario;
-      const button = this.add.rectangle(x, 82, 136, 64, selected ? UI_COLORS.commandActive : UI_COLORS.command, 1).setOrigin(0);
+      const button = this.add.rectangle(x, y, 206, 56, selected ? UI_COLORS.commandActive : UI_COLORS.command, 1).setOrigin(0);
       button.setStrokeStyle(selected ? 2 : 1, selected ? UI_COLORS.accent : UI_COLORS.trim);
       button.setInteractive({ useHandCursor: true });
       button.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
         pointer.event.stopPropagation();
         this.selectCampaignScenario(scenario);
       });
-      const label = this.add.text(x + 10, 92, profile.label, {
+      const label = this.add.text(x + 10, y + 9, profile.label, {
         fontFamily: "Arial Black, Arial",
         fontSize: "10px",
         color: UI_COLORS.text,
-        wordWrap: { width: 116 }
+        wordWrap: { width: 184 }
       });
-      const detail = this.add.text(x + 10, 111, profile.summary.split(".")[0].toUpperCase(), {
+      const detail = this.add.text(x + 10, y + 27, profile.summary.split(".")[0].toUpperCase(), {
         fontFamily: "Arial, sans-serif",
         fontSize: "8px",
         color: UI_COLORS.muted,
-        wordWrap: { width: 116 }
+        wordWrap: { width: 184 }
       });
       controls.push(button, label, detail);
     });
@@ -826,14 +827,14 @@ export class MilestoneOneScene extends Phaser.Scene {
     difficulties.forEach((difficulty, index) => {
       const profile = RIVAL_DIFFICULTY_PROFILES[difficulty];
       const x = 20 + index * 146;
-      const button = this.add.rectangle(x, 164, 136, 108, UI_COLORS.command, 1).setOrigin(0);
+      const button = this.add.rectangle(x, 242, 136, 108, UI_COLORS.command, 1).setOrigin(0);
       button.setStrokeStyle(1, UI_COLORS.trim);
       button.setInteractive({ useHandCursor: true });
       button.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
         pointer.event.stopPropagation();
         this.startCampaign(difficulty);
       });
-      const label = this.add.text(x + 12, 181, profile.label, {
+      const label = this.add.text(x + 12, 259, profile.label, {
         fontFamily: "Arial Black, Arial",
         fontSize: "12px",
         color: UI_COLORS.text,
@@ -841,7 +842,7 @@ export class MilestoneOneScene extends Phaser.Scene {
       });
       const detail = this.add.text(
         x + 12,
-        220,
+        298,
         `GRACE ${profile.openingGraceTicks} TICKS\nLEARNING +${profile.doctrineConfidenceGain}`,
         {
           fontFamily: "Arial, sans-serif",
@@ -853,14 +854,14 @@ export class MilestoneOneScene extends Phaser.Scene {
       controls.push(button, label, detail);
     });
     if (hasSavedReign) {
-      const continueButton = this.add.rectangle(20, 288, 430, 42, UI_COLORS.commandActive, 1).setOrigin(0);
+      const continueButton = this.add.rectangle(20, 366, 430, 42, UI_COLORS.commandActive, 1).setOrigin(0);
       continueButton.setStrokeStyle(1, UI_COLORS.trim);
       continueButton.setInteractive({ useHandCursor: true });
       continueButton.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
         pointer.event.stopPropagation();
         this.loadLocalGame();
       });
-      const continueLabel = this.add.text(140, 302, "CONTINUE LOCAL REIGN", {
+      const continueLabel = this.add.text(140, 380, "CONTINUE LOCAL REIGN", {
         fontFamily: "Arial Black, Arial",
         fontSize: "11px",
         color: UI_COLORS.text

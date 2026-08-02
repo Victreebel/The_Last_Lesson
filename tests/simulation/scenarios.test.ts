@@ -33,4 +33,13 @@ describe("campaign scenarios", () => {
     expect(capital.externalReligiousPressure).toBeGreaterThan(0);
     expect(pressureEvent?.payload.roadPressure).toBeGreaterThan(0);
   });
+
+  it("starts Stonewall with a defensible gate line and civic reserves", () => {
+    const world = createInitialWorld(713, "rival", "stonewall");
+    const capital = world.settlements["settlement-capital"];
+
+    expect(capital.buildingIds).toContain("building-stonewall-gate");
+    expect(world.buildings["building-stonewall-wall-1"].complete).toBe(true);
+    expect(world.empires["empire-player"].resources.iron).toBe(10);
+  });
 });

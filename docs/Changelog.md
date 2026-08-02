@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.57.0 - 2026-08-01
+
+- Added the Stonewall Campaign Theatre opening: a fortified Crown border with walls, gate, food reserves, and build labor for testing defense, retreat, logistics, and counter-siege play.
+
 ## 1.56.0 - 2026-08-01
 
 - Governing heirs now recognize unfinished infrastructure and deterministically reassign enough labor to complete foundations before pursuing other priorities.

@@ -99,7 +99,7 @@ Implemented:
 - Automatic local recovery saves every five ticks and a Continue Local Reign opening action, verified through a refresh-and-resume browser pass.
 - Responsive phone-sized layout pass: reflowed header, scaled campaign panels, accessible command dock, and intentional minimap/intel suppression where those surfaces cannot coexist without overlap.
 - Religious infrastructure: completed road corridors and nearby caravans now propagate opposing faith through the existing pressure, rebellion, and faith systems with deterministic source-level events.
-- Campaign Theatre with three authored deterministic openings: Crownfall (balanced), Rivergate (civic supply and naval opening), and Ashen Oath (captives and hostile religious roads).
+- Campaign Theatre with four authored deterministic openings: Crownfall (balanced), Rivergate (civic supply and naval opening), Ashen Oath (captives and hostile religious roads), and Stonewall (a fortified border for testing defense, logistics, retreat, and counter-siege play).
 - Scout Hounds: Town Square-trained, non-population reconnaissance packs with high movement speed and extended visibility.
 - Luxury Groves now support terrain-bound Plantations and a dedicated luxury labor assignment. Produced Luxury increases local happiness and devotion, feeding the existing Faith loop.
 - Rare settlement defection under catastrophic captive rebellion, rival religious pressure, collapsed loyalty, and absent local defense. Defection is a political transfer: it displaces rather than kills the governor, preserving the rule that only a fallen Castle kills an heir.
