@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.62.0 - 2026-08-01
+
+- Added a nine-tick Stonewall militia regression test, proving the opening defender remains active through the scenario's initial defense window.
+
 ## 1.61.0 - 2026-08-01
 
 - Preserved scenario-authored opening labor allocations instead of overwriting them with the generic Crown setup command. Stonewall now starts with its intended farming and construction workforce.

@@ -43,4 +43,24 @@ describe("campaign scenarios", () => {
     expect(world.empires["empire-player"].resources.iron).toBe(10);
     expect(capital.population).toMatchObject({ farmers: 6, builders: 2 });
   });
+
+  it("keeps a Stonewall militia alive through the opening defense window", () => {
+    const simulation = new Simulation(createInitialWorld(714, "rival", "stonewall"));
+    simulation.enqueueCommand({
+      id: "stonewall-militia",
+      issuedBy: "player-1",
+      tick: 1,
+      type: "create-battalion",
+      payload: { settlementId: "settlement-capital", size: 10, specialization: "militia" }
+    });
+
+    simulation.runTicks(9);
+
+    expect(simulation.getState().battalions["battalion-1-1"]).toMatchObject({
+      ownerEmpireId: "empire-player",
+      specialization: "militia",
+      size: 10
+    });
+    expect(simulation.getState().settlements["settlement-capital"].population.militarizedCitizens).toBe(10);
+  });
 });
