@@ -229,6 +229,25 @@ export interface BattalionState {
   readonly devotion: number;
   readonly supply: number;
   readonly experience?: number;
+  readonly battlefieldTraining?: BattlefieldTraining;
+}
+
+export interface BattlefieldTraining {
+  readonly forest?: number;
+  readonly hills?: number;
+  readonly marsh?: number;
+  readonly siege?: number;
+}
+
+export type BattalionTrait = "Forest Veterans" | "Hill Fighters" | "Marsh Runners" | "Siege Specialists";
+
+export function getBattalionTraits(training: BattlefieldTraining | undefined): BattalionTrait[] {
+  const traits: BattalionTrait[] = [];
+  if ((training?.forest ?? 0) >= 6) traits.push("Forest Veterans");
+  if ((training?.hills ?? 0) >= 6) traits.push("Hill Fighters");
+  if ((training?.marsh ?? 0) >= 6) traits.push("Marsh Runners");
+  if ((training?.siege ?? 0) >= 6) traits.push("Siege Specialists");
+  return traits;
 }
 
 export type BattalionRank = "Militia" | "Regular" | "Veteran" | "Elite" | "Legendary";

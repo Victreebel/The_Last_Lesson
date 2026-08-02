@@ -7,6 +7,7 @@ import { SeededRandom } from "./random/SeededRandom";
 import {
   isBuildingTerrainCompatible,
   getBuildingCost,
+  getBattalionTraits,
   isPositionVisibleToEmpire,
   RIVAL_DIFFICULTY_PROFILES,
   terrainAtPosition,
@@ -2201,7 +2202,7 @@ export class Simulation {
       const terrain = terrainAtPosition(this.state, battalion.position);
       const moatMultiplier = this.moatMovementMultiplier(battalion.ownerEmpireId, battalion.position);
       const speed =
-        battalion.speed * terrainMovementMultiplier(terrain) * this.roadMovementMultiplier(battalion) * moatMultiplier;
+        battalion.speed * this.getBattalionTerrainMovementMultiplier(battalion, terrain) * this.roadMovementMultiplier(battalion) * moatMultiplier;
       if (speed === 0) {
         updatedBattalions[battalion.id] = battalion;
         continue;
@@ -2345,6 +2346,17 @@ export class Simulation {
         distance(building.position, unit.position) <= 28
     );
     return onRoad ? 1.3 : 1;
+  }
+
+  private getBattalionTerrainMovementMultiplier(
+    battalion: BattalionState,
+    terrain: ReturnType<typeof terrainAtPosition>
+  ): number {
+    const traits = getBattalionTraits(battalion.battlefieldTraining);
+    if (terrain === "forest" && traits.includes("Forest Veterans")) return 0.88;
+    if (terrain === "hills" && traits.includes("Hill Fighters")) return 0.84;
+    if (terrain === "marsh" && traits.includes("Marsh Runners")) return 0.72;
+    return terrainMovementMultiplier(terrain);
   }
 
   private updateBattalionSupply(tick: number): void {
@@ -2517,13 +2529,16 @@ export class Simulation {
         ? getSpecializationAdvantage(battalion.specialization, targetBattalion.specialization)
         : 1;
       const supplyMultiplier = battalion.supply === 0 ? 0.65 : 0.8 + battalion.supply / 500;
+      const traits = getBattalionTraits(battalion.battlefieldTraining);
+      const siegeMultiplier = targetBuilding && traits.includes("Siege Specialists") ? 1.18 : 1;
       const damage = Math.max(
         1,
         Math.floor(
           (battalion.attack *
             (battalion.morale / 100) *
             specializationMultiplier *
-            supplyMultiplier) /
+            supplyMultiplier *
+            siegeMultiplier) /
           terrainDefenseMultiplier(defenderTerrain)
         )
       );
@@ -2580,12 +2595,21 @@ export class Simulation {
       if (attackingBattalion) {
         const previousExperience = attackingBattalion.experience ?? 0;
         const experience = Math.min(100, previousExperience + experienceGain);
+        const trainingKey = targetBuilding ? "siege" : defenderTerrain === "forest" || defenderTerrain === "hills" || defenderTerrain === "marsh" ? defenderTerrain : undefined;
+        const previousTraining = attackingBattalion.battlefieldTraining ?? {};
+        const battlefieldTraining = trainingKey
+          ? { ...previousTraining, [trainingKey]: Math.min(10, (previousTraining[trainingKey] ?? 0) + 1) }
+          : previousTraining;
+        const newlyLearned = getBattalionTraits(battlefieldTraining).filter(
+          (trait) => !getBattalionTraits(previousTraining).includes(trait)
+        );
         battalions = {
           ...battalions,
           [battalion.id]: {
             ...attackingBattalion,
             attackCooldownRemaining: battalion.attackCooldownTicks,
-            experience
+            experience,
+            battlefieldTraining
           }
         };
         this.eventWriter.emit(tick, "battalion-experienced", {
@@ -2593,6 +2617,9 @@ export class Simulation {
           gained: experience - previousExperience,
           experience
         });
+        for (const trait of newlyLearned) {
+          this.eventWriter.emit(tick, "battalion-trained", { battalionId: battalion.id, trait });
+        }
       }
 
       this.eventWriter.emit(tick, "damage-dealt", {

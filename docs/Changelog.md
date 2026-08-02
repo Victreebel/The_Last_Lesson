@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.50.0 - 2026-08-01
+
+- Added derived battalion battlefield traits. Repeated terrain combat produces Forest Veterans, Hill Fighters, or Marsh Runners with improved traversal; repeated structure attacks produce Siege Specialists with a bounded siege-only bonus.
+
 ## 1.49.0 - 2026-08-01
 
 - Added civic morale recovery. Every third tick, supplied battalions can regain morale from a peaceful, adequately housed, happy, loyal, and religiously secure home settlement. The recovery is event-explained and cannot replace logistical supply.

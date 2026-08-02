@@ -112,6 +112,7 @@ Implemented:
 - Destroyed Villas now inflict immediate, event-explained civilian losses and social instability, while Hovels continue to liberate their captive population.
 - Decisive battalion victories now create bounded, explainable morale and devotion shifts for the victor, its local allies, and surviving defenders.
 - Supplied battalions now recover morale from peaceful, adequately housed, happy, loyal, and religiously secure home settlements, tying civic legitimacy directly to military readiness.
+- Battalions now derive terrain and siege traits from actual engagements. Forest, hills, and marsh expertise improves contextual movement; repeated structure attacks create a bounded siege specialization.
 
 ## Milestone 4: Persistence Foundation
 

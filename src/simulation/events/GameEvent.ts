@@ -25,6 +25,7 @@ export type EventType =
   | "battalion-embarked"
   | "battalion-disembarked"
   | "battalion-experienced"
+  | "battalion-trained"
   | "battalion-garrisoned"
   | "battalion-ungarrisoned"
   | "supply-delivered"
