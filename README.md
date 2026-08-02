@@ -7,6 +7,7 @@ The current browser prototype is a playable single-player campaign: establish th
 ## Playable Systems
 
 - Deterministic five-second simulation ticks, save/load, command logs, and replay-safe state.
+- Versioned replay records that preserve an opening world, applied command log, and duration for deterministic verification and future player-facing replay review.
 - Real-time battlefield camera, selection, movement, attack orders, garrisons, land caravans, and Warships.
 - Terrain-bound construction and harvesting: fertile farms, forest lumber mills, iron mines, roads, walls, gates, outposts, and housing.
 - Population, food, local growth, starvation, captives, rebellion, faith, religion, and miracles. Road corridors and caravans also carry religious influence between empires.

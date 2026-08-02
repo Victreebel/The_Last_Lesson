@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.32.0 - 2026-08-01
+
+- Added versioned `the-last-lesson-replay` records with validated serialization and deterministic playback through the same simulation path used by live matches.
+
 ## 1.31.0 - 2026-08-01
 
 - Added an authoritative reign report to the match-resolution panel. It summarizes campaign duration, thrones captured, lessons taught, heirs guided, and retained Faith from deterministic world state and event history.
