@@ -60,6 +60,9 @@ It listens on `ws://127.0.0.1:8787` by default. Open `MULTI` from the top comman
 - Click a Crown Castle or choose a seat in `REALM`: change the active governor and settlement command context.
 - `HEIR`: inspect doctrine and reward or punish the current governor's last lesson.
 - `BOOK`: inspect recent history and create or restore a local deterministic save.
+- `B`, `H`, `R`, and `L`: toggle the Build, Heir, Realm, and Book panels.
+- `M` and `A`: enter move and attack targeting modes.
+- `Esc`: cancel building placement, close open command panels, or clear the current selection.
 - `VERIFY REPLAY`: confirm that the active reign can be reproduced from its opening world and command history.
 - `REVIEW REIGN`: replay the command history from tick zero in read-only mode, then return exactly to the live paused campaign.
 - Space or `PAUSE`: pause/resume the live simulation.

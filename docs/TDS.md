@@ -2,9 +2,9 @@
 
 ## Technical Design Specification
 
-**Version:** 1.1
+**Version:** 1.2
 **Status:** Active Implementation Blueprint
-**Date:** 2026-08-01
+**Date:** 2026-08-02
 **Working Title:** The Last Lesson  
 **Repository Identity:** `the-last-lesson`  
 **Internal Codename:** `TLL`  
@@ -70,6 +70,19 @@ Player Input
   -> State Snapshot
   -> Renderer/UI
 ```
+
+### 3.3 Command Input Contract
+
+The scene exposes the same command state through pointer controls and keyboard controls. Keyboard input is presentation-only: it may select a UI panel or targeting mode, but it never writes directly to simulation state. The player commits simulation changes only through the existing command path.
+
+| Input | Presentation result |
+| --- | --- |
+| `B`, `H`, `R`, `L` | Toggle Build, Heir, Realm, and Book panels. Realm and Book remain mutually exclusive. |
+| `M`, `A` | Enter movement or attack targeting mode. |
+| `Space` | Toggle the local presentation clock when the player is the authority. |
+| `Esc` | Cancel placement first; otherwise close panels; otherwise clear selection. |
+
+Shortcuts are ignored during campaign setup and while a text input, select, or textarea has focus. This protects multiplayer-lobby entry and prevents browser form input from triggering game actions.
 
 ### 3.2 Core Systems
 

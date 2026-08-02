@@ -285,7 +285,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.cameras.main.setBounds(0, 0, 1400, 900);
     this.worldLayer = this.add.container(0, 0);
     this.cursors = this.input.keyboard?.createCursorKeys();
-    this.input.keyboard?.on("keydown-SPACE", () => this.togglePause());
+    this.bindKeyboardControls();
 
     this.drawTerrain();
     this.createUi();
@@ -306,6 +306,97 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.assignOpeningLabor();
     this.renderWorld();
     this.updateUi(["The Crown is established."]);
+  }
+
+  private bindKeyboardControls(): void {
+    const keyboard = this.input.keyboard;
+    if (!keyboard) {
+      return;
+    }
+    const bind = (key: string, action: () => void) => {
+      keyboard.on(`keydown-${key}`, (event: KeyboardEvent) => {
+        if (event.repeat || !this.canUseGameShortcut()) {
+          return;
+        }
+        action();
+      });
+    };
+
+    bind("SPACE", () => this.togglePause());
+    bind("B", () => this.toggleBuildingsPanel());
+    bind("H", () => this.toggleHeirPanel());
+    bind("R", () => this.toggleRealmPanel());
+    bind("L", () => this.toggleBookOfLessons());
+    bind("M", () => this.enterMoveMode());
+    bind("A", () => this.enterAttackMode());
+    bind("ESC", () => this.cancelActiveCommand());
+  }
+
+  private canUseGameShortcut(): boolean {
+    if (this.campaignSetupPending) {
+      return false;
+    }
+    const activeElement = document.activeElement;
+    return !(
+      activeElement instanceof HTMLInputElement ||
+      activeElement instanceof HTMLSelectElement ||
+      activeElement instanceof HTMLTextAreaElement
+    );
+  }
+
+  private enterMoveMode(): void {
+    this.mode = "move";
+    this.updateUi(["Select a battalion, then designate a destination."]);
+  }
+
+  private enterAttackMode(): void {
+    this.mode = "attack";
+    this.updateUi(["Select a battalion, then designate a target."]);
+  }
+
+  private cancelActiveCommand(): void {
+    if (this.mode === "building") {
+      this.cancelPlacement();
+      return;
+    }
+    if (this.bookPanelExpanded || this.realmPanelExpanded || this.heirPanelExpanded || this.buildingsPanelExpanded) {
+      this.bookPanelExpanded = false;
+      this.realmPanelExpanded = false;
+      this.heirPanelExpanded = false;
+      this.buildingsPanelExpanded = false;
+      this.updateBookOfLessons();
+      this.updateRealmPanel();
+      this.updateHeirPanel();
+      this.updateBuildingsPanel();
+      return;
+    }
+    this.mode = "select";
+    this.clearSelection();
+    this.updateUi(["Selection cleared."]);
+  }
+
+  private toggleBuildingsPanel(): void {
+    this.buildingsPanelExpanded = !this.buildingsPanelExpanded;
+    this.updateBuildingsPanel();
+  }
+
+  private toggleHeirPanel(): void {
+    this.heirPanelExpanded = !this.heirPanelExpanded;
+    this.updateHeirPanel();
+  }
+
+  private toggleRealmPanel(): void {
+    this.realmPanelExpanded = !this.realmPanelExpanded;
+    this.bookPanelExpanded = false;
+    this.updateBookOfLessons();
+    this.updateRealmPanel();
+  }
+
+  private toggleBookOfLessons(): void {
+    this.bookPanelExpanded = !this.bookPanelExpanded;
+    this.realmPanelExpanded = false;
+    this.updateRealmPanel();
+    this.updateBookOfLessons();
   }
 
   update(): void {
@@ -674,10 +765,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     control.setInteractive({ useHandCursor: true });
     control.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
       pointer.event.stopPropagation();
-      this.bookPanelExpanded = !this.bookPanelExpanded;
-      this.realmPanelExpanded = false;
-      this.updateRealmPanel();
-      this.updateBookOfLessons();
+      this.toggleBookOfLessons();
     });
     this.bookControlLabel = this.add.text(200, 23, "BOOK [+]", {
       fontFamily: "Arial Black, Arial",
@@ -774,10 +862,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     control.setInteractive({ useHandCursor: true });
     control.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
       pointer.event.stopPropagation();
-      this.realmPanelExpanded = !this.realmPanelExpanded;
-      this.bookPanelExpanded = false;
-      this.updateBookOfLessons();
-      this.updateRealmPanel();
+      this.toggleRealmPanel();
     });
     this.realmControlLabel = this.add.text(328, 23, "REALM [+]", {
       fontFamily: "Arial Black, Arial",
@@ -1302,14 +1387,8 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.commandDock.setScrollFactor(0).setDepth(40);
 
     this.addCommandButton(14, 42, "SUPPLY", "WAGON", () => this.createCaravan());
-    this.addCommandButton(110, 42, "MOVE", "UNIT", () => {
-      this.mode = "move";
-      this.updateUi(["Select a battalion, then designate a destination."]);
-    });
-    this.addCommandButton(206, 42, "ATTACK", "TARGET", () => {
-      this.mode = "attack";
-      this.updateUi(["Select a battalion, then designate a target."]);
-    }, UI_COLORS.danger);
+    this.addCommandButton(110, 42, "MOVE", "UNIT", () => this.enterMoveMode());
+    this.addCommandButton(206, 42, "ATTACK", "TARGET", () => this.enterAttackMode(), UI_COLORS.danger);
     this.addCommandButton(302, 42, "RETREAT", "TO CROWN", () => this.retreatSelectedBattalions(), UI_COLORS.danger);
     this.addLaborButton(14, "FOOD", () => this.setLaborFocus("farmers"));
     this.addLaborButton(90, "WOOD", () => this.setLaborFocus("lumberjacks"));
@@ -1491,8 +1570,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.heirPanelHeader.setInteractive({ useHandCursor: true });
     this.heirPanelHeader.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
       pointer.event.stopPropagation();
-      this.heirPanelExpanded = !this.heirPanelExpanded;
-      this.updateHeirPanel();
+      this.toggleHeirPanel();
     });
 
     this.heirPanelTitle = this.add.text(14, 9, "", {
@@ -1669,8 +1747,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.buildingsPanelHeader.setInteractive({ useHandCursor: true });
     this.buildingsPanelHeader.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
       pointer.event.stopPropagation();
-      this.buildingsPanelExpanded = !this.buildingsPanelExpanded;
-      this.updateBuildingsPanel();
+      this.toggleBuildingsPanel();
     });
     this.buildingsPanelTitle = this.add.text(14, 9, "", {
       fontFamily: "Arial Black, Arial",

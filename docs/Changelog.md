@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.72.0 - 2026-08-02
+
+- Added RTS keyboard controls for Build, Heir, Realm, Book, Move, and Attack modes, plus a layered `Esc` cancel flow for placement, panels, and selection.
+- Routed matching command-dock clicks through the same handlers so keyboard and pointer controls always produce identical UI states.
+
 ## 1.71.0 - 2026-08-01
 
 - Updated the living Technical Design Specification to reflect the actual implementation baseline: complete deterministic milestones, playable local-network co-op, current authoritative boundaries, and remaining delivery work.
