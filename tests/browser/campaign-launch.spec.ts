@@ -1,7 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import sharp from "sharp";
-
-const BOOK_PANEL_HEIGHT = 634;
+import { BOOK_PANEL_HEIGHT } from "../../src/rendering/uiLayout";
 
 async function expectRenderedCanvas(page: Page): Promise<void> {
   const screenshot = await page.locator("canvas").screenshot();
