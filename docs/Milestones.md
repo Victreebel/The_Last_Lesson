@@ -116,6 +116,7 @@ Implemented:
 - The command dock now includes an explicit Retreat to Crown order. It cancels an engagement, returns selected field forces to their home Castle, carries a small morale cost, and produces an observable lesson.
 - Building placement now has simulation-authoritative footprint clearance shared with the tactical placement preview, preventing overlapping foundations and wasted resources.
 - Governing heirs now independently retreat low-morale or low-supply field forces from visible enemy pressure, producing a rewardable or punishable preservation lesson.
+- Walls and Gates now affect local hostile movement. Gates provide a deliberately less restrictive breach path, so defensive layout changes actual battlefield choices.
 
 ## Milestone 4: Persistence Foundation
 

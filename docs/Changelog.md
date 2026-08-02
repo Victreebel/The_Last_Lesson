@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.54.0 - 2026-08-01
+
+- Made defensive works spatially meaningful. Hostile Walls now severely slow nearby land movement while Gates form a comparatively faster breach route; the effects vanish when defenses fall.
+
 ## 1.53.0 - 2026-08-01
 
 - Taught governing heirs to preserve exhausted field forces. When a visible enemy closes on a low-morale or low-supply battalion, the heir now orders an explainable Retreat to Crown rather than committing it to a doomed fight.
