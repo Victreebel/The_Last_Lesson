@@ -53,7 +53,10 @@ export function deserializeSaveGame(serialized: string): SaveGame {
       : "rival";
   const scenarioId = (parsed.world as Partial<WorldState>).scenarioId;
   const normalizedScenario: ScenarioId =
-    scenarioId === "rivergate" || scenarioId === "ashen-oath" || scenarioId === "crownfall"
+    scenarioId === "rivergate" ||
+    scenarioId === "ashen-oath" ||
+    scenarioId === "stonewall" ||
+    scenarioId === "crownfall"
       ? scenarioId
       : "crownfall";
   return {

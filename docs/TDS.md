@@ -358,8 +358,11 @@ AI may only use information available to its empire.
 - `crownfall`: balanced economic opening and the default for legacy saves.
 - `rivergate`: completed Town Square, additional civic resources, and an opening that foregrounds supply and naval transport.
 - `ashen-oath`: captive population, an initial hovel, lower internal Faith, and a rival road corridor that amplifies religious pressure.
+- `stonewall`: completed walls and a gate, food reserves, and construction labor that foreground defensive geometry, garrisons, logistics, retreat, and counter-siege play.
 
 Scenario content may alter opening state, structures, resources, and pressures, but must not change the fixed tick order or introduce non-deterministic rules. The campaign theatre selects a scenario first, then a Rival Doctrine difficulty profile.
+
+The Tactical Uplink's Imperial Mandate is presentation-only and scenario-aware. It leads Rivergate toward an initial supply wagon, Ashen Oath toward resolving its captive population, and Stonewall toward raising then garrisoning a defensive battalion before continuing through the standard reconnaissance and throne-capture progression.
 
 ### 7.3 Scout Hounds
 

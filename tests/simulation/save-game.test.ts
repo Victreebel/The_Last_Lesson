@@ -69,4 +69,13 @@ describe("save games", () => {
     expect(restored.getState().settlements["settlement-capital"].population.luxuryWorkers).toBe(0);
     expect(() => restored.tick()).not.toThrow();
   });
+
+  it("preserves the Stonewall campaign opening through save and restore", () => {
+    const original = new Simulation(createInitialWorld(9005, "rival", "stonewall"));
+
+    const restored = restoreSaveGame(deserializeSaveGame(serializeSaveGame(createSaveGame(original))));
+
+    expect(restored.getState().scenarioId).toBe("stonewall");
+    expect(restored.getState()).toEqual(original.getState());
+  });
 });

@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.58.0 - 2026-08-01
+
+- Preserved the Stonewall opening in save/load normalization and added a round-trip regression test.
+- Made the Tactical Uplink's Imperial Mandate scenario-aware: Rivergate begins with supply, Ashen Oath begins with captive legitimacy, and Stonewall begins with a garrisoned gate.
+
 ## 1.57.0 - 2026-08-01
 
 - Added the Stonewall Campaign Theatre opening: a fortified Crown border with walls, gate, food reserves, and build labor for testing defense, retreat, logistics, and counter-siege play.

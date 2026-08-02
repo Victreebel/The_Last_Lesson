@@ -2756,15 +2756,47 @@ export class MilestoneOneScene extends Phaser.Scene {
     const playerSettlements = state.empires["empire-player"].settlementIds
       .map((id) => state.settlements[id])
       .filter((settlement): settlement is SettlementState => Boolean(settlement));
+    const hasFieldForce = Object.values(state.battalions).some(
+      (battalion) => battalion.ownerEmpireId === "empire-player"
+    );
+
+    if (state.scenarioId === "ashen-oath") {
+      const captiveCount = playerSettlements.reduce((total, settlement) => total + settlement.population.captives, 0);
+      if (captiveCount > 0) {
+        return "SECURE THE CAPTIVES: ASSIMILATE OR RELEASE THEM.";
+      }
+    }
+
+    if (state.scenarioId === "rivergate") {
+      const hasCaravan = Object.values(state.caravans).some(
+        (caravan) => caravan.ownerEmpireId === "empire-player" && caravan.kind === "caravan"
+      );
+      if (!hasCaravan) {
+        return "COMMISSION A SUPPLY WAGON FROM THE TOWN SQUARE.";
+      }
+    }
+
+    if (state.scenarioId === "stonewall") {
+      if (!hasFieldForce) {
+        return "RAISE A BATTALION TO HOLD THE GATE.";
+      }
+      const gateIsGarrisoned = Object.values(state.buildings).some(
+        (building) =>
+          building.ownerEmpireId === "empire-player" &&
+          building.kind === "gate" &&
+          (building.garrisonBattalionIds?.length ?? 0) > 0
+      );
+      if (!gateIsGarrisoned) {
+        return "GARRISON A BATTALION IN THE GATE.";
+      }
+    }
+
     const hasFarm = playerSettlements.some((settlement) =>
       settlement.buildingIds.some((id) => state.buildings[id]?.kind === "farm" && state.buildings[id]?.complete)
     );
     if (!hasFarm) {
       return "ESTABLISH A FARM ON FERTILE GROUND.";
     }
-    const hasFieldForce = Object.values(state.battalions).some(
-      (battalion) => battalion.ownerEmpireId === "empire-player"
-    );
     if (!hasFieldForce) {
       return "RAISE A BATTALION TO SECURE THE CROWN.";
     }
