@@ -11,7 +11,8 @@
     "build": "pnpm optimize:assets && tsc --noEmit && tsc --noEmit -p tsconfig.server.json && vite build",
     "package:storefront": "VITE_BASE_PATH=./ pnpm build && mkdir -p release && (cd dist && zip -r -FS ../release/the-last-lesson-web.zip .)",
     "test": "vitest run",
-    "check": "pnpm test && pnpm build",
+    "test:browser": "playwright test",
+    "check": "pnpm test && pnpm build && pnpm test:browser",
     "test:watch": "vitest"
   },
   "dependencies": {
@@ -19,6 +20,7 @@
     "ws": "^8.21.1"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@types/node": "^26.1.2",
     "@types/ws": "^8.18.1",
     "sharp": "^0.35.3",

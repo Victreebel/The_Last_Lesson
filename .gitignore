@@ -1,6 +1,7 @@
 node_modules
 dist
 coverage
+test-results
 release
 .DS_Store
 *.log

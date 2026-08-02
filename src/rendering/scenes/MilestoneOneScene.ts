@@ -1378,8 +1378,6 @@ export class MilestoneOneScene extends Phaser.Scene {
     const panelHeight = hasSavedReign ? 446 : 402;
     const background = this.add.rectangle(0, 0, 470, panelHeight, UI_COLORS.panelDeep, 0.98).setOrigin(0);
     background.setStrokeStyle(2, UI_COLORS.accent);
-    background.setInteractive({ useHandCursor: false });
-    background.on("pointerdown", (pointer: Phaser.Input.Pointer) => pointer.event.stopPropagation());
     const title = this.add.text(20, 18, "CAMPAIGN THEATRE", {
       fontFamily: "Arial Black, Arial",
       fontSize: "19px",
@@ -1400,6 +1398,7 @@ export class MilestoneOneScene extends Phaser.Scene {
       const conquests = this.getCampaignConquests(scenario);
       const honor = this.getCampaignHonor(scenario);
       const button = this.add.rectangle(x, y, 206, 56, selected ? UI_COLORS.commandActive : UI_COLORS.command, 1).setOrigin(0);
+      button.setScrollFactor(0);
       button.setStrokeStyle(selected ? 2 : 1, selected ? UI_COLORS.accent : UI_COLORS.trim);
       button.setInteractive({ useHandCursor: true });
       button.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
@@ -1431,6 +1430,7 @@ export class MilestoneOneScene extends Phaser.Scene {
       const profile = RIVAL_DIFFICULTY_PROFILES[difficulty];
       const x = 20 + index * 146;
       const button = this.add.rectangle(x, 242, 136, 108, UI_COLORS.command, 1).setOrigin(0);
+      button.setScrollFactor(0);
       button.setStrokeStyle(1, UI_COLORS.trim);
       button.setInteractive({ useHandCursor: true });
       button.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
@@ -1458,6 +1458,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     });
     if (hasSavedReign) {
       const continueButton = this.add.rectangle(20, 366, 430, 42, UI_COLORS.commandActive, 1).setOrigin(0);
+      continueButton.setScrollFactor(0);
       continueButton.setStrokeStyle(1, UI_COLORS.trim);
       continueButton.setInteractive({ useHandCursor: true });
       continueButton.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
@@ -1491,7 +1492,10 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.campaignSetupPending = false;
     this.campaignSetupPanel.setVisible(false);
     this.restartCampaign(`${RIVAL_DIFFICULTY_PROFILES[difficulty].label} rival doctrine selected.`);
-    this.announceAccessibility(`${SCENARIO_PROFILES[this.campaignScenario].label} reign begins. ${this.getImperialMandate()}`);
+    const campaignAnnouncement = `${SCENARIO_PROFILES[this.campaignScenario].label} reign begins. ${this.getImperialMandate()}`;
+    // Phaser dispatches the scene-wide pointer-up after this button's pointer-down handler.
+    // Announce on the next frame so the generic selection message cannot mask the campaign transition.
+    this.time.delayedCall(16, () => this.announceAccessibility(campaignAnnouncement));
   }
 
   private restartCampaign(message = "A new reign begins."): void {

@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.2.0 - 2026-08-02
+
+- Added Playwright browser smoke coverage to the release gate. Desktop verification now checks the PWA shell, WebP tactical assets, and rendered campaign theatre; a phone-sized pass checks that the tactical surface remains visibly rendered without runtime errors.
+- GitHub verification and Pages deployment now install Chromium and run these browser checks alongside deterministic simulation and production-build coverage.
+
 ## 2.1.0 - 2026-08-02
 
 - Added `pnpm package:storefront`, which builds a relative-path, self-contained HTML5 archive with `index.html` at its root for browser-game storefront uploads.
