@@ -96,6 +96,7 @@ Implemented:
 - Tactical Uplink threat forecast that summarizes the active settlement's most urgent food, rebellion, religious, or observed military risk.
 - Adjustable 1x/2x/3x live presentation speed for accelerating tactical downtime without changing deterministic tick rules.
 - Campaign-opening Rival Doctrine profiles for fair, transparent difficulty that changes rival learning pace and opening grace rather than granting raw simulation bonuses.
+- Deterministic four-theatre balance reports with one representative Crown opening per scenario, validating survival, no rejected orders, enemy pressure timing, and Rivergate/Ashen Oath/Stonewall's distinctive opening lesson.
 - Automatic local recovery saves every five ticks and a Continue Local Reign opening action, verified through a refresh-and-resume browser pass.
 - Versioned portable `.tll` archives from the Book of Lessons, preserving both the active deterministic save and its replay origin across browsers or devices.
 - Responsive phone-sized layout pass: reflowed header, scaled campaign panels, accessible command dock, and intentional minimap/intel suppression where those surfaces cannot coexist without overlap.

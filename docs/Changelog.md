@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.5 - 2026-08-02
+
+- Added `pnpm balance:report`, a deterministic standard-opening playtest across Crownfall, Rivergate, Ashen Oath, and Stonewall. It reports survival, economy, force, rival pressure timing, and scenario-specific opening outcomes, and it now runs under automated coverage.
+
 ## 2.6.4 - 2026-08-02
 
 - Added data-driven, event-only miracle feedback. Bless Harvest, Inspire Army, Mend Settlement, and Divine Judgment now each have distinct world effects and audio cues while reduced-motion play retains the audible confirmation without forced animation.
