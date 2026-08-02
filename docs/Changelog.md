@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.43.0 - 2026-08-01
+
+- Added terrain-compatible Moats to the construction console. Completed enemy moats halve battalion and land-caravan movement through their perimeter, producing clear siege geometry without special-case pathfinding.
+
 ## 1.42.0 - 2026-08-01
 
 - Corrected Faith generation so only a settlement's own battalions contribute military Faith; remote forces no longer multiply devotion across an empire.

@@ -161,6 +161,7 @@ export type BuildingKind =
   | "mine"
   | "lumber-mill"
   | "plantation"
+  | "moat"
   | "wall"
   | "gate"
   | "outpost";
@@ -727,6 +728,9 @@ export function isBuildingTerrainCompatible(kind: BuildingKind, terrain: Terrain
   if (kind === "plantation") {
     return terrain === "luxury-grove";
   }
+  if (kind === "moat") {
+    return terrain === "grassland" || terrain === "fertile" || terrain === "hills";
+  }
   if (kind === "villa") {
     return terrain === "grassland" || terrain === "fertile" || terrain === "luxury-grove";
   }
@@ -753,6 +757,8 @@ export function getBuildingCost(kind: BuildingKind): ResourceCost {
       return { wood: 10, iron: 0 };
     case "road":
       return { wood: 2, iron: 0 };
+    case "moat":
+      return { wood: 4, iron: 0 };
     case "wall":
       return { wood: 6, iron: 4 };
     case "gate":

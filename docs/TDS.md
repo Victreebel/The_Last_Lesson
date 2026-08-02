@@ -561,6 +561,8 @@ Walls and outposts may garrison units. When units are inside a valid garrison, t
 
 When the structure reaches zero defense, garrisoned units die unless a specific future content rule creates an evacuation effect. The initial implementation should use the simple rule: zero structure defense destroys the garrison.
 
+Moats are non-garrison defensive works. Completed enemy moats halve battalion and land-caravan movement while an enemy crosses their 62-unit perimeter. This creates a deterministic approach penalty without requiring a bespoke siege pathfinding system. Movement events expose the applied moat multiplier.
+
 ### 11.3 Terrain
 
 Terrain affects movement, visibility, attack, defense, and range using clear modifiers inspired by Civilization-style tactical rules.

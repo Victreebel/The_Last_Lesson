@@ -1933,6 +1933,17 @@ export class Simulation {
     return Math.min(18, influence);
   }
 
+  private moatMovementMultiplier(ownerEmpireId: string, position: Position): number {
+    const isCrossingEnemyMoat = Object.values(this.state.buildings).some(
+      (building) =>
+        building.ownerEmpireId !== ownerEmpireId &&
+        building.kind === "moat" &&
+        building.complete &&
+        distance(building.position, position) <= 62
+    );
+    return isCrossingEnemyMoat ? 0.5 : 1;
+  }
+
   private updateCaptives(tick: number): void {
     for (const settlement of Object.values(this.state.settlements).sort((left, right) =>
       left.id.localeCompare(right.id)
@@ -2122,8 +2133,9 @@ export class Simulation {
       }
 
       const terrain = terrainAtPosition(this.state, battalion.position);
+      const moatMultiplier = this.moatMovementMultiplier(battalion.ownerEmpireId, battalion.position);
       const speed =
-        battalion.speed * terrainMovementMultiplier(terrain) * this.roadMovementMultiplier(battalion);
+        battalion.speed * terrainMovementMultiplier(terrain) * this.roadMovementMultiplier(battalion) * moatMultiplier;
       if (speed === 0) {
         updatedBattalions[battalion.id] = battalion;
         continue;
@@ -2140,7 +2152,8 @@ export class Simulation {
       this.eventWriter.emit(tick, "battalion-moved", {
         battalionId: battalion.id,
         x: Math.round(nextPosition.x),
-        y: Math.round(nextPosition.y)
+        y: Math.round(nextPosition.y),
+        moatMultiplier
       });
     }
 
@@ -2160,7 +2173,9 @@ export class Simulation {
         continue;
       }
       const terrain = terrainAtPosition(this.state, caravan.position);
-      const speed = caravan.speed * terrainMovementMultiplier(terrain) * this.roadMovementMultiplier(caravan);
+      const moatMultiplier = this.moatMovementMultiplier(caravan.ownerEmpireId, caravan.position);
+      const speed =
+        caravan.speed * terrainMovementMultiplier(terrain) * this.roadMovementMultiplier(caravan) * moatMultiplier;
       if (speed === 0) {
         nextCaravans[caravan.id] = caravan;
         continue;
@@ -2175,7 +2190,8 @@ export class Simulation {
       this.eventWriter.emit(tick, "caravan-moved", {
         caravanId: caravan.id,
         x: Math.round(nextPosition.x),
-        y: Math.round(nextPosition.y)
+        y: Math.round(nextPosition.y),
+        moatMultiplier
       });
     }
     const nextBattalions: Record<string, BattalionState> = { ...this.state.battalions };
@@ -2845,6 +2861,8 @@ function getBuildingStats(kind: BuildingState["kind"]): { defense: number; build
     case "farm":
     case "road":
       return { defense: 40, buildTicks: 2 };
+    case "moat":
+      return { defense: 160, buildTicks: 3 };
     case "villa":
     case "lumber-mill":
     case "mine":

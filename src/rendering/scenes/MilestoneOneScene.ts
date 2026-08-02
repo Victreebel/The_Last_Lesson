@@ -48,6 +48,7 @@ const BUILDING_OPTIONS: ReadonlyArray<{ readonly kind: BuildingKind; readonly la
   { kind: "mine", label: "Mine" },
   { kind: "lumber-mill", label: "Lumber Mill" },
   { kind: "plantation", label: "Plantation" },
+  { kind: "moat", label: "Moat" },
   { kind: "wall", label: "Wall" },
   { kind: "gate", label: "Gate" },
   { kind: "outpost", label: "Outpost" }
@@ -64,6 +65,7 @@ const BUILDING_COLORS: Record<BuildingKind, number> = {
   mine: 0x6d7480,
   "lumber-mill": 0x735e40,
   plantation: 0x9b7351,
+  moat: 0x356c80,
   wall: 0x9a9788,
   gate: 0x566a74,
   outpost: 0xb2693f
@@ -80,6 +82,7 @@ const BUILDING_SIZES: Record<BuildingKind, number> = {
   mine: 50,
   "lumber-mill": 50,
   plantation: 52,
+  moat: 54,
   wall: 54,
   gate: 54,
   outpost: 44
@@ -96,6 +99,7 @@ const BUILDING_DISPLAY_LABELS: Record<BuildingKind, string> = {
   mine: "MINE",
   "lumber-mill": "LUMBER\nMILL",
   plantation: "PLANTATION",
+  moat: "MOAT",
   wall: "WALL",
   gate: "GATE",
   outpost: "OUTPOST"
