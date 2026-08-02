@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.96.0 - 2026-08-02
+
+- Added baseline accessibility semantics around the canvas strategy interface: a focusable, named application surface, screen-reader-only campaign and keyboard briefing, a JavaScript fallback, and polite announcements for deliberate player commands.
+- The live-region filter excludes raw simulation event identifiers, so five-second world ticks do not flood assistive technology.
+
 ## 1.95.0 - 2026-08-02
 
 - Added production web metadata for the public campaign: an intentional browser title, description, dark theme color, and Open Graph/Twitter previews using the existing painterly battlefield art.

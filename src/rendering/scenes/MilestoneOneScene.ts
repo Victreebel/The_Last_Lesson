@@ -325,6 +325,7 @@ export class MilestoneOneScene extends Phaser.Scene {
   private buildingsPanelBody!: Phaser.GameObjects.Text;
   private buildingsPanelExpanded = false;
   private selectedBuildingKind: BuildingKind | null = null;
+  private accessibilityAnnouncements?: HTMLElement;
   private readonly buildingTiles = new Map<BuildingKind, BuildingTile>();
   private worldLayer!: Phaser.GameObjects.Container;
   private readonly buildingSprites = new Map<string, Phaser.GameObjects.Rectangle>();
@@ -351,6 +352,7 @@ export class MilestoneOneScene extends Phaser.Scene {
   create(): void {
     // Reserve lateral camera room for the permanent command panels without moving authoritative world coordinates.
     this.cameras.main.setBounds(-280, 0, 1680, 900);
+    this.configureAccessibility();
     this.worldLayer = this.add.container(0, 0);
     this.cursors = this.input.keyboard?.createCursorKeys();
     this.bindKeyboardControls();
@@ -368,6 +370,8 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.events.once("shutdown", () => {
       this.game.events.off("join-multiplayer", this.connectToMultiplayer, this);
       this.disconnectFromMultiplayer();
+      this.accessibilityAnnouncements?.replaceChildren();
+      this.accessibilityAnnouncements = undefined;
     });
 
     this.configureSimulationClock();
@@ -378,6 +382,22 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.centerCameraOnSettlement(this.inspectedSettlementId);
     this.renderWorld();
     this.updateUi(["The Crown is established."]);
+  }
+
+  private configureAccessibility(): void {
+    const canvas = this.game.canvas;
+    canvas.tabIndex = 0;
+    canvas.setAttribute("role", "application");
+    canvas.setAttribute("aria-label", "The Last Lesson tactical map and command interface");
+    canvas.setAttribute("aria-describedby", "the-last-lesson-accessibility-brief");
+    this.accessibilityAnnouncements = document.getElementById("the-last-lesson-announcements") ?? undefined;
+  }
+
+  private announceAccessibility(message: string): void {
+    if (!this.accessibilityAnnouncements || this.accessibilityAnnouncements.textContent === message) {
+      return;
+    }
+    this.accessibilityAnnouncements.textContent = message;
   }
 
   private bindKeyboardControls(): void {
@@ -1429,6 +1449,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.campaignSetupPending = false;
     this.campaignSetupPanel.setVisible(false);
     this.restartCampaign(`${RIVAL_DIFFICULTY_PROFILES[difficulty].label} rival doctrine selected.`);
+    this.announceAccessibility(`${SCENARIO_PROFILES[this.campaignScenario].label} reign begins. ${this.getImperialMandate()}`);
   }
 
   private restartCampaign(message = "A new reign begins."): void {
@@ -3603,6 +3624,10 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.updateBookOfLessons();
     this.updateVictoryPanel();
     this.updateMinimap();
+    const latestPlayerMessage = events.at(-1);
+    if (latestPlayerMessage?.includes(" ")) {
+      this.announceAccessibility(latestPlayerMessage);
+    }
   }
 
   private getModeLabel(): string {

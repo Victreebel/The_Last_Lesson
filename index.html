@@ -28,7 +28,16 @@
     <title>The Last Lesson | Teach an Empire to Rule</title>
   </head>
   <body>
-    <div id="app"></div>
+    <main
+      id="app"
+      aria-label="The Last Lesson real-time strategy game"
+      aria-describedby="the-last-lesson-accessibility-brief"
+    ></main>
+    <p id="the-last-lesson-accessibility-brief" class="sr-only">
+      The Last Lesson is a real-time strategy game. Choose a Campaign Theatre and Rival Doctrine to begin. Use arrow keys to pan; B, H, R, and L open the Build, Heir, Realm, and Book panels; M, A, and F choose move, attack, and advance orders; Escape cancels the current command; Space pauses the local reign.
+    </p>
+    <div id="the-last-lesson-announcements" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+    <noscript>The Last Lesson requires JavaScript to run the tactical simulation.</noscript>
     <script type="module" src="/src/app/main.ts"></script>
   </body>
 </html>
