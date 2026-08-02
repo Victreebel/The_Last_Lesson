@@ -2814,6 +2814,23 @@ export class MilestoneOneScene extends Phaser.Scene {
         ease: "Quad.easeOut",
         onComplete: () => projectile.destroy()
       });
+      const impact = this.add.circle(
+        target.x,
+        target.y,
+        isShipStrike ? 14 : 9,
+        isShipStrike ? 0x9cc8d5 : 0xf0d36f,
+        0.22
+      );
+      impact.setStrokeStyle(isShipStrike ? 3 : 2, isShipStrike ? 0xc9edf5 : 0xffe1a4, 0.9).setDepth(30);
+      this.tweens.add({
+        targets: impact,
+        scaleX: isShipStrike ? 3 : 2.4,
+        scaleY: isShipStrike ? 3 : 2.4,
+        alpha: 0,
+        duration: isShipStrike ? 420 : 280,
+        ease: "Quad.easeOut",
+        onComplete: () => impact.destroy()
+      });
       const damage = Number(event.payload.damage ?? 0);
       if (damage <= 0) {
         continue;

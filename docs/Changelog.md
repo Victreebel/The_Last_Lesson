@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.77.0 - 2026-08-02
+
+- Added expanding target impact pulses to existing projectile and damage-number feedback for battalion and Warship strikes.
+- Kept combat feedback presentation-only; deterministic damage, cooldowns, event history, saves, replays, and multiplayer state are unchanged.
+
 ## 1.76.0 - 2026-08-02
 
 - Replaced generic battalion rectangles with painterly formation markers for militia, spears, archers, raiders, and scout hounds, while preserving explicit labels, ranks, traits, selection, and visibility.
