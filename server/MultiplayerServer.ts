@@ -1,3 +1,4 @@
+import { createServer, type Server as HttpServer } from "node:http";
 import { WebSocketServer, WebSocket, type RawData } from "ws";
 import { LocalAuthority, type AuthoritySnapshot } from "../src/networking/LocalAuthority";
 import {
@@ -117,6 +118,7 @@ class MultiplayerRoom {
  */
 export class MultiplayerServer {
   private server?: WebSocketServer;
+  private httpServer?: HttpServer;
   private readonly rooms = new Map<string, MultiplayerRoom>();
   private readonly idleRoomCleanup = new Map<string, ReturnType<typeof setTimeout>>();
   private readonly tickIntervalMs: number;
@@ -131,14 +133,25 @@ export class MultiplayerServer {
     if (this.server) {
       throw new Error("The multiplayer server is already listening.");
     }
-    const server = new WebSocketServer({ port });
+    const httpServer = createServer((request, response) => {
+      if (request.method === "GET" && request.url === "/health") {
+        response.writeHead(200, { "cache-control": "no-store", "content-type": "application/json" });
+        response.end(JSON.stringify({ status: "ok", rooms: this.rooms.size }));
+        return;
+      }
+      response.writeHead(404, { "content-type": "application/json" });
+      response.end(JSON.stringify({ error: "not found" }));
+    });
+    const server = new WebSocketServer({ server: httpServer });
     this.server = server;
+    this.httpServer = httpServer;
     server.on("connection", (socket) => this.configureConnection(socket));
     await new Promise<void>((resolve, reject) => {
-      server.once("listening", resolve);
-      server.once("error", reject);
+      httpServer.once("listening", resolve);
+      httpServer.once("error", reject);
+      httpServer.listen(port);
     });
-    const address = server.address();
+    const address = httpServer.address();
     if (!address || typeof address === "string") {
       throw new Error("The multiplayer server did not expose a TCP port.");
     }
@@ -155,11 +168,21 @@ export class MultiplayerServer {
     }
     this.rooms.clear();
     const server = this.server;
+    const httpServer = this.httpServer;
     this.server = undefined;
-    if (!server) {
+    this.httpServer = undefined;
+    if (!server || !httpServer) {
       return;
     }
-    await new Promise<void>((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())));
+    await new Promise<void>((resolve, reject) => {
+      server.close((serverError) => {
+        if (serverError) {
+          reject(serverError);
+          return;
+        }
+        httpServer.close((httpError) => (httpError ? reject(httpError) : resolve()));
+      });
+    });
   }
 
   advanceRoom(roomId: string): AuthoritySnapshot | undefined {

@@ -14,6 +14,8 @@ describe("multiplayer WebSocket transport", () => {
     const server = new MultiplayerServer({ tickIntervalMs: 60_000 });
     servers.push(server);
     const port = await server.listen(0);
+    const health = await fetch(`http://127.0.0.1:${port}/health`);
+    await expect(health.json()).resolves.toEqual({ status: "ok", rooms: 0 });
     const client = new WebSocket(`ws://127.0.0.1:${port}`);
     await waitForOpen(client);
 

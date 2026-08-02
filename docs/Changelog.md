@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.3.0 - 2026-08-02
+
+- Added a container-ready authoritative multiplayer host with a deterministic-transport-preserving `/health` endpoint, an operational deployment guide, and networking coverage for the health contract.
+
 ## 2.2.3 - 2026-08-02
 
 - Production builds now generate a content-addressed service worker that precaches the exact shell, split engine, art, manifest, and icons in the emitted artifact. Browser coverage verifies an installed campaign survives an offline reload.

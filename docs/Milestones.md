@@ -155,6 +155,7 @@ Implemented:
 - Host-prepared opening labor, with a genuine tick-one player order deterministically taking precedence.
 - Per-intent empire authorization: connected players cannot command rival assets or create Faith outside the civilization simulation.
 - A bounded room-resume window: empty rooms stop ticking but retain their authoritative state for two minutes, allowing a client to return to the same reign.
+- A deployable container entry point with a `GET /health` endpoint on the same port as WebSocket authority transport. This keeps production readiness probes outside the deterministic simulation and gives any WebSocket-capable host a clear startup contract.
 
 Acceptance:
 
