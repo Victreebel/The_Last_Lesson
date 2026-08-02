@@ -3,6 +3,7 @@
 ## 1.73.0 - 2026-08-02
 
 - Added classic RTS control groups: bind selected Crown battalions with `Ctrl`/`Cmd` plus `1` through `9`, then recall the surviving group with its number key.
+- Pressing a recalled group key twice now centers the tactical camera on the average position of that group.
 - Kept control groups strictly presentation-side, pruning lost battalions from bindings and clearing bindings whenever a campaign, load, replay, or multiplayer authority changes without changing deterministic simulation, replays, or multiplayer authority.
 
 ## 1.72.0 - 2026-08-02

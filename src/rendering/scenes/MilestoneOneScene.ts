@@ -208,6 +208,8 @@ export class MilestoneOneScene extends Phaser.Scene {
   private selectedCaravanId: string | null = null;
   private readonly selectedBattalionIds = new Set<string>();
   private readonly controlGroups = new Map<number, readonly string[]>();
+  private lastControlGroupSlot?: number;
+  private lastControlGroupRecallAt = 0;
   private mode: ToolMode = "select";
   private topHud!: Phaser.GameObjects.Rectangle;
   private gameTitleText!: Phaser.GameObjects.Text;
@@ -438,7 +440,25 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.clearSelection();
     battalionIds.forEach((id) => this.selectedBattalionIds.add(id));
     this.selectedBattalionId = battalionIds[0];
+    const recalledTwice = this.lastControlGroupSlot === slot && this.time.now - this.lastControlGroupRecallAt <= 350;
+    this.lastControlGroupSlot = slot;
+    this.lastControlGroupRecallAt = this.time.now;
+    if (recalledTwice) {
+      this.centerCameraOnBattalions(battalionIds);
+    }
     this.updateUi([`Group ${slot} recalled: ${battalionIds.length} battalion(s) selected.`]);
+  }
+
+  private centerCameraOnBattalions(battalionIds: readonly string[]): void {
+    const battalions = battalionIds
+      .map((id) => this.simulation.getState().battalions[id])
+      .filter((battalion): battalion is BattalionState => Boolean(battalion));
+    if (battalions.length === 0) {
+      return;
+    }
+    const x = battalions.reduce((total, battalion) => total + battalion.position.x, 0) / battalions.length;
+    const y = battalions.reduce((total, battalion) => total + battalion.position.y, 0) / battalions.length;
+    this.cameras.main.centerOn(x, y);
   }
 
   private getActiveControlGroup(): number | undefined {
@@ -468,6 +488,8 @@ export class MilestoneOneScene extends Phaser.Scene {
 
   private clearControlGroups(): void {
     this.controlGroups.clear();
+    this.lastControlGroupSlot = undefined;
+    this.lastControlGroupRecallAt = 0;
   }
 
   update(): void {
