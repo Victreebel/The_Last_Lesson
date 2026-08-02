@@ -14,6 +14,7 @@ export type MandateStepId =
 export interface MandateStep {
   readonly id: MandateStepId;
   readonly label: string;
+  readonly instruction: string;
   readonly complete: boolean;
 }
 
@@ -71,29 +72,80 @@ export function getImperialMandateProgress(state: WorldState): ImperialMandatePr
 
   const steps: MandateStep[] = [];
   if (state.scenarioId === "ashen-oath") {
-    steps.push({ id: "mend-plague", label: "MEND CROWNKEEP: END THE PLAGUE.", complete: !hasPlague });
-    steps.push({ id: "resolve-captives", label: "SECURE THE CAPTIVES: ASSIMILATE OR RELEASE THEM.", complete: !hasCaptives });
+    steps.push({
+      id: "mend-plague",
+      label: "MEND CROWNKEEP: END THE PLAGUE.",
+      instruction: "COMMAND DOCK > MEND // spend Faith to save Crownkeep.",
+      complete: !hasPlague
+    });
+    steps.push({
+      id: "resolve-captives",
+      label: "SECURE THE CAPTIVES: ASSIMILATE OR RELEASE THEM.",
+      instruction: "COMMAND DOCK > ASSIMILATE or RELEASE // lower rebellion.",
+      complete: !hasCaptives
+    });
   }
   if (state.scenarioId === "rivergate") {
-    steps.push({ id: "commission-wagon", label: "COMMISSION A SUPPLY WAGON FROM THE TOWN SQUARE.", complete: hasWagon });
+    steps.push({
+      id: "commission-wagon",
+      label: "COMMISSION A SUPPLY WAGON FROM THE TOWN SQUARE.",
+      instruction: "COMMAND DOCK > SUPPLY WAGON // route food along roads.",
+      complete: hasWagon
+    });
   }
   if (state.scenarioId === "stonewall") {
-    steps.push({ id: "raise-battalion", label: "RAISE A BATTALION TO HOLD THE GATE.", complete: hasFieldBattalion(state) });
-    steps.push({ id: "garrison-gate", label: "GARRISON A BATTALION IN THE GATE.", complete: hasGarrisonedGate });
+    steps.push({
+      id: "raise-battalion",
+      label: "RAISE A BATTALION TO HOLD THE GATE.",
+      instruction: "COMMAND DOCK > MILITIA // recruit a field battalion.",
+      complete: hasFieldBattalion(state)
+    });
+    steps.push({
+      id: "garrison-gate",
+      label: "GARRISON A BATTALION IN THE GATE.",
+      instruction: "Select the battalion, then COMMAND DOCK > GARRISON.",
+      complete: hasGarrisonedGate
+    });
   }
 
   if (state.scenarioId !== "stonewall") {
-    steps.push({ id: "establish-farm", label: "ESTABLISH A FARM ON FERTILE GROUND.", complete: hasCompletedFarm(state, settlements) });
-    steps.push({ id: "raise-battalion", label: "RAISE A BATTALION TO SECURE THE CROWN.", complete: hasFieldBattalion(state) });
+    steps.push({
+      id: "establish-farm",
+      label: "ESTABLISH A FARM ON FERTILE GROUND.",
+      instruction: "Open BUILD [B], choose FARM, then place it on [F] fertile ground.",
+      complete: hasCompletedFarm(state, settlements)
+    });
+    steps.push({
+      id: "raise-battalion",
+      label: "RAISE A BATTALION TO SECURE THE CROWN.",
+      instruction: "COMMAND DOCK > MILITIA // recruit a field battalion.",
+      complete: hasFieldBattalion(state)
+    });
   } else {
-    steps.push({ id: "establish-farm", label: "ESTABLISH A FARM ON FERTILE GROUND.", complete: hasCompletedFarm(state, settlements) });
+    steps.push({
+      id: "establish-farm",
+      label: "ESTABLISH A FARM ON FERTILE GROUND.",
+      instruction: "Open BUILD [B], choose FARM, then place it on [F] fertile ground.",
+      complete: hasCompletedFarm(state, settlements)
+    });
   }
 
-  steps.push({ id: "scout-frontier", label: "SCOUT THE FRONTIER AND FIND THE RIVAL THRONE.", complete: hasObservedRival(state) });
-  steps.push({ id: "teach-heir", label: "TEACH THE HEIR: REWARD OR PUNISH THE LAST LESSON.", complete: hasGuidedHeir(state) });
+  steps.push({
+    id: "scout-frontier",
+    label: "SCOUT THE FRONTIER AND FIND THE RIVAL THRONE.",
+    instruction: "Select a field battalion, then use MOVE [M] into the frontier.",
+    complete: hasObservedRival(state)
+  });
+  steps.push({
+    id: "teach-heir",
+    label: "TEACH THE HEIR: REWARD OR PUNISH THE LAST LESSON.",
+    instruction: "Open HEIR [H], then REWARD or PUNISH the last lesson.",
+    complete: hasGuidedHeir(state)
+  });
   steps.push({
     id: "claim-thrones",
     label: "BREAK THE RIVAL CASTLES AND TAKE THE THRONES.",
+    instruction: "Break the rival castle defenses, then take the throne.",
     complete: state.victory.winnerEmpireId === "empire-player"
   });
 

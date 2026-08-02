@@ -7,7 +7,10 @@ describe("imperial mandate", () => {
     const initial = createInitialWorld(5101, "rival", "crownfall");
     expect(getImperialMandateProgress(initial)).toMatchObject({
       completedSteps: 0,
-      activeStep: { id: "establish-farm" }
+      activeStep: {
+        id: "establish-farm",
+        instruction: "Open BUILD [B], choose FARM, then place it on [F] fertile ground."
+      }
     });
 
     const primeHeir = initial.heirs["heir-prime"];
@@ -29,7 +32,9 @@ describe("imperial mandate", () => {
     const stonewall = getImperialMandateProgress(createInitialWorld(5104, "rival", "stonewall"));
 
     expect(rivergate.activeStep.id).toBe("commission-wagon");
+    expect(rivergate.activeStep.instruction).toContain("SUPPLY WAGON");
     expect(ashenOath.activeStep.id).toBe("mend-plague");
+    expect(ashenOath.activeStep.instruction).toContain("MEND");
     expect(stonewall.steps.slice(0, 2).map((step) => step.id)).toEqual(["raise-battalion", "garrison-gate"]);
   });
 

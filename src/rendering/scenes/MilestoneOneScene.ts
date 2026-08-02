@@ -2043,7 +2043,7 @@ export class MilestoneOneScene extends Phaser.Scene {
   }
 
   private createIntelPanel(): void {
-    const background = this.add.rectangle(0, 0, 332, 204, UI_COLORS.panel, 0.95).setOrigin(0);
+    const background = this.add.rectangle(0, 0, 332, 218, UI_COLORS.panel, 0.95).setOrigin(0);
     background.setStrokeStyle(1, UI_COLORS.trim);
     background.setInteractive({ useHandCursor: false });
     background.on("pointerdown", (pointer: Phaser.Input.Pointer) => pointer.event.stopPropagation());
@@ -2059,9 +2059,9 @@ export class MilestoneOneScene extends Phaser.Scene {
       color: UI_COLORS.text,
       lineSpacing: 4
     });
-    this.eventText = this.add.text(14, 144, "", {
+    this.eventText = this.add.text(14, 142, "", {
       fontFamily: "Arial, sans-serif",
-      fontSize: "11px",
+      fontSize: "10px",
       color: UI_COLORS.muted,
       lineSpacing: 3,
       wordWrap: { width: 302 }
@@ -2357,7 +2357,8 @@ export class MilestoneOneScene extends Phaser.Scene {
   private updateHeirPanel(): void {
     const settlement = this.getActiveSettlement();
     const heir = this.getActiveHeir();
-    const heirLessonIsMandated = getImperialMandateProgress(this.simulation.getState()).activeStep.id === "teach-heir";
+    const activeMandate = getImperialMandateProgress(this.simulation.getState()).activeStep;
+    const heirLessonIsMandated = activeMandate.id === "teach-heir";
     const doctrines = this.getHeirDoctrines(heir);
     const lastDoctrine = heir?.lastDoctrineId ? this.simulation.getState().doctrines[heir.lastDoctrineId] : undefined;
     const height = this.heirPanelExpanded ? 396 : 48;
@@ -2634,9 +2635,10 @@ export class MilestoneOneScene extends Phaser.Scene {
     }
   }
 
-  private updateBuildingsPanel(): void {
-    const settlement = this.getActiveControlledSettlement();
-    const counts = this.getBuildingCounts();
+ private updateBuildingsPanel(): void {
+   const settlement = this.getActiveControlledSettlement();
+    const farmIsMandated = getImperialMandateProgress(this.simulation.getState()).activeStep.id === "establish-farm";
+   const counts = this.getBuildingCounts();
     const buildRows = Math.ceil(BUILDING_OPTIONS.length / 3);
     const height = this.buildingsPanelExpanded ? 76 + buildRows * 76 + 8 : 48;
 
@@ -2645,8 +2647,9 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.buildingsPanelTitle.setText(
       this.buildingsPanelExpanded
         ? `BUILD // ${this.getSettlementDisplayName(settlement?.id)} [-]`
-        : `BUILD // ${this.getSettlementDisplayName(settlement?.id)} [+]`
+        : `BUILD // ${this.getSettlementDisplayName(settlement?.id)} [${farmIsMandated ? "!" : "+"}]`
     );
+    this.buildingsPanelTitle.setColor(farmIsMandated ? UI_COLORS.text : "#f2d77f");
     this.buildingsPanelBody.setVisible(this.buildingsPanelExpanded);
     for (const [kind, tile] of this.buildingTiles) {
       const isSelected = kind === this.selectedBuildingKind;
@@ -4205,14 +4208,16 @@ export class MilestoneOneScene extends Phaser.Scene {
     return this.mode.toUpperCase();
   }
 
-  private getImperialMandate(): string {
-    return getImperialMandateProgress(this.simulation.getState()).activeStep.label;
+ private getImperialMandate(): string {
+    const activeStep = getImperialMandateProgress(this.simulation.getState()).activeStep;
+    return `${activeStep.label} ${activeStep.instruction}`;
   }
 
   private getTacticalUplinkMandate(settlement: SettlementState, events: readonly string[]): string {
     const mandate = getImperialMandateProgress(this.simulation.getState());
     return [
       `MANDATE ${Math.min(mandate.completedSteps + 1, mandate.steps.length)}/${mandate.steps.length}: ${mandate.activeStep.label}`,
+      `DIRECTIVE: ${mandate.activeStep.instruction}`,
       `THREAT: ${this.getThreatForecast(settlement)}`,
       `LATEST INTEL: ${events.at(-1) ?? "NO NEW REPORTS."}`
     ].join("\n");

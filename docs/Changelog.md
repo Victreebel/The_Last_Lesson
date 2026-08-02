@@ -614,6 +614,11 @@
 
 - Added capacity-limited battalion embarkation, synchronized transport movement, player disembarkation, and emergency ejection after caravan destruction.
 - Added Book of Lessons UI with heir doctrine history, recent event history, and local save/load controls.
+# 2.6.9 - 2026-08-02
+
+- Expanded the Imperial Mandate from a progress label into state-derived, action-level onboarding directives.
+- The Tactical Uplink now names the next visible command path, while Build and Heir headers signal when they are the relevant surface for the active lesson.
+
 # 2.6.8 - 2026-08-02
 
 - Added a locally persisted high-contrast presentation mode, including an `X` shortcut and Book of Lessons visibility control.

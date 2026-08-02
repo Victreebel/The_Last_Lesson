@@ -380,7 +380,7 @@ Scenario content may alter opening state, structures, resources, and pressures, 
 
 When an authored opening defines a non-zero starting labor allocation, the presentation layer must enqueue that allocation unchanged at the first simulation tick. Openings without authored labor use the standard Crown allocation. This preserves scenario identity without placing UI-specific behavior in the simulation.
 
-The Tactical Uplink's Imperial Mandate is presentation-only and scenario-aware. It leads Rivergate toward an initial supply wagon, Ashen Oath through plague recovery and captive policy, and Stonewall toward raising then garrisoning a defensive battalion before continuing through the standard reconnaissance, Heir-feedback, and throne-capture progression.
+The Tactical Uplink's Imperial Mandate is presentation-only and scenario-aware. It leads Rivergate toward an initial supply wagon, Ashen Oath through plague recovery and captive policy, and Stonewall toward raising then garrisoning a defensive battalion before continuing through the standard reconnaissance, Heir-feedback, and throne-capture progression. Each active step also derives an action-level directive using the actual visible command surface (for example, Build > Farm or Heir > Reward/Punish), so onboarding never depends on hidden tutorial state or a second input path.
 
 ### 7.3 Scout Hounds
 

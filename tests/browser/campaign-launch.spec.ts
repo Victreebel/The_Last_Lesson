@@ -89,6 +89,7 @@ test("launches the campaign theatre and begins a Crownfall reign", async ({ page
   await expectRenderedCanvas(page);
   await page.waitForFunction(async () => Boolean((await navigator.serviceWorker.ready).active));
   await beginCrownfallRivalReign(page);
+  await expect(page.locator("#the-last-lesson-announcements")).toContainText("Open BUILD [B], choose FARM");
   await expect.poll(() => assetUrls.some((url) => url.endsWith("painterly-battlefield-v1.webp"))).toBe(true);
   await expect.poll(() => assetUrls.some((url) => url.endsWith("building-atlas-v1.webp"))).toBe(true);
   expect(pageErrors).toEqual([]);
