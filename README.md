@@ -24,6 +24,7 @@ The current browser prototype is a playable single-player campaign: establish th
 - A local Campaign Chronicle marks every theatre the Crown has conquered, preserving a sense of campaign progress without locking scenario access or changing match rules.
 - Local save/load from the Book of Lessons, plus an automatic recovery save every five world ticks and a `CONTINUE LOCAL REIGN` entry point after refresh.
 - An authoritative end-of-reign debrief records campaign duration, thrones taken, lessons taught, heir guidance, and Faith held.
+- The end-of-reign debrief can immediately replay the current theatre or return to Campaign Theatre selection, preserving a smooth path between scenarios.
 - Responsive tactical presentation: phone-sized views reflow the header and command surface, preserve the campaign choice, and suppress minimap/intel chrome that cannot fit without obscuring play.
 - Local `SFX` and `MOTION` preferences keep optional tactical audio and transient visual effects under player control without affecting the simulation, saves, replays, or multiplayer authority.
 - A painterly isometric building atlas renders every construction type while retaining explicit ownership tint, terrain-aware labels, and the existing deterministic selection and placement hitboxes.

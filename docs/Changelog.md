@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.88.0 - 2026-08-02
+
+- Added a `CAMPAIGN THEATRE` path to the end-of-reign debrief, letting players return directly to scenario selection after a victory or defeat.
+- The debrief now distinguishes replaying the current theatre from choosing a different Chronicle-marked opening; campaign navigation remains presentation-only.
+
 ## 1.87.0 - 2026-08-02
 
 - Added sustainable, terrain-valid rival farms and labeled rival fertile fields to every Campaign Theatre opening, preventing unattended enemy realms from collapsing into empty castles.

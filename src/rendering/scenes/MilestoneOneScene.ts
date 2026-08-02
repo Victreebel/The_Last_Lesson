@@ -1256,7 +1256,7 @@ export class MilestoneOneScene extends Phaser.Scene {
   }
 
   private createVictoryPanel(): void {
-    const background = this.add.rectangle(0, 0, 420, 260, UI_COLORS.panelDeep, 0.98).setOrigin(0);
+    const background = this.add.rectangle(0, 0, 420, 304, UI_COLORS.panelDeep, 0.98).setOrigin(0);
     background.setStrokeStyle(2, UI_COLORS.accent);
     background.setInteractive({ useHandCursor: false });
     background.on("pointerdown", (pointer: Phaser.Input.Pointer) => pointer.event.stopPropagation());
@@ -1276,19 +1276,39 @@ export class MilestoneOneScene extends Phaser.Scene {
       wordWrap: { width: 376 }
     });
     this.victoryDetail.setOrigin(0.5, 0).setPosition(210, 86);
-    const restartButton = this.add.rectangle(110, 204, 200, 34, UI_COLORS.commandActive, 1).setOrigin(0);
+    const restartButton = this.add.rectangle(32, 244, 168, 34, UI_COLORS.commandActive, 1).setOrigin(0);
     restartButton.setStrokeStyle(1, UI_COLORS.trim);
     restartButton.setInteractive({ useHandCursor: true });
     restartButton.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
       pointer.event.stopPropagation();
       this.restartCampaign();
     });
-    const restartLabel = this.add.text(132, 215, "BEGIN ANOTHER REIGN", {
+    const restartLabel = this.add.text(47, 255, "REPEAT THEATRE", {
       fontFamily: "Arial Black, Arial",
       fontSize: "10px",
       color: UI_COLORS.text
     });
-    this.victoryPanel = this.add.container(0, 0, [background, this.victoryTitle, this.victoryDetail, restartButton, restartLabel]);
+    const theatreButton = this.add.rectangle(220, 244, 168, 34, UI_COLORS.command, 1).setOrigin(0);
+    theatreButton.setStrokeStyle(1, UI_COLORS.trim);
+    theatreButton.setInteractive({ useHandCursor: true });
+    theatreButton.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+      pointer.event.stopPropagation();
+      this.returnToCampaignTheatre();
+    });
+    const theatreLabel = this.add.text(234, 255, "CAMPAIGN THEATRE", {
+      fontFamily: "Arial Black, Arial",
+      fontSize: "10px",
+      color: UI_COLORS.text
+    });
+    this.victoryPanel = this.add.container(0, 0, [
+      background,
+      this.victoryTitle,
+      this.victoryDetail,
+      restartButton,
+      restartLabel,
+      theatreButton,
+      theatreLabel
+    ]);
     this.victoryPanel.setScrollFactor(0).setDepth(90).setVisible(false);
   }
 
@@ -1436,6 +1456,22 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.updateUi([message]);
   }
 
+  private returnToCampaignTheatre(): void {
+    this.disconnectFromMultiplayer();
+    this.paused = true;
+    this.pauseControlLabel.setText("SELECT");
+    this.campaignSetupPending = true;
+    this.victoryPanel.setVisible(false);
+    this.campaignSetupPanel.destroy(true);
+    this.createCampaignSetupPanel();
+    this.clearSelection();
+    this.clearControlGroups();
+    this.mode = "select";
+    this.clearPlacementPreview();
+    this.layoutUi();
+    this.updateUi(["Choose the next Campaign Theatre."]);
+  }
+
   private assignOpeningLabor(): void {
     const settlement = this.simulation.getState().settlements["settlement-capital"];
     if (!settlement) {
@@ -1463,6 +1499,10 @@ export class MilestoneOneScene extends Phaser.Scene {
   }
 
   private updateVictoryPanel(): void {
+    if (this.campaignSetupPending) {
+      this.victoryPanel.setVisible(false);
+      return;
+    }
     const state = this.simulation.getState();
     const report = createReignReport(state, this.simulation.getEventLog(), "empire-player");
     if (!report) {
@@ -2202,7 +2242,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     );
     this.victoryPanel.setPosition(
       Math.max(16, Math.round((width - 420 * victoryScale) / 2)),
-      Math.max(topHeight + 18, Math.round((height - 260 * victoryScale) / 2))
+      Math.max(topHeight + 18, Math.round((height - 304 * victoryScale) / 2))
     );
     this.campaignSetupPanel.setPosition(
       Math.max(16, Math.round((width - 470 * campaignScale) / 2)),
