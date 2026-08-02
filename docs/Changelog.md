@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.1 - 2026-08-02
+
+- Promoted the existing captive Civic Record into the Book of Lessons and authoritative end-of-reign report. The record remains factual rather than becoming a morality meter, keeping every reign's captive policy visible beside its military, learning, and Faith outcomes.
+
 ## 2.6.0 - 2026-08-02
 
 - Connected the four authored theatres into a presentation-only campaign path. The Chronicle now recommends the first unconquered chapter, highlights it in Campaign Theatre, and advances the selection after a victorious reign without locking alternate scenarios or modifying simulation rules.

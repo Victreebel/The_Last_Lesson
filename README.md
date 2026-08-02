@@ -23,7 +23,7 @@ The current browser prototype is a playable single-player campaign: establish th
 - Rival settlements begin with their own terrain-valid farms and labeled fertile fields, so every theatre opens against sustainable enemy economies rather than passive empty-castle targets.
 - A local Campaign Chronicle marks every theatre the Crown has conquered and recommends a four-chapter route through the theatres without locking scenario access or changing match rules.
 - Local save/load from the Book of Lessons, plus an automatic recovery save every five world ticks and a `CONTINUE LOCAL REIGN` entry point after refresh. Reigns can also export as portable `.tll` archives and restore on another browser without losing their deterministic replay origin.
-- An authoritative end-of-reign debrief records campaign duration, thrones taken, lessons taught, heir guidance, and Faith held.
+- An authoritative end-of-reign debrief records campaign duration, thrones taken, lessons taught, heir guidance, Faith held, and the Civic Record of captives taken, integrated, and released.
 - The end-of-reign debrief can immediately replay the current theatre or return to Campaign Theatre selection, preserving a smooth path between scenarios.
 - Responsive tactical presentation: phone-sized views reflow the header and command surface, preserve the campaign choice, and suppress minimap/intel chrome that cannot fit without obscuring play.
 - Local `SFX` and `MOTION` preferences keep optional tactical audio and transient visual effects under player control without affecting the simulation, saves, replays, or multiplayer authority. Motion defaults to the browser's reduced-motion preference until the player chooses otherwise.

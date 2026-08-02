@@ -9,6 +9,15 @@ export interface ReignReport {
   readonly lessonsTaught: number;
   readonly heirsGuided: number;
   readonly faithHeld: number;
+  readonly captivesTaken: number;
+  readonly captivesIntegrated: number;
+  readonly captivesReleased: number;
+}
+
+export interface CivicRecord {
+  readonly captivesTaken: number;
+  readonly captivesIntegrated: number;
+  readonly captivesReleased: number;
 }
 
 const WORLD_TICK_SECONDS = 5;
@@ -44,7 +53,10 @@ export function createReignReport(
     thronesCaptured,
     lessonsTaught,
     heirsGuided,
-    faithHeld: empire.resources.faith
+    faithHeld: empire.resources.faith,
+    captivesTaken: empire.moralMemory?.captivesTaken ?? 0,
+    captivesIntegrated: empire.moralMemory?.captivesIntegrated ?? 0,
+    captivesReleased: empire.moralMemory?.captivesReleased ?? 0
   };
 }
 
@@ -52,4 +64,9 @@ export function formatReignDuration(seconds: number): string {
   const minutes = Math.floor(seconds / 60);
   const remainingSeconds = seconds % 60;
   return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
+}
+
+/** Formats factual captive-policy history without imposing a morality score. */
+export function formatCivicRecord(record: Partial<CivicRecord> | undefined): string {
+  return `CIVIC RECORD: TAKEN ${record?.captivesTaken ?? 0}  //  INTEGRATED ${record?.captivesIntegrated ?? 0}  //  RELEASED ${record?.captivesReleased ?? 0}`;
 }

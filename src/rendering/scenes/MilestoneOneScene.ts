@@ -26,7 +26,7 @@ import {
   serializePortableSaveArchive,
   type PortableSaveArchive
 } from "../../simulation/save/PortableSave";
-import { createReignReport, formatReignDuration } from "../../simulation/reports/ReignReport";
+import { createReignReport, formatCivicRecord, formatReignDuration } from "../../simulation/reports/ReignReport";
 import { stableHash } from "../../simulation/hash/stableHash";
 import { createReplayRecord, runReplayRecord } from "../../simulation/replay/ReplayRecord";
 import {
@@ -1708,6 +1708,7 @@ export class MilestoneOneScene extends Phaser.Scene {
             `REIGN ${formatReignDuration(report.durationSeconds)}  //  THRONES ${report.thronesCaptured}`,
             `LESSONS ${report.lessonsTaught}  //  HEIRS GUIDED ${report.heirsGuided}`,
             `FAITH HELD ${report.faithHeld}`,
+            formatCivicRecord(report),
             `CHRONICLE: ${SCENARIO_PROFILES[state.scenarioId].label.toUpperCase()} CROWNED ${campaignConquests}`,
             nextTheatre ? `NEXT THEATRE: ${SCENARIO_PROFILES[nextTheatre].label}` : "CAMPAIGN: EVERY THEATRE CROWNED",
             campaignHonor
@@ -1719,7 +1720,8 @@ export class MilestoneOneScene extends Phaser.Scene {
             "",
             `REIGN ${formatReignDuration(report.durationSeconds)}  //  THRONES ${report.thronesCaptured}`,
             `LESSONS ${report.lessonsTaught}  //  HEIRS GUIDED ${report.heirsGuided}`,
-            `FAITH HELD ${report.faithHeld}`
+            `FAITH HELD ${report.faithHeld}`,
+            formatCivicRecord(report)
           ].join("\\n")
     );
     this.victoryPanel.setVisible(true);
@@ -1748,6 +1750,7 @@ export class MilestoneOneScene extends Phaser.Scene {
       `RIVAL DOCTRINE: ${RIVAL_DIFFICULTY_PROFILES[state.rivalDifficulty].label}`,
       `THEATRE HONOR: ${this.getCampaignHonor(state.scenarioId)?.label ?? `UNSEALED // ${SCENARIO_HONORS[state.scenarioId].condition.toUpperCase()}`}`,
       `FAITH: ${settlement?.internalFaith ?? 0}  //  RIVAL PRESSURE: ${settlement?.externalReligiousPressure ?? 0}`,
+      formatCivicRecord(state.empires["empire-player"]?.moralMemory),
         "",
         "CONVICTIONS:",
         ...(doctrines.length
