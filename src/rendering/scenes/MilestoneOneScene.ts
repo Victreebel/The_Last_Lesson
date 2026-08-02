@@ -218,6 +218,7 @@ const UI_COLORS = {
 const LOCAL_SAVE_KEY = "the-last-lesson.primary-save.v1";
 const LOCAL_REPLAY_ORIGIN_KEY = "the-last-lesson.replay-origin.v1";
 const LOCAL_AUDIO_ENABLED_KEY = "the-last-lesson.audio-enabled.v1";
+const LOCAL_REDUCED_MOTION_KEY = "the-last-lesson.reduced-motion.v1";
 
 interface BuildingTile {
   readonly button: Phaser.GameObjects.Rectangle;
@@ -281,7 +282,10 @@ export class MilestoneOneScene extends Phaser.Scene {
   private bookPanel!: Phaser.GameObjects.Container;
   private bookPanelBody!: Phaser.GameObjects.Text;
   private replayControlLabel!: Phaser.GameObjects.Text;
+  private motionControlLabel!: Phaser.GameObjects.Text;
+  private lessonBannerHideTimer?: Phaser.Time.TimerEvent;
   private bookPanelExpanded = false;
+  private reducedMotion = false;
   private replayReview?: ReplayReviewState;
   private realmControl!: Phaser.GameObjects.Container;
   private realmControlLabel!: Phaser.GameObjects.Text;
@@ -364,6 +368,7 @@ export class MilestoneOneScene extends Phaser.Scene {
 
     this.configureSimulationClock();
     this.restoreAudioPreference();
+    this.restoreMotionPreference();
 
     this.assignOpeningLabor();
     this.centerCameraOnSettlement(this.inspectedSettlementId);
@@ -770,6 +775,26 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.updateUi([this.audioEnabled ? "Tactical sound enabled." : "Tactical sound disabled."]);
   }
 
+  private restoreMotionPreference(): void {
+    try {
+      this.reducedMotion = window.localStorage.getItem(LOCAL_REDUCED_MOTION_KEY) === "true";
+    } catch {
+      this.reducedMotion = false;
+    }
+    this.motionControlLabel.setText(this.reducedMotion ? "MOTION // REDUCED" : "MOTION // FULL");
+  }
+
+  private toggleReducedMotion(): void {
+    this.reducedMotion = !this.reducedMotion;
+    this.motionControlLabel.setText(this.reducedMotion ? "MOTION // REDUCED" : "MOTION // FULL");
+    try {
+      window.localStorage.setItem(LOCAL_REDUCED_MOTION_KEY, String(this.reducedMotion));
+    } catch {
+      // Motion preference is optional local presentation state.
+    }
+    this.updateUi([this.reducedMotion ? "Reduced motion enabled." : "Full motion enabled."]);
+  }
+
   private configureSimulationClock(): void {
     this.simulationClock?.remove(false);
     this.simulationClock = this.time.addEvent({
@@ -952,7 +977,13 @@ export class MilestoneOneScene extends Phaser.Scene {
       `LESSON ${status} // ${heir?.name.toUpperCase() ?? "HEIR"}\n${action}  ${confidence}%`
     );
     this.tweens.killTweensOf(this.lessonBanner);
+    this.lessonBannerHideTimer?.remove(false);
+    this.lessonBannerHideTimer = undefined;
     this.lessonBanner.setVisible(true).setAlpha(1);
+    if (this.reducedMotion) {
+      this.lessonBannerHideTimer = this.time.delayedCall(2600, () => this.lessonBanner.setVisible(false));
+      return;
+    }
     this.tweens.add({
       targets: this.lessonBanner,
       alpha: 0,
@@ -978,7 +1009,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.bookControl = this.add.container(0, 0, [control, this.bookControlLabel]);
     this.bookControl.setScrollFactor(0).setDepth(41);
 
-    const background = this.add.rectangle(0, 0, 470, 502, UI_COLORS.panelDeep, 0.98).setOrigin(0);
+    const background = this.add.rectangle(0, 0, 470, 546, UI_COLORS.panelDeep, 0.98).setOrigin(0);
     background.setStrokeStyle(2, UI_COLORS.accent);
     background.setInteractive({ useHandCursor: false });
     background.on("pointerdown", (pointer: Phaser.Input.Pointer) => pointer.event.stopPropagation());
@@ -1042,6 +1073,18 @@ export class MilestoneOneScene extends Phaser.Scene {
       fontSize: "10px",
       color: UI_COLORS.text
     });
+    const motionButton = this.add.rectangle(18, 492, 434, 34, UI_COLORS.command, 1).setOrigin(0);
+    motionButton.setStrokeStyle(1, UI_COLORS.trim);
+    motionButton.setInteractive({ useHandCursor: true });
+    motionButton.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+      pointer.event.stopPropagation();
+      this.toggleReducedMotion();
+    });
+    this.motionControlLabel = this.add.text(138, 503, "MOTION // FULL", {
+      fontFamily: "Arial Black, Arial",
+      fontSize: "10px",
+      color: UI_COLORS.text
+    });
     this.bookPanel = this.add.container(0, 0, [
       background,
       title,
@@ -1053,7 +1096,9 @@ export class MilestoneOneScene extends Phaser.Scene {
       verifyButton,
       verifyLabel,
       replayButton,
-      this.replayControlLabel
+      this.replayControlLabel,
+      motionButton,
+      this.motionControlLabel
     ]);
     this.bookPanel.setScrollFactor(0).setDepth(70).setVisible(false);
     this.updateBookOfLessons();
@@ -2093,7 +2138,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.campaignSetupPanel.setScale(campaignScale);
     this.bookPanel.setPosition(
       Math.max(16, Math.round((width - 470 * bookScale) / 2)),
-      Math.max(topHeight + 18, Math.round((height - 502 * bookScale) / 2))
+      Math.max(topHeight + 18, Math.round((height - 546 * bookScale) / 2))
     );
     this.realmPanel.setPosition(
       Math.max(16, Math.round((width - 384 * realmScale) / 2)),
@@ -2872,6 +2917,9 @@ export class MilestoneOneScene extends Phaser.Scene {
         continue;
       }
       this.audio.play(isShipStrike ? "naval" : "combat");
+      if (this.reducedMotion) {
+        continue;
+      }
       const attackerId = String(event.payload.attackerId ?? event.payload.shipId ?? "");
       const targetId = String(event.payload.targetId ?? "");
       const attacker = this.getEntityPosition(attackerId);
@@ -2942,6 +2990,9 @@ export class MilestoneOneScene extends Phaser.Scene {
   }
 
   private playMiracleFeedback(events: GameEvent[]): void {
+    if (this.reducedMotion) {
+      return;
+    }
     for (const event of events) {
       if (event.type !== "miracle-cast") {
         continue;

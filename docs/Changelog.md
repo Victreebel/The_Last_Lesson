@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.83.0 - 2026-08-02
+
+- Added a persistent `MOTION // FULL` / `MOTION // REDUCED` preference in the Book of Lessons.
+- Reduced motion suppresses transient combat, miracle, and lesson-banner tweening while retaining all readable commands, events, and tactical state.
+- The preference is local presentation state only and cannot affect simulation, saves, replays, or multiplayer authority.
+
 ## 1.82.0 - 2026-08-02
 
 - Added `pnpm check` as the canonical local release gate for the deterministic suite and production build.
