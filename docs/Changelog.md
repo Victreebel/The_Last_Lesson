@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.33.0 - 2026-08-01
+
+- Added `VERIFY REPLAY` to the Book of Lessons. It compares a fresh replay of the active reign against the authoritative state and event history without mutating either.
+- Local and recovery saves retain the campaign's opening-world snapshot so a resumed reign can be verified as well.
+
 ## 1.32.0 - 2026-08-01
 
 - Added versioned `the-last-lesson-replay` records with validated serialization and deterministic playback through the same simulation path used by live matches.

@@ -10,6 +10,8 @@ import {
   serializeSaveGame
 } from "../../simulation/save/SaveGame";
 import { createReignReport, formatReignDuration } from "../../simulation/reports/ReignReport";
+import { stableHash } from "../../simulation/hash/stableHash";
+import { createReplayRecord, runReplayRecord } from "../../simulation/replay/ReplayRecord";
 import {
   createInitialWorld,
   getBuildingCost,
@@ -27,7 +29,8 @@ import {
   RIVAL_DIFFICULTY_PROFILES,
   type SettlementState,
   type TerrainKind,
-  type TerrainZone
+  type TerrainZone,
+  type WorldState
 } from "../../simulation/state/WorldState";
 
 type ToolMode = "select" | "building" | "move" | "attack";
@@ -145,6 +148,7 @@ const UI_COLORS = {
 };
 
 const LOCAL_SAVE_KEY = "the-last-lesson.primary-save.v1";
+const LOCAL_REPLAY_ORIGIN_KEY = "the-last-lesson.replay-origin.v1";
 
 interface BuildingTile {
   readonly button: Phaser.GameObjects.Rectangle;
@@ -160,7 +164,8 @@ interface HeirFeedbackControl {
 
 export class MilestoneOneScene extends Phaser.Scene {
   private campaignDifficulty: RivalDifficulty = "rival";
-  private simulation = new Simulation(createInitialWorld(777, this.campaignDifficulty));
+  private campaignInitialWorld: WorldState = createInitialWorld(777, this.campaignDifficulty);
+  private simulation = new Simulation(structuredClone(this.campaignInitialWorld));
   private readonly audio = new AudioDirector();
   private commandSequence = 0;
   private paused = false;
@@ -513,7 +518,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.bookControl = this.add.container(0, 0, [control, this.bookControlLabel]);
     this.bookControl.setScrollFactor(0).setDepth(41);
 
-    const background = this.add.rectangle(0, 0, 470, 410, UI_COLORS.panelDeep, 0.98).setOrigin(0);
+    const background = this.add.rectangle(0, 0, 470, 456, UI_COLORS.panelDeep, 0.98).setOrigin(0);
     background.setStrokeStyle(2, UI_COLORS.accent);
     background.setInteractive({ useHandCursor: false });
     background.on("pointerdown", (pointer: Phaser.Input.Pointer) => pointer.event.stopPropagation());
@@ -553,6 +558,18 @@ export class MilestoneOneScene extends Phaser.Scene {
       fontSize: "10px",
       color: UI_COLORS.text
     });
+    const verifyButton = this.add.rectangle(18, 404, 434, 34, UI_COLORS.command, 1).setOrigin(0);
+    verifyButton.setStrokeStyle(1, UI_COLORS.trim);
+    verifyButton.setInteractive({ useHandCursor: true });
+    verifyButton.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+      pointer.event.stopPropagation();
+      this.verifyCurrentReplay();
+    });
+    const verifyLabel = this.add.text(150, 415, "VERIFY REPLAY", {
+      fontFamily: "Arial Black, Arial",
+      fontSize: "10px",
+      color: UI_COLORS.text
+    });
     this.bookPanel = this.add.container(0, 0, [
       background,
       title,
@@ -560,7 +577,9 @@ export class MilestoneOneScene extends Phaser.Scene {
       saveButton,
       loadButton,
       saveLabel,
-      loadLabel
+      loadLabel,
+      verifyButton,
+      verifyLabel
     ]);
     this.bookPanel.setScrollFactor(0).setDepth(70).setVisible(false);
     this.updateBookOfLessons();
@@ -783,7 +802,8 @@ export class MilestoneOneScene extends Phaser.Scene {
   }
 
   private restartCampaign(message = "A new reign begins."): void {
-    this.simulation = new Simulation(createInitialWorld(777, this.campaignDifficulty));
+    this.campaignInitialWorld = createInitialWorld(777, this.campaignDifficulty);
+    this.simulation = new Simulation(structuredClone(this.campaignInitialWorld));
     this.commandSequence = 0;
     this.paused = false;
     this.inspectedSettlementId = "settlement-capital";
@@ -869,6 +889,7 @@ export class MilestoneOneScene extends Phaser.Scene {
   private saveLocalGame(): void {
     try {
       window.localStorage.setItem(LOCAL_SAVE_KEY, serializeSaveGame(createSaveGame(this.simulation)));
+      window.localStorage.setItem(LOCAL_REPLAY_ORIGIN_KEY, JSON.stringify(this.campaignInitialWorld));
       this.updateUi(["Local save recorded in the Book of Lessons."]);
     } catch {
       this.updateUi(["Local save could not be recorded in this browser."]);
@@ -884,6 +905,7 @@ export class MilestoneOneScene extends Phaser.Scene {
       }
       this.simulation = restoreSaveGame(deserializeSaveGame(serialized));
       this.campaignDifficulty = this.simulation.getState().rivalDifficulty;
+      this.restoreReplayOrigin();
       this.campaignSetupPending = false;
       this.campaignSetupPanel.setVisible(false);
       this.paused = false;
@@ -913,9 +935,39 @@ export class MilestoneOneScene extends Phaser.Scene {
     }
     try {
       window.localStorage.setItem(LOCAL_SAVE_KEY, serializeSaveGame(createSaveGame(this.simulation)));
+      window.localStorage.setItem(LOCAL_REPLAY_ORIGIN_KEY, JSON.stringify(this.campaignInitialWorld));
     } catch {
       // Saving is optional presentation persistence and must never interrupt simulation.
     }
+  }
+
+  private restoreReplayOrigin(): void {
+    try {
+      const serialized = window.localStorage.getItem(LOCAL_REPLAY_ORIGIN_KEY);
+      if (!serialized) {
+        return;
+      }
+      const candidate = JSON.parse(serialized) as Partial<WorldState>;
+      if (typeof candidate.tick === "number" && typeof candidate.seed === "number" && candidate.empires && candidate.settlements) {
+        this.campaignInitialWorld = candidate as WorldState;
+      }
+    } catch {
+      // The active save remains valid even if its optional replay origin was not retained.
+    }
+  }
+
+  private verifyCurrentReplay(): void {
+    const state = this.simulation.getState();
+    const replay = runReplayRecord(
+      createReplayRecord(this.campaignInitialWorld, this.simulation.getCommandLog(), state.tick)
+    );
+    const stateMatches = replay.finalStateHash === stableHash(state);
+    const eventsMatch = replay.eventLogHash === stableHash(this.simulation.getEventLog());
+    this.updateUi([
+      stateMatches && eventsMatch
+        ? "Replay verified: command history reproduces this reign."
+        : "Replay mismatch: this reign needs a new archived opening."
+    ]);
   }
 
   private createIntelPanel(): void {
@@ -1402,7 +1454,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.campaignSetupPanel.setScale(campaignScale);
     this.bookPanel.setPosition(
       Math.max(16, Math.round((width - 470 * bookScale) / 2)),
-      Math.max(topHeight + 18, Math.round((height - 410) / 2))
+      Math.max(topHeight + 18, Math.round((height - 456 * bookScale) / 2))
     );
     this.realmPanel.setPosition(
       Math.max(16, Math.round((width - 384 * realmScale) / 2)),
@@ -1410,7 +1462,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     );
     this.victoryPanel.setPosition(
       Math.max(16, Math.round((width - 420 * victoryScale) / 2)),
-      Math.max(topHeight + 18, Math.round((height - 206) / 2))
+      Math.max(topHeight + 18, Math.round((height - 260 * victoryScale) / 2))
     );
     this.campaignSetupPanel.setPosition(
       Math.max(16, Math.round((width - 470 * campaignScale) / 2)),
