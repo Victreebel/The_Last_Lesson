@@ -35,9 +35,8 @@ class MultiplayerRoom {
     setup: MatchSetup,
     private readonly tickIntervalMs: number
   ) {
-    this.authority = new LocalAuthority(
-      createInitialWorld(setup.seed, setup.rivalDifficulty, setup.scenarioId)
-    );
+    this.authority = new LocalAuthority(createInitialWorld(setup.seed, setup.rivalDifficulty, setup.scenarioId));
+    this.authority.prepareOpeningLabor();
   }
 
   join(join: JoinMatchMessage, socket: WebSocket): AuthoritySnapshot {

@@ -1,4 +1,9 @@
 import Phaser from "phaser";
+import {
+  MultiplayerLobby,
+  type MultiplayerConnectRequest,
+  type MultiplayerLobbyDefaults
+} from "./MultiplayerLobby";
 import { MilestoneOneScene } from "../rendering/scenes/MilestoneOneScene";
 import "../styles.css";
 
@@ -23,4 +28,9 @@ const config: Phaser.Types.Core.GameConfig = {
   scene: [MilestoneOneScene]
 };
 
-new Phaser.Game(config);
+const game = new Phaser.Game(config);
+const lobby = new MultiplayerLobby((request: MultiplayerConnectRequest) => {
+  game.events.emit("join-multiplayer", request);
+});
+
+game.events.on("open-multiplayer-lobby", (defaults: MultiplayerLobbyDefaults) => lobby.open(defaults));

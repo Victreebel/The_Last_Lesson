@@ -41,4 +41,20 @@ describe("local authoritative networking", () => {
       })
     ).toThrow("Client player-2 is not connected to this authority.");
   });
+
+  it("prepares the host-owned opening labor order without overriding a player's first command", () => {
+    const authority = new LocalAuthority(createInitialWorld(613));
+    authority.prepareOpeningLabor();
+    authority.connect({ clientId: "player-1", empireId: "empire-player" });
+    authority.submit("player-1", {
+      type: "assign-labor",
+      payload: { settlementId: "settlement-capital", farmers: 5, builders: 3, lumberjacks: 4, miners: 0 }
+    });
+
+    const snapshot = authority.advance();
+    const population = snapshot.state.settlements["settlement-capital"].population;
+
+    expect(population).toMatchObject({ farmers: 5, builders: 3, lumberjacks: 4, miners: 0 });
+    expect(snapshot.recentEvents.filter((event) => event.type === "command-applied")).toHaveLength(2);
+  });
 });

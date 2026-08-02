@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.67.0 - 2026-08-01
+
+- Added an in-game `MULTI` lobby that joins named WebSocket rooms as the Crown, renders host-owned snapshots, forwards the existing RTS command intents, and prevents client-local pause or speed changes from desynchronizing a match. The header explicitly identifies host-controlled time while connected.
+- Made room setup queue the canonical opening labor plan on the authoritative host while preserving a player's own first-tick labor order as the final decision.
+- Added deterministic coverage for the opening-labor precedence rule and browser-verified the full host, join, tick, and snapshot loop.
+
 ## 1.66.0 - 2026-08-01
 
 - Added a real `ws`-based authoritative multiplayer host, named-room lifecycle, shared serialized join/intent/snapshot protocol, browser-side remote authority client, and `pnpm server:multiplayer` command.

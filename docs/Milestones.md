@@ -131,9 +131,9 @@ Implemented:
 - Deterministic load/resume with pending commands and event-ID continuity.
 - Deterministic command-log replay.
 
-## Milestone 5: Local Multiplayer Authority
+## Milestone 5: Authoritative Multiplayer
 
-Status: foundation complete.
+Status: playable local-network co-op complete.
 
 Implemented:
 
@@ -141,6 +141,9 @@ Implemented:
 - Explicit client connect/disconnect lifecycle with immutable state snapshots.
 - Next-tick command intent scheduling for multiple connected local clients.
 - Snapshot state and event hashes proven against the deterministic replay path.
+- A named-room `ws` host that validates messages, advances the only simulation instance, and cleans up empty rooms.
+- In-game `MULTI` connection lobby, authoritative browser snapshot rendering, and host-owned time controls.
+- Host-prepared opening labor, with a genuine tick-one player order deterministically taking precedence.
 
 Acceptance:
 
@@ -150,4 +153,4 @@ Acceptance:
 
 Deferred production work:
 
-- WebSocket transport, authentication, matchmaking, reconnects, and anti-cheat.
+- Account identity, matchmaking, reconnects, rate limiting, and anti-cheat.

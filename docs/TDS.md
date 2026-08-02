@@ -1007,13 +1007,14 @@ Milestone 0 and Milestone 1 do not need live multiplayer. They must still use co
 interface LocalAuthority {
   connect(connection: LocalClientConnection): AuthoritySnapshot;
   disconnect(clientId: PlayerId): void;
+  prepareOpeningLabor(settlementId?: string): void;
   submit(clientId: PlayerId, intent: CommandIntent): GameCommand;
   advance(): AuthoritySnapshot;
   getSnapshot(): AuthoritySnapshot;
 }
 ```
 
-The authority owns tick assignment and command IDs. A connected client submits an intent only; the host schedules it for the next deterministic tick, advances the sole simulation instance, and returns an immutable snapshot containing world state, state hash, event-log hash, recent events, and connected clients. A client must not mutate simulation state or choose its own timestamp.
+The authority owns tick assignment and command IDs. A connected client submits an intent only; the host schedules it for the next deterministic tick, advances the sole simulation instance, and returns an immutable snapshot containing world state, state hash, event-log hash, recent events, and connected clients. A client must not mutate simulation state or choose its own timestamp. A network-created room also queues the canonical opening labor order before the first tick; a player command at that tick is sorted after the default and therefore deliberately takes precedence.
 
 This is intentionally an in-process boundary. WebSocket transport, authentication, matchmaking, reconnection, and anti-cheat remain production networking work; they must adapt this contract rather than duplicate simulation logic.
 
@@ -1036,9 +1037,9 @@ type ServerMessage =
   | { type: "protocol-error"; message: string };
 ```
 
-The host validates the outer protocol, allocates the next authoritative command ID and tick through `LocalAuthority.submit`, broadcasts immutable snapshots after a room tick, and deletes an empty room. Raw client payloads never receive direct access to `WorldState`, command IDs, or tick assignment. `RemoteAuthorityClient.ts` is a presentation-facing browser adapter that exposes listener, join, intent, disconnect, and resynchronization primitives without owning simulation state.
+The host validates the outer protocol, allocates the next authoritative command ID and tick through `LocalAuthority.submit`, broadcasts immutable snapshots after a room tick, and deletes an empty room. Raw client payloads never receive direct access to `WorldState`, command IDs, or tick assignment. `RemoteAuthorityClient.ts` is a presentation-facing browser adapter that exposes listener, join, intent, disconnect, and resynchronization primitives without owning simulation state. `app/MultiplayerLobby.ts` owns only DOM connection fields; `MilestoneOneScene` swaps to host-owned snapshots on join, forwards its existing command intents, and disables local pause and speed simulation while connected.
 
-Socket-level tests must cover join, server-timed command acceptance, snapshot delivery, and malformed input rejection. Authentication, lobby/matchmaking UI, reconnect tokens, persistence, rate limits, and anti-cheat are deliberate follow-up delivery work rather than hidden assumptions of this transport layer.
+Socket-level tests must cover join, server-timed command acceptance, snapshot delivery, malformed input rejection, and opening-labor precedence. Authentication, public matchmaking, reconnect tokens, persistence, rate limits, and anti-cheat are deliberate follow-up delivery work rather than hidden assumptions of this transport layer.
 
 ---
 

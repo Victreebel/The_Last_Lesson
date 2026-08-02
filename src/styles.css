@@ -18,3 +18,81 @@ body,
 canvas {
   display: block;
 }
+
+.multiplayer-lobby {
+  position: fixed;
+  z-index: 10;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgb(4 8 8 / 72%);
+}
+
+.multiplayer-lobby[hidden] {
+  display: none;
+}
+
+.multiplayer-lobby__form {
+  display: grid;
+  width: min(390px, 100%);
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid #d8b75f;
+  background: #101718;
+  box-shadow: 0 16px 48px rgb(0 0 0 / 45%);
+}
+
+.multiplayer-lobby__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.multiplayer-lobby h2 {
+  margin: 0;
+  color: #f2d77f;
+  font-size: 16px;
+  letter-spacing: 0;
+}
+
+.multiplayer-lobby label {
+  display: grid;
+  gap: 6px;
+  color: #b9c8be;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.multiplayer-lobby input,
+.multiplayer-lobby select,
+.multiplayer-lobby button {
+  box-sizing: border-box;
+  min-height: 38px;
+  border: 1px solid #5a6b63;
+  border-radius: 0;
+  background: #263536;
+  color: #e9e4cf;
+  font: inherit;
+}
+
+.multiplayer-lobby input,
+.multiplayer-lobby select {
+  padding: 0 10px;
+}
+
+.multiplayer-lobby button {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.multiplayer-lobby__join {
+  border-color: #d8b75f !important;
+  background: #4c5f53 !important;
+}
+
+.multiplayer-lobby__close {
+  width: 34px;
+  min-height: 30px !important;
+  font-size: 20px !important;
+}

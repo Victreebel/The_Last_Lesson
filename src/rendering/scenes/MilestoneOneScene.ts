@@ -1,4 +1,9 @@
 import Phaser from "phaser";
+import type { MultiplayerConnectRequest } from "../../app/MultiplayerLobby";
+import type { CommandIntent } from "../../networking/LocalAuthority";
+import { RemoteAuthorityClient } from "../../networking/RemoteAuthorityClient";
+import type { AuthoritySnapshot } from "../../networking/LocalAuthority";
+import type { ServerMessage } from "../../networking/protocol";
 import { AudioDirector } from "../AudioDirector";
 import { Simulation } from "../../simulation/Simulation";
 import type { GameCommand } from "../../simulation/commands/GameCommand";
@@ -187,6 +192,9 @@ export class MilestoneOneScene extends Phaser.Scene {
   private campaignScenario: ScenarioId = "crownfall";
   private campaignInitialWorld: WorldState = createInitialWorld(777, this.campaignDifficulty, this.campaignScenario);
   private simulation = new Simulation(structuredClone(this.campaignInitialWorld));
+  private remoteAuthority?: RemoteAuthorityClient;
+  private remoteUnsubscribe?: () => void;
+  private remoteRoomId?: string;
   private readonly audio = new AudioDirector();
   private commandSequence = 0;
   private paused = false;
@@ -209,6 +217,8 @@ export class MilestoneOneScene extends Phaser.Scene {
   private speedControl!: Phaser.GameObjects.Container;
   private speedControlButton!: Phaser.GameObjects.Rectangle;
   private speedControlLabel!: Phaser.GameObjects.Text;
+  private networkControl!: Phaser.GameObjects.Container;
+  private networkControlLabel!: Phaser.GameObjects.Text;
   private bookControl!: Phaser.GameObjects.Container;
   private bookControlLabel!: Phaser.GameObjects.Text;
   private bookPanel!: Phaser.GameObjects.Container;
@@ -283,6 +293,11 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => this.handlePointerDown(pointer));
     this.input.on("pointermove", (pointer: Phaser.Input.Pointer) => this.handlePointerMove(pointer));
     this.input.on("pointerup", (pointer: Phaser.Input.Pointer) => this.handlePointerUp(pointer));
+    this.game.events.on("join-multiplayer", this.connectToMultiplayer, this);
+    this.events.once("shutdown", () => {
+      this.game.events.off("join-multiplayer", this.connectToMultiplayer, this);
+      this.disconnectFromMultiplayer();
+    });
 
     this.configureSimulationClock();
 
@@ -414,7 +429,22 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.speedControl = this.add.container(0, 0, [this.speedControlButton, this.speedControlLabel]);
     this.speedControl.setScrollFactor(0).setDepth(41);
 
-    this.resourceText = this.add.text(600, 18, "", {
+    const networkButton = this.add.rectangle(600, 14, 82, 30, UI_COLORS.command, 1).setOrigin(0);
+    networkButton.setStrokeStyle(1, UI_COLORS.trim);
+    networkButton.setInteractive({ useHandCursor: true });
+    networkButton.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+      pointer.event.stopPropagation();
+      this.openMultiplayerLobby();
+    });
+    this.networkControlLabel = this.add.text(610, 23, "MULTI", {
+      fontFamily: "Arial Black, Arial",
+      fontSize: "10px",
+      color: UI_COLORS.text
+    });
+    this.networkControl = this.add.container(0, 0, [networkButton, this.networkControlLabel]);
+    this.networkControl.setScrollFactor(0).setDepth(41);
+
+    this.resourceText = this.add.text(696, 18, "", {
       fontFamily: "Arial, sans-serif",
       fontSize: "13px",
       color: UI_COLORS.text
@@ -423,6 +453,10 @@ export class MilestoneOneScene extends Phaser.Scene {
   }
 
   private togglePause(): void {
+    if (this.remoteAuthority) {
+      this.updateUi(["Multiplayer time is controlled by the host."]);
+      return;
+    }
     if (this.campaignSetupPending) {
       this.updateUi(["Choose a rival doctrine to begin the reign."]);
       return;
@@ -433,6 +467,10 @@ export class MilestoneOneScene extends Phaser.Scene {
   }
 
   private cycleGameSpeed(): void {
+    if (this.remoteAuthority) {
+      this.updateUi(["Multiplayer time is controlled by the host."]);
+      return;
+    }
     this.gameSpeed = this.gameSpeed === 3 ? 1 : ((this.gameSpeed + 1) as 1 | 2 | 3);
     this.speedControlLabel.setText(`SPEED ${this.gameSpeed}X`);
     this.configureSimulationClock();
@@ -453,6 +491,9 @@ export class MilestoneOneScene extends Phaser.Scene {
   }
 
   private advanceSimulation(): void {
+    if (this.remoteAuthority) {
+      return;
+    }
     if (this.replayReview && this.simulation.getState().tick >= this.replayReview.targetTick) {
       this.paused = true;
       this.pauseControlLabel.setText("REPLAY END");
@@ -472,6 +513,89 @@ export class MilestoneOneScene extends Phaser.Scene {
       return;
     }
     this.updateUi(result.events.map((event) => event.type).slice(-5));
+  }
+
+  private openMultiplayerLobby(): void {
+    this.game.events.emit("open-multiplayer-lobby", {
+      scenarioId: this.campaignScenario,
+      rivalDifficulty: this.campaignDifficulty
+    });
+  }
+
+  private connectToMultiplayer(request: MultiplayerConnectRequest): void {
+    this.disconnectFromMultiplayer();
+    this.campaignScenario = request.scenarioId;
+    this.campaignDifficulty = request.rivalDifficulty;
+    this.campaignSetupPending = false;
+    this.campaignSetupPanel.setVisible(false);
+    this.replayReview = undefined;
+    this.paused = false;
+    this.pauseControlLabel.setText("HOST");
+    this.speedControlLabel.setText("HOST SPEED");
+    this.networkControlLabel.setText("ONLINE");
+    this.clearSelection();
+
+    const authority = new RemoteAuthorityClient();
+    this.remoteAuthority = authority;
+    this.remoteUnsubscribe = authority.onMessage((message) => this.handleRemoteMessage(message));
+    authority.connect(request.url, {
+      type: "join-match",
+      roomId: request.roomId,
+      clientId: request.clientId,
+      empireId: "empire-player",
+      setup: {
+        seed: 777,
+        scenarioId: request.scenarioId,
+        rivalDifficulty: request.rivalDifficulty
+      }
+    });
+    this.updateUi([`Connecting to ${request.roomId.toUpperCase()}...`]);
+  }
+
+  private disconnectFromMultiplayer(): void {
+    this.remoteUnsubscribe?.();
+    this.remoteUnsubscribe = undefined;
+    this.remoteAuthority?.disconnect();
+    this.remoteAuthority = undefined;
+    this.remoteRoomId = undefined;
+    if (this.networkControlLabel) {
+      this.networkControlLabel.setText("MULTI");
+    }
+    if (this.speedControlLabel) {
+      this.speedControlLabel.setText(`SPEED ${this.gameSpeed}X`);
+    }
+  }
+
+  private handleRemoteMessage(message: ServerMessage): void {
+    if (message.type === "joined-match") {
+      this.remoteRoomId = message.roomId;
+      this.applyRemoteSnapshot(message.snapshot);
+      this.updateUi([`Joined ${message.roomId.toUpperCase()} as the Crown.`]);
+      return;
+    }
+    if (message.type === "snapshot") {
+      this.applyRemoteSnapshot(message.snapshot);
+      return;
+    }
+    if (message.type === "command-accepted") {
+      this.updateUi([
+        `Host scheduled ${message.command.type.replaceAll("-", " ")} for tick ${message.command.tick}.`
+      ]);
+      return;
+    }
+    this.updateUi([message.message]);
+  }
+
+  private applyRemoteSnapshot(snapshot: AuthoritySnapshot): void {
+    this.simulation = new Simulation(structuredClone(snapshot.state), undefined, {
+      eventLog: structuredClone(snapshot.recentEvents)
+    });
+    this.inspectedSettlementId = this.getActiveControlledSettlement()?.id ?? "settlement-capital";
+    this.lastLessonEventId = undefined;
+    this.lessonBanner.setVisible(false);
+    this.renderWorld();
+    this.playCombatFeedback(snapshot.recentEvents);
+    this.updateUi(snapshot.recentEvents.map((event) => event.type).slice(-5));
   }
 
   private createLessonBanner(): void {
@@ -887,6 +1011,7 @@ export class MilestoneOneScene extends Phaser.Scene {
   }
 
   private restartCampaign(message = "A new reign begins."): void {
+    this.disconnectFromMultiplayer();
     this.campaignInitialWorld = createInitialWorld(777, this.campaignDifficulty, this.campaignScenario);
     this.simulation = new Simulation(structuredClone(this.campaignInitialWorld));
     this.commandSequence = 0;
@@ -1013,6 +1138,7 @@ export class MilestoneOneScene extends Phaser.Scene {
         this.updateUi(["No local save is available."]);
         return;
       }
+      this.disconnectFromMultiplayer();
       this.simulation = restoreSaveGame(deserializeSaveGame(serialized));
       this.campaignDifficulty = this.simulation.getState().rivalDifficulty;
       this.campaignScenario = this.simulation.getState().scenarioId;
@@ -1609,7 +1735,9 @@ export class MilestoneOneScene extends Phaser.Scene {
     const speedX = compact ? width - 168 : 510;
     this.speedControlButton.setPosition(speedX, pauseY);
     this.speedControlLabel.setPosition(speedX + 9, pauseY + 9);
-    this.resourceText.setPosition(compact ? 18 : 600, narrow ? 88 : compact ? 47 : 19);
+    this.networkControl.setScale(narrow ? 0.7 : 1);
+    this.networkControl.setPosition(narrow ? -85 : compact ? -164 : 0, narrow ? 48 : 0);
+    this.resourceText.setPosition(compact ? 18 : 696, narrow ? 88 : compact ? 47 : 19);
     this.bookControl.setScale(narrow ? 0.7 : 1);
     this.realmControl.setScale(narrow ? 0.7 : 1);
     this.bookControl.setPosition(narrow ? -115 : 0, narrow ? 48 : 0);
@@ -2357,9 +2485,13 @@ export class MilestoneOneScene extends Phaser.Scene {
     }, 0);
   }
 
-  private issueCommand(command: Omit<GameCommand, "id" | "issuedBy" | "tick">): void {
+  private issueCommand(command: CommandIntent): void {
     if (this.replayReview) {
       this.updateUi(["Replay review is read-only. Return to the live reign before issuing orders."]);
+      return;
+    }
+    if (this.remoteAuthority) {
+      this.remoteAuthority.submit(command);
       return;
     }
     this.simulation.enqueueCommand({

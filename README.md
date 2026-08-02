@@ -8,7 +8,7 @@ The current browser prototype is a playable single-player campaign: establish th
 
 - Deterministic five-second simulation ticks, save/load, command logs, and replay-safe state.
 - Versioned replay records that preserve an opening world, applied command log, and duration for deterministic verification and future player-facing replay review.
-- A tested local authoritative host foundation that accepts multiple co-op clients and broadcasts immutable deterministic snapshots; online transport remains a later production milestone.
+- Authoritative real-time co-op: an in-game `MULTI` lobby joins named rooms through a WebSocket host, submits untimestamped player intents, and renders host-owned deterministic snapshots. The host prepares the same opening labor plan as a local reign, owns tick timing and command IDs, and cleans up empty rooms.
 - Real-time battlefield camera, selection, movement, attack orders, garrisons, land caravans, and Warships.
 - Terrain-bound construction and harvesting: fertile farms, forest lumber mills, iron mines, luxury-grove plantations, roads, moats, walls, gates, outposts, and housing.
 - Plantations generate global Luxury while improving their settlement's happiness and devotion, creating a peaceful route into stronger Faith generation.
@@ -48,7 +48,7 @@ The game now includes a real authoritative WebSocket transport on top of the det
 pnpm server:multiplayer
 ```
 
-It listens on `ws://127.0.0.1:8787` by default. The browser-side `RemoteAuthorityClient` and the host use a shared serialized contract: clients join a named room, submit untimestamped intents, and receive host-owned snapshots. Transport identity, matchmaking, and player-facing lobby UI remain the next delivery layer; the server itself already owns ticks, command IDs, simulation state, and room cleanup.
+It listens on `ws://127.0.0.1:8787` by default. Open `MULTI` from the top command bar, enter the host address and a room name, then join as the Crown. The browser-side `RemoteAuthorityClient` and host use a shared serialized contract: clients join a named room, submit untimestamped intents, and receive host-owned snapshots. Time controls become host-owned while connected. Account identity, public matchmaking, reconnect tokens, and production anti-cheat remain later delivery work.
 
 ## Core Controls
 

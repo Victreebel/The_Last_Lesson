@@ -6,9 +6,12 @@ import { stableHash } from "../simulation/hash/stableHash";
 import type { EmpireId, PlayerId } from "../simulation/state/Ids";
 import type { WorldState } from "../simulation/state/WorldState";
 
-export type CommandIntent<TCommand extends GameCommand = GameCommand> = TCommand extends GameCommand
+type StripCommandAuthority<TCommand extends GameCommand> = TCommand extends unknown
   ? Omit<TCommand, "id" | "issuedBy" | "tick">
   : never;
+
+/** A player command before the authoritative host assigns identity and tick. */
+export type CommandIntent = StripCommandAuthority<GameCommand>;
 
 export interface LocalClientConnection {
   readonly clientId: PlayerId;
@@ -33,6 +36,7 @@ export class LocalAuthority {
   private readonly clients = new Map<PlayerId, LocalClientConnection>();
   private commandSequence = 0;
   private recentEvents: GameEvent[] = [];
+  private openingLaborPrepared = false;
 
   constructor(initialWorld: WorldState, config?: SimulationConfig) {
     this.simulation = new Simulation(structuredClone(initialWorld), config);
@@ -45,6 +49,39 @@ export class LocalAuthority {
 
   disconnect(clientId: PlayerId): void {
     this.clients.delete(clientId);
+  }
+
+  /**
+   * Queues the same first-tick Crown labor plan used by a local campaign.
+   * It is host-owned setup, so all joined clients see the identical opening.
+   */
+  prepareOpeningLabor(settlementId = "settlement-capital"): void {
+    if (this.openingLaborPrepared) {
+      return;
+    }
+    const settlement = this.simulation.getState().settlements[settlementId];
+    if (!settlement) {
+      return;
+    }
+    const population = settlement.population;
+    const authoredLabor =
+      population.farmers + population.builders + population.lumberjacks + population.miners + population.luxuryWorkers > 0;
+    this.simulation.enqueueCommand({
+      // This sort order lets a genuine player labor order for tick one supersede the default.
+      id: "authority-0-opening-labor",
+      issuedBy: "authority",
+      tick: this.simulation.getState().tick + 1,
+      type: "assign-labor",
+      payload: {
+        settlementId,
+        farmers: authoredLabor ? population.farmers : 8,
+        builders: authoredLabor ? population.builders : 4,
+        lumberjacks: authoredLabor ? population.lumberjacks : 6,
+        miners: authoredLabor ? population.miners : 0,
+        luxuryWorkers: authoredLabor ? population.luxuryWorkers : 0
+      }
+    });
+    this.openingLaborPrepared = true;
   }
 
   submit(clientId: PlayerId, intent: CommandIntent): GameCommand {
