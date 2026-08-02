@@ -156,6 +156,8 @@ Implemented:
 - Host-prepared opening labor, with a genuine tick-one player order deterministically taking precedence.
 - Per-intent empire authorization: connected players cannot command rival assets or create Faith outside the civilization simulation.
 - A bounded room-resume window: empty rooms stop ticking but retain their authoritative state for two minutes, allowing a client to return to the same reign.
+- Browser-local Crown identities and host-issued reconnect tokens: a retained room requires its opaque token to reclaim a known Crown identity, and a valid recovery safely replaces a stale socket without allowing its later close event to drop the recovered session.
+- A per-Crown host command budget that rejects floods before they reach authoritative scheduling while preserving normal multi-segment orders.
 - A deployable container entry point with a `GET /health` endpoint on the same port as WebSocket authority transport. This keeps production readiness probes outside the deterministic simulation and gives any WebSocket-capable host a clear startup contract.
 
 Acceptance:
@@ -166,4 +168,4 @@ Acceptance:
 
 Deferred production work:
 
-- Account identity, matchmaking, reconnects, rate limiting, and broader anti-cheat.
+- Account identity, public matchmaking, persistent room storage, and broader anti-cheat.

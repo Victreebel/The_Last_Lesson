@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 import { getEarnedScenarioHonor, SCENARIO_HONORS, type CampaignHonor } from "../../campaign/CampaignHonors";
-import type { MultiplayerConnectRequest } from "../../app/MultiplayerLobby";
+import { storeMultiplayerReconnectToken, type MultiplayerConnectRequest } from "../../app/MultiplayerLobby";
 import type { CommandIntent } from "../../networking/LocalAuthority";
 import { RemoteAuthorityClient } from "../../networking/RemoteAuthorityClient";
 import type { RemoteConnectionState } from "../../networking/RemoteAuthorityClient";
@@ -1017,6 +1017,7 @@ export class MilestoneOneScene extends Phaser.Scene {
       roomId: request.roomId,
       clientId: request.clientId,
       empireId: "empire-player",
+      ...(request.reconnectToken ? { reconnectToken: request.reconnectToken } : {}),
       setup: {
         seed: 777,
         scenarioId: request.scenarioId,
@@ -1046,6 +1047,10 @@ export class MilestoneOneScene extends Phaser.Scene {
   private handleRemoteMessage(message: ServerMessage): void {
     if (message.type === "joined-match") {
       this.remoteRoomId = message.roomId;
+      if (this.remoteReconnectRequest) {
+        this.remoteReconnectRequest = { ...this.remoteReconnectRequest, reconnectToken: message.reconnectToken };
+        storeMultiplayerReconnectToken(this.remoteReconnectRequest, message.reconnectToken);
+      }
       this.applyRemoteSnapshot(message.snapshot);
       this.updateUi([`Joined ${message.roomId.toUpperCase()} as the Crown.`]);
       return;

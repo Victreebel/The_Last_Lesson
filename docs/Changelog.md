@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.5.8 - 2026-08-02
+
+- Added host-issued reconnect tokens for retained multiplayer rooms. A browser now stores the credential only for its matching host, room, and Crown identity, and a valid reconnect can safely replace a stale socket without allowing its close event to drop the recovered reign.
+- Added protocol, browser-profile, and socket-level coverage for protected rejoin recovery while keeping reconnect credentials outside deterministic simulation, saves, and replays.
+
 ## 2.5.7 - 2026-08-02
 
 - Added persistent browser-local Crown identities for multiplayer rooms and made `REJOIN` reconnect directly to the retained authoritative room after a socket loss.

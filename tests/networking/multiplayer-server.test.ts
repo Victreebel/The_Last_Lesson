@@ -102,7 +102,11 @@ describe("multiplayer WebSocket transport", () => {
         empireId: "empire-player"
       })
     );
-    await expect(firstJoined).resolves.toMatchObject({ type: "joined-match", snapshot: { tick: 0 } });
+    const firstJoin = await firstJoined;
+    expect(firstJoin).toMatchObject({ type: "joined-match", snapshot: { tick: 0 } });
+    if (firstJoin.type !== "joined-match") {
+      throw new Error("Expected joined-match response.");
+    }
     server.advanceRoom("resume-crown");
     firstClient.close();
     await waitForClose(firstClient);
@@ -115,7 +119,8 @@ describe("multiplayer WebSocket transport", () => {
         type: "join-match",
         roomId: "resume-crown",
         clientId: "player-one",
-        empireId: "empire-player"
+        empireId: "empire-player",
+        reconnectToken: firstJoin.reconnectToken
       })
     );
     await expect(rejoined).resolves.toMatchObject({
@@ -124,6 +129,68 @@ describe("multiplayer WebSocket transport", () => {
       snapshot: { tick: 1, connectedClients: [{ clientId: "player-one", empireId: "empire-player" }] }
     });
 
+    returningClient.close();
+  });
+
+  it("requires a token for room recovery and safely replaces a stale socket", async () => {
+    const server = new MultiplayerServer({ tickIntervalMs: 60_000, idleRoomTtlMs: 60_000 });
+    servers.push(server);
+    const port = await server.listen(0);
+    const firstClient = new WebSocket(`ws://127.0.0.1:${port}`);
+    await waitForOpen(firstClient);
+    const joined = waitForMessage(firstClient);
+    firstClient.send(
+      JSON.stringify({
+        type: "join-match",
+        roomId: "protected-crown",
+        clientId: "player-one",
+        empireId: "empire-player"
+      })
+    );
+    const firstJoin = await joined;
+    expect(firstJoin).toMatchObject({ type: "joined-match" });
+    if (firstJoin.type !== "joined-match") {
+      throw new Error("Expected joined-match response.");
+    }
+
+    const intruder = new WebSocket(`ws://127.0.0.1:${port}`);
+    await waitForOpen(intruder);
+    const rejected = waitForMessage(intruder);
+    intruder.send(
+      JSON.stringify({
+        type: "join-match",
+        roomId: "protected-crown",
+        clientId: "player-one",
+        empireId: "empire-player"
+      })
+    );
+    await expect(rejected).resolves.toEqual({
+      type: "protocol-error",
+      message: "This Crown identity requires its reconnect token to reclaim the room."
+    });
+
+    const returningClient = new WebSocket(`ws://127.0.0.1:${port}`);
+    await waitForOpen(returningClient);
+    const reclaimed = waitForMessage(returningClient);
+    returningClient.send(
+      JSON.stringify({
+        type: "join-match",
+        roomId: "protected-crown",
+        clientId: "player-one",
+        empireId: "empire-player",
+        reconnectToken: firstJoin.reconnectToken
+      })
+    );
+    await expect(reclaimed).resolves.toMatchObject({
+      type: "joined-match",
+      snapshot: { connectedClients: [{ clientId: "player-one", empireId: "empire-player" }] }
+    });
+    await waitForClose(firstClient);
+
+    const snapshot = waitForMessage(returningClient);
+    returningClient.send(JSON.stringify({ type: "request-snapshot" }));
+    await expect(snapshot).resolves.toMatchObject({ type: "snapshot" });
+    intruder.close();
     returningClient.close();
   });
 

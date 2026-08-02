@@ -1039,7 +1039,7 @@ interface LocalAuthority {
 
 The authority owns tick assignment and command IDs. A connected client submits an intent only; the host schedules it for the next deterministic tick, advances the sole simulation instance, and returns an immutable snapshot containing world state, state hash, event-log hash, recent events, and connected clients. A client must not mutate simulation state or choose its own timestamp. A network-created room also queues the canonical opening labor order before the first tick; a player command at that tick is sorted after the default and therefore deliberately takes precedence.
 
-This is intentionally an in-process boundary. WebSocket transport, authentication, matchmaking, reconnection, and anti-cheat remain production networking work; they must adapt this contract rather than duplicate simulation logic.
+This is intentionally an in-process boundary. WebSocket transport, authentication, matchmaking, and anti-cheat remain production networking work; they must adapt this contract rather than duplicate simulation logic.
 
 ### 20.5 WebSocket Transport
 
@@ -1049,20 +1049,20 @@ The serialized contract in `networking/protocol.ts` is intentionally small:
 
 ```ts
 type ClientMessage =
-  | { type: "join-match"; roomId: string; clientId: string; empireId: string; setup?: MatchSetup }
+  | { type: "join-match"; roomId: string; clientId: string; empireId: string; setup?: MatchSetup; reconnectToken?: string }
   | { type: "submit-intent"; intent: CommandIntent }
   | { type: "request-snapshot" };
 
 type ServerMessage =
-  | { type: "joined-match"; roomId: string; clientId: string; snapshot: AuthoritySnapshot }
+  | { type: "joined-match"; roomId: string; clientId: string; reconnectToken: string; snapshot: AuthoritySnapshot }
   | { type: "command-accepted"; command: GameCommand }
   | { type: "snapshot"; snapshot: AuthoritySnapshot }
   | { type: "protocol-error"; message: string };
 ```
 
-The host validates the outer protocol, verifies that an intent controls only the submitter's empire-owned settlements, heirs, battalions, buildings, and transports, allocates the next authoritative command ID and tick through `LocalAuthority.submit`, broadcasts immutable snapshots after a room tick, and deletes an empty room after a bounded 120-second idle grace period. Empty rooms stop ticking but retain their sole authority snapshot, so a returning client can join the same room and resume its exact reign before expiry. Raw client payloads never receive direct access to `WorldState`, command IDs, or tick assignment. `generate-faith` is a deterministic fixture command and is never legal over the connected-player boundary. `RemoteAuthorityClient.ts` is a presentation-facing browser adapter that exposes message and connection-state listeners, join, intent, disconnect, and resynchronization primitives without owning simulation state. `app/MultiplayerLobby.ts` owns only DOM connection fields; `MilestoneOneScene` swaps to host-owned snapshots on join, forwards its existing command intents, and disables local pause and speed simulation while connected. If the socket closes unexpectedly, the scene remains bound to the last host snapshot and freezes the interface until the player deliberately uses `REJOIN`; it must never advance that state locally.
+The host validates the outer protocol, verifies that an intent controls only the submitter's empire-owned settlements, heirs, battalions, buildings, and transports, allocates the next authoritative command ID and tick through `LocalAuthority.submit`, broadcasts immutable snapshots after a room tick, and deletes an empty room after a bounded 120-second idle grace period. Empty rooms stop ticking but retain their sole authority snapshot, so a returning client can join the same room and resume its exact reign before expiry. On first join the host issues an opaque random reconnect token. Rejoining a known Crown identity requires that token, and a successful token-authenticated join safely replaces a stale socket without allowing its later close event to disconnect the recovered Crown. The browser stores the token only under its host-room-Crown key; it is a local recovery credential, not an account system. The room also enforces a bounded per-Crown command budget before authority scheduling. Both mechanisms are transport behavior and never affect deterministic `WorldState`, ticks, command IDs, saves, or replay content. Raw client payloads never receive direct access to `WorldState`, command IDs, or tick assignment. `generate-faith` is a deterministic fixture command and is never legal over the connected-player boundary. `RemoteAuthorityClient.ts` is a presentation-facing browser adapter that exposes message and connection-state listeners, join, intent, disconnect, and resynchronization primitives without owning simulation state. `app/MultiplayerLobby.ts` owns only DOM connection fields; `MilestoneOneScene` swaps to host-owned snapshots on join, forwards its existing command intents, and disables local pause and speed simulation while connected. If the socket closes unexpectedly, the scene remains bound to the last host snapshot and freezes the interface until the player deliberately uses `REJOIN`; it must never advance that state locally.
 
-Socket-level tests must cover join, server-timed command acceptance, snapshot delivery, malformed input rejection, opening-labor precedence, and cross-empire authorization. Authentication, public matchmaking, reconnect tokens, persistence, rate limits, and broader anti-cheat are deliberate follow-up delivery work rather than hidden assumptions of this transport layer.
+Socket-level tests must cover join, server-timed command acceptance, snapshot delivery, malformed input rejection, opening-labor precedence, cross-empire authorization, reconnect-token recovery, stale-socket replacement, and command budgeting. Authentication, public matchmaking, persistence, and broader anti-cheat are deliberate follow-up delivery work rather than hidden assumptions of this transport layer.
 
 ---
 
@@ -1448,7 +1448,7 @@ The frozen gameplay architecture is implemented as a robust vertical slice. Rema
 - balance playtests across the four authored Campaign Theatre openings;
 - bespoke miracle presentation assets, plus remaining environment-art expansion;
 - campaign progression, onboarding, and broader content tuning;
-- account identity, public matchmaking, reconnect tokens, rate limiting, and broader anti-cheat for internet multiplayer;
+- account identity, public matchmaking, persistence, and broader anti-cheat for internet multiplayer;
 - telemetry, accessibility audit, localization, storefront packaging, and separate public hosting for the authoritative multiplayer service.
 
 Each addition must preserve deterministic command replay and the simulation/presentation separation documented above.

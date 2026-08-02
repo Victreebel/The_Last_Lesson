@@ -15,6 +15,8 @@ export interface JoinMatchMessage {
   readonly clientId: PlayerId;
   readonly empireId: EmpireId;
   readonly setup?: MatchSetup;
+  /** Host-issued bearer credential for reclaiming a retained room. */
+  readonly reconnectToken?: string;
 }
 
 export interface SubmitIntentMessage {
@@ -32,6 +34,7 @@ export interface JoinedMatchMessage {
   readonly type: "joined-match";
   readonly roomId: string;
   readonly clientId: PlayerId;
+  readonly reconnectToken: string;
   readonly snapshot: AuthoritySnapshot;
 }
 
@@ -69,14 +72,16 @@ export function parseClientMessage(serialized: string): ClientMessage | undefine
       isIdentifier(value.roomId) &&
       isIdentifier(value.clientId) &&
       isIdentifier(value.empireId) &&
-      (value.setup === undefined || isMatchSetup(value.setup))
+      (value.setup === undefined || isMatchSetup(value.setup)) &&
+      (value.reconnectToken === undefined || isReconnectToken(value.reconnectToken))
     ) {
       return {
         type: "join-match",
         roomId: value.roomId,
         clientId: value.clientId,
         empireId: value.empireId,
-        ...(value.setup ? { setup: value.setup } : {})
+        ...(value.setup ? { setup: value.setup } : {}),
+        ...(value.reconnectToken ? { reconnectToken: value.reconnectToken } : {})
       };
     }
   } catch {
@@ -119,6 +124,10 @@ function isRivalDifficulty(value: unknown): value is RivalDifficulty {
 
 function isIdentifier(value: unknown): value is string {
   return typeof value === "string" && /^[a-z0-9-]{1,64}$/i.test(value);
+}
+
+function isReconnectToken(value: unknown): value is string {
+  return typeof value === "string" && /^[A-Za-z0-9_-]{32,128}$/.test(value);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { getPersistentMultiplayerClientId } from "../../src/app/MultiplayerLobby";
+import {
+  getPersistentMultiplayerClientId,
+  getStoredMultiplayerReconnectToken,
+  storeMultiplayerReconnectToken
+} from "../../src/app/MultiplayerLobby";
 
 class MemoryStore {
   private readonly values = new Map<string, string>();
@@ -28,5 +32,16 @@ describe("persistent multiplayer identity", () => {
     store.setItem("the-last-lesson.multiplayer-client-id.v1", "not-a-crown");
 
     expect(getPersistentMultiplayerClientId(store)).toMatch(/^crown-[a-z0-9-]{6,64}$/i);
+  });
+
+  it("keeps reconnect credentials scoped to one local Crown room", () => {
+    const store = new MemoryStore();
+    const request = { url: "wss://crown.example", roomId: "iron-gate", clientId: "crown-steadfast" };
+    const token = "a".repeat(43);
+
+    storeMultiplayerReconnectToken(request, token, store);
+
+    expect(getStoredMultiplayerReconnectToken(request, store)).toBe(token);
+    expect(getStoredMultiplayerReconnectToken({ ...request, roomId: "other-room" }, store)).toBeUndefined();
   });
 });

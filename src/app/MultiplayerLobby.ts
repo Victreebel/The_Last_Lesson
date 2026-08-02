@@ -4,6 +4,7 @@ export interface MultiplayerConnectRequest {
   readonly url: string;
   readonly roomId: string;
   readonly clientId: string;
+  readonly reconnectToken?: string;
   readonly scenarioId: ScenarioId;
   readonly rivalDifficulty: RivalDifficulty;
 }
@@ -19,7 +20,9 @@ interface KeyValueStore {
 }
 
 const LOCAL_MULTIPLAYER_CLIENT_ID_KEY = "the-last-lesson.multiplayer-client-id.v1";
+const LOCAL_MULTIPLAYER_RECONNECT_TOKEN_PREFIX = "the-last-lesson.multiplayer-reconnect-token.v1";
 const CLIENT_ID_PATTERN = /^crown-[a-z0-9-]{6,64}$/i;
+const RECONNECT_TOKEN_PATTERN = /^[A-Za-z0-9_-]{32,128}$/;
 
 /**
  * A browser-local identity lets a returning player reclaim an idle room
@@ -37,6 +40,29 @@ export function getPersistentMultiplayerClientId(store: KeyValueStore | undefine
     // Private browser contexts may reject persistence; a session identity still works.
   }
   return clientId;
+}
+
+export function getStoredMultiplayerReconnectToken(
+  request: Pick<MultiplayerConnectRequest, "url" | "roomId" | "clientId">,
+  store: KeyValueStore | undefined = getBrowserStore()
+): string | undefined {
+  const token = store?.getItem(reconnectTokenKey(request)) ?? undefined;
+  return token && RECONNECT_TOKEN_PATTERN.test(token) ? token : undefined;
+}
+
+export function storeMultiplayerReconnectToken(
+  request: Pick<MultiplayerConnectRequest, "url" | "roomId" | "clientId">,
+  reconnectToken: string,
+  store: KeyValueStore | undefined = getBrowserStore()
+): void {
+  if (!RECONNECT_TOKEN_PATTERN.test(reconnectToken)) {
+    return;
+  }
+  try {
+    store?.setItem(reconnectTokenKey(request), reconnectToken);
+  } catch {
+    // A reconnect still works for the current session even when persistence is unavailable.
+  }
 }
 
 /** DOM form for connection data; simulation and rendering remain Phaser-owned. */
@@ -90,10 +116,16 @@ export class MultiplayerLobby {
     this.form.addEventListener("submit", (event) => {
       event.preventDefault();
       this.close();
-      this.onConnect({
+      const clientId = getPersistentMultiplayerClientId();
+      const request = {
         url: this.urlInput.value.trim(),
         roomId: this.roomInput.value.trim(),
-        clientId: getPersistentMultiplayerClientId(),
+        clientId
+      };
+      const reconnectToken = getStoredMultiplayerReconnectToken(request);
+      this.onConnect({
+        ...request,
+        ...(reconnectToken ? { reconnectToken } : {}),
         scenarioId: this.scenarioSelect.value as ScenarioId,
         rivalDifficulty: this.difficultySelect.value as RivalDifficulty
       });
@@ -130,4 +162,8 @@ function getBrowserStore(): KeyValueStore | undefined {
   } catch {
     return undefined;
   }
+}
+
+function reconnectTokenKey(request: Pick<MultiplayerConnectRequest, "url" | "roomId" | "clientId">): string {
+  return `${LOCAL_MULTIPLAYER_RECONNECT_TOKEN_PREFIX}:${encodeURIComponent(request.url)}:${request.roomId}:${request.clientId}`;
 }

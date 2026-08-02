@@ -1,4 +1,5 @@
 import { createServer, type Server as HttpServer } from "node:http";
+import { randomBytes } from "node:crypto";
 import { WebSocketServer, WebSocket, type RawData } from "ws";
 import { LocalAuthority, type AuthoritySnapshot } from "../src/networking/LocalAuthority";
 import {
@@ -32,6 +33,7 @@ interface ConnectedClient {
 class MultiplayerRoom {
   private readonly authority: LocalAuthority;
   private readonly clients = new Map<string, WebSocket>();
+  private readonly reconnectTokens = new Map<string, string>();
   private readonly intentTimestamps = new Map<string, number[]>();
   private interval?: ReturnType<typeof setInterval>;
 
@@ -46,17 +48,27 @@ class MultiplayerRoom {
     this.authority.prepareOpeningLabor();
   }
 
-  join(join: JoinMatchMessage, socket: WebSocket): AuthoritySnapshot {
-    if (this.clients.has(join.clientId)) {
-      throw new Error("That multiplayer identity is already connected to this room.");
+  join(join: JoinMatchMessage, socket: WebSocket): { snapshot: AuthoritySnapshot; reconnectToken: string } {
+    const knownToken = this.reconnectTokens.get(join.clientId);
+    if (knownToken && join.reconnectToken !== knownToken) {
+      throw new Error("This Crown identity requires its reconnect token to reclaim the room.");
+    }
+    const previousSocket = this.clients.get(join.clientId);
+    if (previousSocket && previousSocket !== socket) {
+      previousSocket.close(4000, "Crown session reclaimed");
     }
     this.clients.set(join.clientId, socket);
     const snapshot = this.authority.connect({ clientId: join.clientId, empireId: join.empireId });
     this.ensureTicking();
-    return snapshot;
+    const reconnectToken = knownToken ?? createReconnectToken();
+    this.reconnectTokens.set(join.clientId, reconnectToken);
+    return { snapshot, reconnectToken };
   }
 
-  leave(clientId: string): boolean {
+  leave(clientId: string, socket: WebSocket): boolean {
+    if (this.clients.get(clientId) !== socket) {
+      return this.clients.size === 0;
+    }
     this.clients.delete(clientId);
     this.authority.disconnect(clientId);
     if (this.clients.size === 0) {
@@ -99,6 +111,7 @@ class MultiplayerRoom {
     }
     this.clients.clear();
     this.intentTimestamps.clear();
+    this.reconnectTokens.clear();
   }
 
   private consumeIntentBudget(clientId: string): void {
@@ -261,14 +274,15 @@ export class MultiplayerServer {
     const room = this.rooms.get(message.roomId) ?? this.createRoom(message.roomId, message.setup);
     this.clearIdleRoomCleanup(room.id);
     try {
-      const snapshot = room.join(message, client.socket);
+      const joined = room.join(message, client.socket);
       client.roomId = room.id;
       client.clientId = message.clientId;
       this.send(client.socket, {
         type: "joined-match",
         roomId: room.id,
         clientId: message.clientId,
-        snapshot
+        reconnectToken: joined.reconnectToken,
+        snapshot: joined.snapshot
       });
     } catch (error) {
       this.send(client.socket, {
@@ -295,7 +309,7 @@ export class MultiplayerServer {
       return;
     }
     const room = this.rooms.get(client.roomId);
-    if (room?.leave(client.clientId)) {
+    if (room?.leave(client.clientId, client.socket)) {
       this.scheduleIdleRoomCleanup(client.roomId);
     }
     client.roomId = undefined;
@@ -341,4 +355,8 @@ function rawDataToString(data: RawData): string {
     return Buffer.from(new Uint8Array(data)).toString();
   }
   return Buffer.from(data).toString();
+}
+
+function createReconnectToken(): string {
+  return randomBytes(32).toString("base64url");
 }

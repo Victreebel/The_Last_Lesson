@@ -27,4 +27,4 @@ The static GitHub Pages game must connect to the host over `wss://` in productio
 
 ## Boundaries
 
-This host deliberately does not add account identity, matchmaking, payments, rate limiting, moderation, or anti-cheat services. It only provides the transport-safe deterministic authority already specified by the game. Those product services require a chosen production provider and account model.
+This host deliberately does not add account identity, matchmaking, payments, moderation, or broad anti-cheat services. It does issue an opaque reconnect credential to each Crown after the first join, stores it only in that browser's local profile, and requires it to reclaim a retained Crown identity. Commands are also bounded per Crown before they enter authoritative scheduling. These transport safeguards do not replace account-backed identity or production anti-cheat, which require a chosen provider and account model.
