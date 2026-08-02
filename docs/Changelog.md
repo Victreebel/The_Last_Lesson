@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.5.9 - 2026-08-02
+
+- Bounded the multiplayer host to conservative room, co-op-seat, and WebSocket payload capacities before an input can consume simulation authority. Production hosts may adjust those limits with documented environment variables.
+
 ## 2.5.8 - 2026-08-02
 
 - Added host-issued reconnect tokens for retained multiplayer rooms. A browser now stores the credential only for its matching host, room, and Crown identity, and a valid reconnect can safely replace a stale socket without allowing its close event to drop the recovered reign.

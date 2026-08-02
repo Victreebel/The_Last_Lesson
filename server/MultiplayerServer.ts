@@ -22,6 +22,9 @@ export interface MultiplayerServerOptions {
   readonly idleRoomTtlMs?: number;
   readonly maxIntentsPerWindow?: number;
   readonly intentWindowMs?: number;
+  readonly maxRooms?: number;
+  readonly maxClientsPerRoom?: number;
+  readonly maxPayloadBytes?: number;
 }
 
 interface ConnectedClient {
@@ -43,7 +46,8 @@ class MultiplayerRoom {
     setup: MatchSetup,
     private readonly tickIntervalMs: number,
     private readonly maxIntentsPerWindow: number,
-    private readonly intentWindowMs: number
+    private readonly intentWindowMs: number,
+    private readonly maxClientsPerRoom: number
   ) {
     this.authority = new LocalAuthority(createInitialWorld(setup.seed, setup.rivalDifficulty, setup.scenarioId));
     this.authority.prepareOpeningLabor();
@@ -59,6 +63,9 @@ class MultiplayerRoom {
       throw new Error("This multiplayer identity is permanently bound to its original empire in this room.");
     }
     const previousSocket = this.clients.get(join.clientId);
+    if (!previousSocket && this.clients.size >= this.maxClientsPerRoom) {
+      throw new Error("That multiplayer room has reached its Crown capacity.");
+    }
     if (previousSocket && previousSocket !== socket) {
       previousSocket.close(4000, "Crown session reclaimed");
     }
@@ -164,12 +171,18 @@ export class MultiplayerServer {
   private readonly idleRoomTtlMs: number;
   private readonly maxIntentsPerWindow: number;
   private readonly intentWindowMs: number;
+  private readonly maxRooms: number;
+  private readonly maxClientsPerRoom: number;
+  private readonly maxPayloadBytes: number;
 
   constructor(options: MultiplayerServerOptions = {}) {
     this.tickIntervalMs = options.tickIntervalMs ?? 5000;
     this.idleRoomTtlMs = options.idleRoomTtlMs ?? 120_000;
     this.maxIntentsPerWindow = options.maxIntentsPerWindow ?? 48;
     this.intentWindowMs = options.intentWindowMs ?? 5000;
+    this.maxRooms = options.maxRooms ?? 64;
+    this.maxClientsPerRoom = options.maxClientsPerRoom ?? 4;
+    this.maxPayloadBytes = options.maxPayloadBytes ?? 16_384;
   }
 
   async listen(port = 8787): Promise<number> {
@@ -185,7 +198,7 @@ export class MultiplayerServer {
       response.writeHead(404, { "content-type": "application/json" });
       response.end(JSON.stringify({ error: "not found" }));
     });
-    const server = new WebSocketServer({ server: httpServer });
+    const server = new WebSocketServer({ server: httpServer, maxPayload: this.maxPayloadBytes });
     this.server = server;
     this.httpServer = httpServer;
     server.on("connection", (socket) => this.configureConnection(socket));
@@ -278,9 +291,9 @@ export class MultiplayerServer {
       this.send(client.socket, { type: "protocol-error", message: "A connection may join only one room." });
       return;
     }
-    const room = this.rooms.get(message.roomId) ?? this.createRoom(message.roomId, message.setup);
-    this.clearIdleRoomCleanup(room.id);
     try {
+      const room = this.rooms.get(message.roomId) ?? this.createRoom(message.roomId, message.setup);
+      this.clearIdleRoomCleanup(room.id);
       const joined = room.join(message, client.socket);
       client.roomId = room.id;
       client.clientId = message.clientId;
@@ -300,12 +313,16 @@ export class MultiplayerServer {
   }
 
   private createRoom(roomId: string, setup?: MatchSetup): MultiplayerRoom {
+    if (this.rooms.size >= this.maxRooms) {
+      throw new Error("The multiplayer host has reached its room capacity.");
+    }
     const room = new MultiplayerRoom(
       roomId,
       setup ?? DEFAULT_MATCH_SETUP,
       this.tickIntervalMs,
       this.maxIntentsPerWindow,
-      this.intentWindowMs
+      this.intentWindowMs,
+      this.maxClientsPerRoom
     );
     this.rooms.set(roomId, room);
     return room;

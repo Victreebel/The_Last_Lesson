@@ -212,6 +212,54 @@ describe("multiplayer WebSocket transport", () => {
     returningClient.close();
   });
 
+  it("bounds the host's room and co-op seat capacity before authority creation", async () => {
+    const server = new MultiplayerServer({ tickIntervalMs: 60_000, maxRooms: 1, maxClientsPerRoom: 1 });
+    servers.push(server);
+    const port = await server.listen(0);
+    const firstClient = new WebSocket(`ws://127.0.0.1:${port}`);
+    await waitForOpen(firstClient);
+    const firstJoined = waitForMessage(firstClient);
+    firstClient.send(JSON.stringify({
+      type: "join-match",
+      roomId: "bounded-room",
+      clientId: "player-one",
+      empireId: "empire-player"
+    }));
+    await expect(firstJoined).resolves.toMatchObject({ type: "joined-match" });
+
+    const secondClient = new WebSocket(`ws://127.0.0.1:${port}`);
+    await waitForOpen(secondClient);
+    const seatRejected = waitForMessage(secondClient);
+    secondClient.send(JSON.stringify({
+      type: "join-match",
+      roomId: "bounded-room",
+      clientId: "player-two",
+      empireId: "empire-player"
+    }));
+    await expect(seatRejected).resolves.toEqual({
+      type: "protocol-error",
+      message: "That multiplayer room has reached its Crown capacity."
+    });
+
+    const thirdClient = new WebSocket(`ws://127.0.0.1:${port}`);
+    await waitForOpen(thirdClient);
+    const roomRejected = waitForMessage(thirdClient);
+    thirdClient.send(JSON.stringify({
+      type: "join-match",
+      roomId: "other-room",
+      clientId: "player-three",
+      empireId: "empire-player"
+    }));
+    await expect(roomRejected).resolves.toEqual({
+      type: "protocol-error",
+      message: "The multiplayer host has reached its room capacity."
+    });
+
+    firstClient.close();
+    secondClient.close();
+    thirdClient.close();
+  });
+
   it("bounds command bursts without changing authoritative command timing", async () => {
     const server = new MultiplayerServer({
       tickIntervalMs: 60_000,
