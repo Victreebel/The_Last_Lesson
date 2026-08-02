@@ -2699,6 +2699,18 @@ export class MilestoneOneScene extends Phaser.Scene {
     if (!settlement) {
       return;
     }
+    const selectedBattalion =
+      this.selectedBattalionIds.size === 1
+        ? state.battalions[this.selectedBattalionIds.values().next().value as string]
+        : undefined;
+    const selectedTraits = selectedBattalion ? getBattalionTraits(selectedBattalion.battlefieldTraining) : [];
+    const selectionSummary = selectedBattalion
+      ? `UNIT: ${getBattalionRank(selectedBattalion.experience)} ${selectedBattalion.specialization.toUpperCase()}  //  MORALE ${selectedBattalion.morale}  //  SUPPLY ${selectedBattalion.supply}  //  XP ${selectedBattalion.experience ?? 0}  //  ${selectedTraits.join(" / ") || "NO TRAIT"}`
+      : this.selectedCaravanId
+        ? "SELECTION: SUPPLY CARAVAN"
+        : this.selectedBattalionIds.size
+          ? `SELECTION: ${this.selectedBattalionIds.size} BATTALIONS`
+          : "SELECTION: NO UNIT SELECTED";
     this.resourceText.setText(
       this.scale.width < 640
         ? `SEAT ${this.getSettlementDisplayName(settlement.id)}  //  TICK ${state.tick}\nFOOD ${settlement.localFood}  WOOD ${empire.resources.wood}  IRON ${empire.resources.iron}  LUX ${empire.resources.luxury}  FAITH ${empire.resources.faith}`
@@ -2707,7 +2719,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.statusText.setText(
       [
         `ORDER: ${this.getModeLabel()}`,
-        `SELECTION: ${this.selectedCaravanId ? "SUPPLY CARAVAN" : this.selectedBattalionIds.size ? `${this.selectedBattalionIds.size} BATTALION(S)` : "NO UNIT SELECTED"}`,
+        selectionSummary,
         `POPULATION: ${settlement.population.citizens}/${this.getCitizenCapacity(settlement.id)}  //  MILITARY: ${settlement.population.militarizedCitizens}  //  GROWTH: ${settlement.population.growthProgress}/80`,
         `LABOR: FARM ${settlement.population.farmers}  BUILD ${settlement.population.builders}  LUMBER ${settlement.population.lumberjacks}  MINE ${settlement.population.miners}  LUX ${settlement.population.luxuryWorkers}`,
         `CAPTIVES: ${settlement.population.captives}/${this.getCaptiveCapacity(settlement.id)}  //  REBELLION: ${settlement.pressures.rebellion}%  //  HEALTH ${settlement.population.health}  //  PLAGUE ${settlement.plagueTicks ?? 0}`,
