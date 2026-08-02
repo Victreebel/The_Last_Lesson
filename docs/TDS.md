@@ -1458,6 +1458,7 @@ The Last Lesson is in active vertical-slice production. Its frozen architecture,
 The following compatible systems are now implemented in the prototype and are the current reference behavior:
 
 - Two empires begin with one castle each; every non-castle structure is deployed from the building console.
+- Rival starting settlements include terrain-valid farms on authored, labeled fertile fields. This is starting-world content, not a hidden economy bonus: their governing heirs still assign labor, raise forces, and make visible doctrine-driven decisions under the same simulation rules.
 - Capturing a castle kills its incumbent heir, transfers the settlement and civic structures, creates a replacement governor, and awards victory when the defeated empire owns no settlement.
 - Terrain is explicit data. Farms require fertile ground, lumber mills require forest, mines require iron veins, and movement/combat use terrain modifiers.
 - Completed farms, mills, and mines cap food, wood, and iron production from assigned labor. Construction costs are deducted from global resources.

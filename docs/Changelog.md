@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.87.0 - 2026-08-02
+
+- Added sustainable, terrain-valid rival farms and labeled rival fertile fields to every Campaign Theatre opening, preventing unattended enemy realms from collapsing into empty castles.
+- Added 72-tick scenario regressions proving both rival economic viability and the Crown's authored opening-farm path across all four theatres.
+
 ## 1.86.0 - 2026-08-02
 
 - Added a local Campaign Chronicle. Victories are recorded per Campaign Theatre opening and appear in the scenario selector and end-of-reign debrief.

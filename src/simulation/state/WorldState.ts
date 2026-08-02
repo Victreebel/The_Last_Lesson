@@ -353,6 +353,12 @@ export function createInitialWorld(
         bounds: { x: 700, y: 90, width: 210, height: 185 }
       },
       {
+        id: "rival-fields",
+        kind: "fertile",
+        label: "RIVAL FIELDS",
+        bounds: { x: 930, y: 245, width: 180, height: 125 }
+      },
+      {
         id: "iron-vein",
         kind: "iron-vein",
         label: "IRON VEIN",
@@ -375,6 +381,12 @@ export function createInitialWorld(
         kind: "luxury-grove",
         label: "LUXURY GROVE",
         bounds: { x: 1035, y: 615, width: 240, height: 155 }
+      },
+      {
+        id: "grove-fields",
+        kind: "fertile",
+        label: "GROVE FIELDS",
+        bounds: { x: 890, y: 645, width: 125, height: 120 }
       },
       {
         id: "southern-marsh",
@@ -448,7 +460,7 @@ export function createInitialWorld(
         ownerEmpireId: "empire-rival",
         heirId: "heir-rival",
         centralBuildingId: "building-rival-castle",
-        buildingIds: ["building-rival-castle"],
+        buildingIds: ["building-rival-castle", "building-rival-farm"],
         battalionIds: ["battalion-rival-1"],
         caravanIds: [],
         population: {
@@ -491,7 +503,7 @@ export function createInitialWorld(
         ownerEmpireId: "empire-rival",
         heirId: "heir-rival-grove",
         centralBuildingId: "building-rival-grove-castle",
-        buildingIds: ["building-rival-grove-castle"],
+        buildingIds: ["building-rival-grove-castle", "building-rival-grove-farm"],
         battalionIds: [],
         caravanIds: [],
         population: {
@@ -551,6 +563,16 @@ export function createInitialWorld(
         complete: true,
         remainingBuildTicks: 0
       },
+      "building-rival-farm": {
+        id: "building-rival-farm",
+        ownerEmpireId: "empire-rival",
+        settlementId: "settlement-rival",
+        kind: "farm",
+        position: { x: 980, y: 300 },
+        defense: 40,
+        complete: true,
+        remainingBuildTicks: 0
+      },
       "building-rival-grove-castle": {
         id: "building-rival-grove-castle",
         ownerEmpireId: "empire-rival",
@@ -558,6 +580,16 @@ export function createInitialWorld(
         kind: "castle",
         position: { x: 1160, y: 700 },
         defense: 500,
+        complete: true,
+        remainingBuildTicks: 0
+      },
+      "building-rival-grove-farm": {
+        id: "building-rival-grove-farm",
+        ownerEmpireId: "empire-rival",
+        settlementId: "settlement-rival-grove",
+        kind: "farm",
+        position: { x: 940, y: 700 },
+        defense: 40,
         complete: true,
         remainingBuildTicks: 0
       },

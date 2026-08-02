@@ -17,7 +17,9 @@ describe("building placement", () => {
     simulation.enqueueCommand(command("farm-overlap"));
 
     const result = simulation.tick();
-    const farms = Object.values(simulation.getState().buildings).filter((building) => building.kind === "farm");
+    const farms = Object.values(simulation.getState().buildings).filter(
+      (building) => building.kind === "farm" && building.ownerEmpireId === "empire-player"
+    );
 
     expect(farms).toHaveLength(1);
     expect(simulation.getState().empires["empire-player"].resources.wood).toBe(initial.empires["empire-player"].resources.wood - 8);

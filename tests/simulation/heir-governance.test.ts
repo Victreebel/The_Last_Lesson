@@ -75,7 +75,7 @@ describe("heir governance", () => {
             "building-rival-villa",
             "building-rival-hovel"
           ],
-          localFood: 100,
+          localFood: 20,
           population: {
             ...initial.settlements["settlement-rival"].population,
             captives: 8
