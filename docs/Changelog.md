@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.48.0 - 2026-08-01
+
+- Added deterministic battle aftermath morale. Destroying an enemy battalion bolsters the victor and nearby settlement forces while shaking surviving defenders; the full delta is exposed through `battle-morale-shifted`.
+
 ## 1.47.0 - 2026-08-01
 
 - Made civilian housing a real wartime target: destroying a completed Villa now causes immediate civilian deaths plus health, happiness, and loyalty losses recorded by `housing-destroyed`. Captive Hovels retain their distinct liberation behavior.

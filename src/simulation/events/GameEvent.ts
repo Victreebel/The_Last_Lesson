@@ -45,6 +45,7 @@ export type EventType =
   | "heir-decision"
   | "heir-concern"
   | "damage-dealt"
+  | "battle-morale-shifted"
   | "entity-destroyed"
   | "settlement-captured"
   | "settlement-defected"

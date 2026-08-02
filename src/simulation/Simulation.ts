@@ -2581,6 +2581,7 @@ export class Simulation {
     for (const defeated of defeatedBattalions) {
       const attacker = this.state.battalions[defeated.attackerId];
       if (attacker) {
+        this.applyBattleMoraleOutcome(attacker, defeated.defender, tick);
         this.captureDefeatedBattalion(attacker, defeated.defender, tick);
       }
     }
@@ -2825,6 +2826,44 @@ export class Simulation {
       });
       this.recordMoralMemory(captorSettlement.ownerEmpireId, "captivesTaken", capturedCount, tick);
     }
+  }
+
+  private applyBattleMoraleOutcome(attacker: BattalionState, defeated: BattalionState, tick: number): void {
+    const nextBattalions: Record<string, BattalionState> = {};
+    const victorMoraleGain = attacker.supply === 0 ? 0 : 8;
+    for (const battalion of Object.values(this.state.battalions).sort((left, right) =>
+      left.id.localeCompare(right.id)
+    )) {
+      const sharesVictoriousSettlement =
+        battalion.ownerEmpireId === attacker.ownerEmpireId && battalion.settlementId === attacker.settlementId;
+      const sharesDefeatedSettlement =
+        battalion.ownerEmpireId === defeated.ownerEmpireId && battalion.settlementId === defeated.settlementId;
+      const moraleDelta =
+        battalion.id === attacker.id
+          ? victorMoraleGain
+          : sharesVictoriousSettlement && battalion.supply > 0
+            ? 2
+            : sharesDefeatedSettlement
+              ? -4
+              : 0;
+      const devotionDelta = battalion.id === attacker.id ? 2 : sharesVictoriousSettlement ? 1 : 0;
+      nextBattalions[battalion.id] =
+        moraleDelta === 0 && devotionDelta === 0
+          ? battalion
+          : {
+              ...battalion,
+              morale: Math.max(0, Math.min(100, battalion.morale + moraleDelta)),
+              devotion: Math.max(0, Math.min(100, battalion.devotion + devotionDelta))
+            };
+    }
+    this.state = { ...this.state, battalions: nextBattalions };
+    this.eventWriter.emit(tick, "battle-morale-shifted", {
+      victorId: attacker.id,
+      defeatedId: defeated.id,
+      victorMoraleGain,
+      alliedMoraleGain: 2,
+      defenderMoraleLoss: 4
+    });
   }
 
   private recordMoralMemory(
