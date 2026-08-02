@@ -7,7 +7,8 @@ import {
   createSaveGame,
   deserializeSaveGame,
   restoreSaveGame,
-  serializeSaveGame
+  serializeSaveGame,
+  type SaveGame
 } from "../../simulation/save/SaveGame";
 import { createReignReport, formatReignDuration } from "../../simulation/reports/ReignReport";
 import { stableHash } from "../../simulation/hash/stableHash";
@@ -164,6 +165,12 @@ interface HeirFeedbackControl {
   readonly label: Phaser.GameObjects.Text;
 }
 
+interface ReplayReviewState {
+  readonly liveSave: SaveGame;
+  readonly commandSequence: number;
+  readonly targetTick: number;
+}
+
 export class MilestoneOneScene extends Phaser.Scene {
   private campaignDifficulty: RivalDifficulty = "rival";
   private campaignScenario: ScenarioId = "crownfall";
@@ -195,7 +202,9 @@ export class MilestoneOneScene extends Phaser.Scene {
   private bookControlLabel!: Phaser.GameObjects.Text;
   private bookPanel!: Phaser.GameObjects.Container;
   private bookPanelBody!: Phaser.GameObjects.Text;
+  private replayControlLabel!: Phaser.GameObjects.Text;
   private bookPanelExpanded = false;
+  private replayReview?: ReplayReviewState;
   private realmControl!: Phaser.GameObjects.Container;
   private realmControlLabel!: Phaser.GameObjects.Text;
   private realmPanel!: Phaser.GameObjects.Container;
@@ -442,10 +451,24 @@ export class MilestoneOneScene extends Phaser.Scene {
   }
 
   private advanceSimulation(): void {
+    if (this.replayReview && this.simulation.getState().tick >= this.replayReview.targetTick) {
+      this.paused = true;
+      this.pauseControlLabel.setText("REPLAY END");
+      this.updateUi(["Replay reached the live reign's current tick. Return to continue commanding."]);
+      return;
+    }
     const result = this.simulation.tick();
-    this.recordAutoSave(result.tick);
+    if (!this.replayReview) {
+      this.recordAutoSave(result.tick);
+    }
     this.renderWorld();
     this.playCombatFeedback(result.events);
+    if (this.replayReview && result.tick >= this.replayReview.targetTick) {
+      this.paused = true;
+      this.pauseControlLabel.setText("REPLAY END");
+      this.updateUi(["Replay reached the live reign's current tick. Return to continue commanding."]);
+      return;
+    }
     this.updateUi(result.events.map((event) => event.type).slice(-5));
   }
 
@@ -521,7 +544,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.bookControl = this.add.container(0, 0, [control, this.bookControlLabel]);
     this.bookControl.setScrollFactor(0).setDepth(41);
 
-    const background = this.add.rectangle(0, 0, 470, 456, UI_COLORS.panelDeep, 0.98).setOrigin(0);
+    const background = this.add.rectangle(0, 0, 470, 502, UI_COLORS.panelDeep, 0.98).setOrigin(0);
     background.setStrokeStyle(2, UI_COLORS.accent);
     background.setInteractive({ useHandCursor: false });
     background.on("pointerdown", (pointer: Phaser.Input.Pointer) => pointer.event.stopPropagation());
@@ -573,6 +596,18 @@ export class MilestoneOneScene extends Phaser.Scene {
       fontSize: "10px",
       color: UI_COLORS.text
     });
+    const replayButton = this.add.rectangle(18, 448, 434, 34, UI_COLORS.commandActive, 1).setOrigin(0);
+    replayButton.setStrokeStyle(1, UI_COLORS.trim);
+    replayButton.setInteractive({ useHandCursor: true });
+    replayButton.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+      pointer.event.stopPropagation();
+      this.toggleReplayReview();
+    });
+    this.replayControlLabel = this.add.text(164, 459, "REVIEW REIGN", {
+      fontFamily: "Arial Black, Arial",
+      fontSize: "10px",
+      color: UI_COLORS.text
+    });
     this.bookPanel = this.add.container(0, 0, [
       background,
       title,
@@ -582,7 +617,9 @@ export class MilestoneOneScene extends Phaser.Scene {
       saveLabel,
       loadLabel,
       verifyButton,
-      verifyLabel
+      verifyLabel,
+      replayButton,
+      this.replayControlLabel
     ]);
     this.bookPanel.setScrollFactor(0).setDepth(70).setVisible(false);
     this.updateBookOfLessons();
@@ -844,6 +881,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.campaignInitialWorld = createInitialWorld(777, this.campaignDifficulty, this.campaignScenario);
     this.simulation = new Simulation(structuredClone(this.campaignInitialWorld));
     this.commandSequence = 0;
+    this.replayReview = undefined;
     this.paused = false;
     this.inspectedSettlementId = "settlement-capital";
     this.lastLessonEventId = undefined;
@@ -895,6 +933,7 @@ export class MilestoneOneScene extends Phaser.Scene {
   private updateBookOfLessons(): void {
     this.bookPanel.setVisible(this.bookPanelExpanded);
     this.bookControlLabel.setText(this.bookPanelExpanded ? "BOOK [-]" : "BOOK [+]");
+    this.replayControlLabel.setText(this.replayReview ? "RETURN TO REIGN" : "REVIEW REIGN");
     if (!this.bookPanelExpanded) {
       return;
     }
@@ -953,6 +992,7 @@ export class MilestoneOneScene extends Phaser.Scene {
       this.inspectedSettlementId = "settlement-capital";
       this.lastLessonEventId = undefined;
       this.lessonBanner.setVisible(false);
+      this.replayReview = undefined;
       this.clearSelection();
       this.renderWorld();
       this.updateUi(["Local save restored."]);
@@ -1008,6 +1048,40 @@ export class MilestoneOneScene extends Phaser.Scene {
         ? "Replay verified: command history reproduces this reign."
         : "Replay mismatch: this reign needs a new archived opening."
     ]);
+  }
+
+  private toggleReplayReview(): void {
+    if (this.replayReview) {
+      this.simulation = restoreSaveGame(this.replayReview.liveSave);
+      this.commandSequence = this.replayReview.commandSequence;
+      this.replayReview = undefined;
+      this.paused = true;
+      this.pauseControlLabel.setText("RESUME");
+      this.clearSelection();
+      this.renderWorld();
+      this.updateUi(["Returned to the live reign. Simulation remains paused."]);
+      return;
+    }
+    if (this.campaignSetupPending) {
+      this.updateUi(["Choose a campaign opening before reviewing a reign."]);
+      return;
+    }
+
+    const liveSave = createSaveGame(this.simulation);
+    this.replayReview = {
+      liveSave,
+      commandSequence: this.commandSequence,
+      targetTick: this.simulation.getState().tick
+    };
+    this.simulation = new Simulation(structuredClone(this.campaignInitialWorld));
+    for (const command of liveSave.commandLog) {
+      this.simulation.enqueueCommand(structuredClone(command));
+    }
+    this.paused = true;
+    this.pauseControlLabel.setText("PLAY REPLAY");
+    this.clearSelection();
+    this.renderWorld();
+    this.updateUi(["Replay review opened at tick 0. Resume or advance to study the reign."]);
   }
 
   private createIntelPanel(): void {
@@ -1495,7 +1569,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.campaignSetupPanel.setScale(campaignScale);
     this.bookPanel.setPosition(
       Math.max(16, Math.round((width - 470 * bookScale) / 2)),
-      Math.max(topHeight + 18, Math.round((height - 456 * bookScale) / 2))
+      Math.max(topHeight + 18, Math.round((height - 502 * bookScale) / 2))
     );
     this.realmPanel.setPosition(
       Math.max(16, Math.round((width - 384 * realmScale) / 2)),
@@ -2202,6 +2276,10 @@ export class MilestoneOneScene extends Phaser.Scene {
   }
 
   private issueCommand(command: Omit<GameCommand, "id" | "issuedBy" | "tick">): void {
+    if (this.replayReview) {
+      this.updateUi(["Replay review is read-only. Return to the live reign before issuing orders."]);
+      return;
+    }
     this.simulation.enqueueCommand({
       id: `ui-command-${this.commandSequence++}`,
       issuedBy: "player-1",

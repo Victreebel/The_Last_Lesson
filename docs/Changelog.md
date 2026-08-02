@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.37.0 - 2026-08-01
+
+- Added a reversible `REVIEW REIGN` workflow to the Book of Lessons. Players can replay the active command history from tick zero in read-only mode and return to the exact live paused campaign.
+- Replay review never writes recovery saves, accepts orders, or advances beyond the live reign's recorded tick.
+
 ## 1.36.0 - 2026-08-01
 
 - Added the Campaign Theatre with Crownfall, Rivergate, and Ashen Oath scenario openings before Rival Doctrine selection.

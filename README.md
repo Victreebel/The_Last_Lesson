@@ -40,6 +40,7 @@ Open the URL printed by Vite, normally `http://127.0.0.1:5173/`.
 - `HEIR`: inspect doctrine and reward or punish the current governor's last lesson.
 - `BOOK`: inspect recent history and create or restore a local deterministic save.
 - `VERIFY REPLAY`: confirm that the active reign can be reproduced from its opening world and command history.
+- `REVIEW REIGN`: replay the command history from tick zero in read-only mode, then return exactly to the live paused campaign.
 - Space or `PAUSE`: pause/resume the live simulation.
 - `SPEED`: cycle the live presentation clock through 1x, 2x, and 3x without changing deterministic simulation rules.
 
