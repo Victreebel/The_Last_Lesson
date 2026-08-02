@@ -48,7 +48,7 @@ The game now includes a real authoritative WebSocket transport on top of the det
 pnpm server:multiplayer
 ```
 
-It listens on `ws://127.0.0.1:8787` by default. Open `MULTI` from the top command bar, enter the host address and a room name, then join as the Crown. The browser-side `RemoteAuthorityClient` and host use a shared serialized contract: clients join a named room, submit untimestamped intents, and receive host-owned snapshots. The host rejects cross-empire orders and arbitrary Faith grants before they enter simulation. Time controls become host-owned while connected; an interrupted connection freezes the displayed reign and exposes `REJOIN` rather than drifting into an invalid local simulation. Account identity, public matchmaking, reconnect tokens, rate limits, and broader production anti-cheat remain later delivery work.
+It listens on `ws://127.0.0.1:8787` by default. Open `MULTI` from the top command bar, enter the host address and a room name, then join as the Crown. The browser-side `RemoteAuthorityClient` and host use a shared serialized contract: clients join a named room, submit untimestamped intents, and receive host-owned snapshots. The host rejects cross-empire orders and arbitrary Faith grants before they enter simulation. Time controls become host-owned while connected; an interrupted connection freezes the displayed reign and exposes `REJOIN` rather than drifting into an invalid local simulation. An empty room is held for two minutes so a returning client can recover the same authoritative reign while the host remains online. Account identity, public matchmaking, reconnect tokens, rate limits, and broader production anti-cheat remain later delivery work.
 
 ## Core Controls
 

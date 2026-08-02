@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.70.0 - 2026-08-01
+
+- Added a 120-second idle-room grace period to the multiplayer host. A room stops simulating when empty but preserves its authority state, so a returning client can rejoin the same reign rather than starting over.
+- Added live WebSocket coverage for disconnecting, retaining a room at tick one, and joining it again with the exact persisted host snapshot.
+
 ## 1.69.0 - 2026-08-01
 
 - Added explicit remote connection-state handling. An interrupted host freezes the current multiplayer snapshot, marks the header `FROZEN / REJOIN`, and leaves no path for a client to continue the match from a non-authoritative local timeline.

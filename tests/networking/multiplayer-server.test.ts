@@ -84,6 +84,42 @@ describe("multiplayer WebSocket transport", () => {
 
     client.close();
   });
+
+  it("retains an empty room long enough for a client to rejoin its current reign", async () => {
+    const server = new MultiplayerServer({ tickIntervalMs: 60_000, idleRoomTtlMs: 60_000 });
+    servers.push(server);
+    const port = await server.listen(0);
+    const firstClient = new WebSocket(`ws://127.0.0.1:${port}`);
+    await waitForOpen(firstClient);
+    const firstJoined = waitForMessage(firstClient);
+    firstClient.send(
+      JSON.stringify({
+        type: "join-match",
+        roomId: "resume-crown",
+        clientId: "player-one",
+        empireId: "empire-player"
+      })
+    );
+    await expect(firstJoined).resolves.toMatchObject({ type: "joined-match", snapshot: { tick: 0 } });
+    server.advanceRoom("resume-crown");
+    firstClient.close();
+    await waitForClose(firstClient);
+
+    const returningClient = new WebSocket(`ws://127.0.0.1:${port}`);
+    await waitForOpen(returningClient);
+    const rejoined = waitForMessage(returningClient);
+    returningClient.send(
+      JSON.stringify({
+        type: "join-match",
+        roomId: "resume-crown",
+        clientId: "player-returning",
+        empireId: "empire-player"
+      })
+    );
+    await expect(rejoined).resolves.toMatchObject({ type: "joined-match", snapshot: { tick: 1 } });
+
+    returningClient.close();
+  });
 });
 
 function waitForOpen(client: WebSocket): Promise<void> {
@@ -91,6 +127,10 @@ function waitForOpen(client: WebSocket): Promise<void> {
     client.once("open", resolve);
     client.once("error", reject);
   });
+}
+
+function waitForClose(client: WebSocket): Promise<void> {
+  return new Promise((resolve) => client.once("close", () => resolve()));
 }
 
 function waitForMessage(client: WebSocket): Promise<ServerMessage> {

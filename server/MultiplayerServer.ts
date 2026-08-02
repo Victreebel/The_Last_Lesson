@@ -17,6 +17,7 @@ const DEFAULT_MATCH_SETUP: MatchSetup = {
 
 export interface MultiplayerServerOptions {
   readonly tickIntervalMs?: number;
+  readonly idleRoomTtlMs?: number;
 }
 
 interface ConnectedClient {
@@ -57,6 +58,10 @@ class MultiplayerRoom {
       return true;
     }
     return false;
+  }
+
+  isEmpty(): boolean {
+    return this.clients.size === 0;
   }
 
   submit(clientId: string, intent: Parameters<LocalAuthority["submit"]>[1]) {
@@ -113,10 +118,13 @@ class MultiplayerRoom {
 export class MultiplayerServer {
   private server?: WebSocketServer;
   private readonly rooms = new Map<string, MultiplayerRoom>();
+  private readonly idleRoomCleanup = new Map<string, ReturnType<typeof setTimeout>>();
   private readonly tickIntervalMs: number;
+  private readonly idleRoomTtlMs: number;
 
   constructor(options: MultiplayerServerOptions = {}) {
     this.tickIntervalMs = options.tickIntervalMs ?? 5000;
+    this.idleRoomTtlMs = options.idleRoomTtlMs ?? 120_000;
   }
 
   async listen(port = 8787): Promise<number> {
@@ -138,6 +146,10 @@ export class MultiplayerServer {
   }
 
   async close(): Promise<void> {
+    for (const timeout of this.idleRoomCleanup.values()) {
+      clearTimeout(timeout);
+    }
+    this.idleRoomCleanup.clear();
     for (const room of this.rooms.values()) {
       room.close();
     }
@@ -201,6 +213,7 @@ export class MultiplayerServer {
       return;
     }
     const room = this.rooms.get(message.roomId) ?? this.createRoom(message.roomId, message.setup);
+    this.clearIdleRoomCleanup(room.id);
     try {
       const snapshot = room.join(message, client.socket);
       client.roomId = room.id;
@@ -231,7 +244,7 @@ export class MultiplayerServer {
     }
     const room = this.rooms.get(client.roomId);
     if (room?.leave(client.clientId)) {
-      this.rooms.delete(client.roomId);
+      this.scheduleIdleRoomCleanup(client.roomId);
     }
     client.roomId = undefined;
     client.clientId = undefined;
@@ -240,6 +253,27 @@ export class MultiplayerServer {
   private send(socket: WebSocket, message: ServerMessage): void {
     if (socket.readyState === WebSocket.OPEN) {
       socket.send(serializeServerMessage(message));
+    }
+  }
+
+  private scheduleIdleRoomCleanup(roomId: string): void {
+    this.clearIdleRoomCleanup(roomId);
+    const timeout = setTimeout(() => {
+      const room = this.rooms.get(roomId);
+      if (room?.isEmpty()) {
+        room.close();
+        this.rooms.delete(roomId);
+      }
+      this.idleRoomCleanup.delete(roomId);
+    }, this.idleRoomTtlMs);
+    this.idleRoomCleanup.set(roomId, timeout);
+  }
+
+  private clearIdleRoomCleanup(roomId: string): void {
+    const timeout = this.idleRoomCleanup.get(roomId);
+    if (timeout) {
+      clearTimeout(timeout);
+      this.idleRoomCleanup.delete(roomId);
     }
   }
 }

@@ -145,6 +145,7 @@ Implemented:
 - In-game `MULTI` connection lobby, authoritative browser snapshot rendering, and host-owned time controls.
 - Host-prepared opening labor, with a genuine tick-one player order deterministically taking precedence.
 - Per-intent empire authorization: connected players cannot command rival assets or create Faith outside the civilization simulation.
+- A bounded room-resume window: empty rooms stop ticking but retain their authoritative state for two minutes, allowing a client to return to the same reign.
 
 Acceptance:
 
