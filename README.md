@@ -61,6 +61,7 @@ For container deployment, health checks, and the required `wss://` production bo
 ## Core Controls
 
 - Arrow keys: pan the tactical camera.
+- Mouse wheel: zoom between empire and battalion scale while keeping the hovered battlefield point in view.
 - Click or drag: select Crown forces.
 - Right-click or use the command dock: issue movement, attack, retreat, embarkation, and supply orders.
 - `BUILD`: choose a structure, then click terrain; drag to lay roads and walls.

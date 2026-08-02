@@ -106,6 +106,25 @@ test("renders a usable tactical canvas on a phone-sized viewport", async ({ page
   expect(pageErrors).toEqual([]);
 });
 
+test("zooms the continuous tactical map around the player's cursor", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto("/");
+  await beginCrownfallRivalReign(page);
+
+  const canvas = page.locator("canvas");
+  const bounds = await canvas.boundingBox();
+  if (!bounds) {
+    throw new Error("Tactical canvas did not expose a layout box.");
+  }
+  const before = await canvas.screenshot();
+  await page.mouse.move(bounds.x + bounds.width * 0.52, bounds.y + bounds.height * 0.48);
+  await page.mouse.wheel(0, -360);
+  await page.waitForTimeout(100);
+  const after = await canvas.screenshot();
+
+  expect(after.equals(before)).toBe(false);
+});
+
 test("surfaces and resolves Ashen Oath's opening civic crisis", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto("/");

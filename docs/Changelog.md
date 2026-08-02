@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.5.4 - 2026-08-02
+
+- Added cursor-anchored tactical wheel zoom with deterministic-state isolation and browser coverage for the continuous battlefield framing.
+
 ## 2.5.3 - 2026-08-02
 
 - Updated the direct GitHub Actions dependencies to Node 24-compatible major releases and explicitly run the remaining Pages composite actions on Node 24. The game build itself remains on Node 22.

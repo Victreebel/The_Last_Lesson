@@ -212,6 +212,9 @@ const MINIMAP_HEIGHT = 158;
 const WORLD_TICK_MILLISECONDS = 5000;
 const AUTO_SAVE_INTERVAL_TICKS = 5;
 const BOOK_PANEL_HEIGHT = 590;
+const CAMERA_ZOOM_MIN = 0.72;
+const CAMERA_ZOOM_MAX = 1.5;
+const CAMERA_ZOOM_STEP = 0.1;
 const UI_COLORS = {
   panel: 0x12191a,
   panelDeep: 0x0b1011,
@@ -393,6 +396,11 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => this.handlePointerDown(pointer));
     this.input.on("pointermove", (pointer: Phaser.Input.Pointer) => this.handlePointerMove(pointer));
     this.input.on("pointerup", (pointer: Phaser.Input.Pointer) => this.handlePointerUp(pointer));
+    this.input.on(
+      "wheel",
+      (pointer: Phaser.Input.Pointer, _gameObjects: Phaser.GameObjects.GameObject[], _deltaX: number, deltaY: number) =>
+        this.handleCameraWheel(pointer, deltaY)
+    );
     document.addEventListener("visibilitychange", this.handleVisibilityChange);
     this.game.events.on("join-multiplayer", this.connectToMultiplayer, this);
     this.events.once("shutdown", () => {
@@ -2640,6 +2648,30 @@ export class MilestoneOneScene extends Phaser.Scene {
     if (this.mode === "building") {
       this.updatePlacementPreview(worldPoint);
     }
+  }
+
+  private handleCameraWheel(pointer: Phaser.Input.Pointer, deltaY: number): void {
+    if (pointer.y < this.topHud.height || deltaY === 0) {
+      return;
+    }
+
+    const camera = this.cameras.main;
+    const currentZoom = camera.zoom;
+    const targetZoom = Phaser.Math.Clamp(
+      currentZoom + (deltaY < 0 ? CAMERA_ZOOM_STEP : -CAMERA_ZOOM_STEP),
+      CAMERA_ZOOM_MIN,
+      CAMERA_ZOOM_MAX
+    );
+    if (targetZoom === currentZoom) {
+      return;
+    }
+
+    // Preserve the battlefield point beneath the cursor while changing strategic scale.
+    const worldPoint = camera.getWorldPoint(pointer.x, pointer.y);
+    camera.setZoom(targetZoom);
+    const adjustedPoint = camera.getWorldPoint(pointer.x, pointer.y);
+    camera.scrollX += worldPoint.x - adjustedPoint.x;
+    camera.scrollY += worldPoint.y - adjustedPoint.y;
   }
 
   private isBookControlPointer(pointer: Phaser.Input.Pointer): boolean {
