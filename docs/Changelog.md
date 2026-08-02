@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.5.3 - 2026-08-02
+
+- Updated the direct GitHub Actions dependencies to Node 24-compatible major releases and explicitly run the remaining Pages composite actions on Node 24. The game build itself remains on Node 22.
+
 ## 2.5.2 - 2026-08-02
 
 - Added the `C` canvas shortcut for Mend Settlement at the active Crown seat, with browser coverage for Ashen Oath's player-facing emergency response.
