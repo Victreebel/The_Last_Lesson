@@ -109,6 +109,7 @@ Implemented:
 - Battalions now persist combat experience and derive Militia through Legendary ranks. Experience rewards successful fighting and gives veterans stronger morale discipline during supply collapse without direct attack-stat inflation.
 - Civic Memory now records captives taken, integrated, and released as durable history rather than an abstract morality meter. Unresolved captivity adds explainable rebellion pressure across an empire.
 - Settlement health now has a deterministic plague cycle. Critical health plus food pressure starts a short localized outbreak, with visible deaths and social consequences across three world ticks.
+- Destroyed Villas now inflict immediate, event-explained civilian losses and social instability, while Hovels continue to liberate their captive population.
 
 ## Milestone 4: Persistence Foundation
 

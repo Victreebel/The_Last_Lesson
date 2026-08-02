@@ -2575,7 +2575,7 @@ export class Simulation {
       ...capturedCastleIds.map((capture) => capture.castleId)
     ];
     this.destroyGarrisonsInBreachedStructures(breachedBuildingIds, tick);
-    this.removeDestroyedBuildings(destroyedBuildingIds);
+    this.removeDestroyedBuildings(destroyedBuildingIds, tick);
     this.removeDestroyedCaravans(destroyedCaravans.map((caravan) => caravan.id));
     this.ejectPassengersFromDestroyedCaravans(destroyedCaravans, tick);
     for (const defeated of defeatedBattalions) {
@@ -2668,25 +2668,68 @@ export class Simulation {
     }
   }
 
-  private removeDestroyedBuildings(buildingIds: string[]): void {
+  private removeDestroyedBuildings(buildingIds: string[], tick: number): void {
     if (buildingIds.length === 0) {
       return;
     }
     const destroyed = new Set(buildingIds);
+    const destroyedVillasBySettlement = Object.values(this.state.buildings)
+      .filter((building) => destroyed.has(building.id) && building.kind === "villa")
+      .reduce<Record<string, number>>(
+        (totals, villa) => ({ ...totals, [villa.settlementId]: (totals[villa.settlementId] ?? 0) + 1 }),
+        {}
+      );
+    const civilianDeathsBySettlement = Object.fromEntries(
+      Object.entries(destroyedVillasBySettlement).map(([settlementId, villasDestroyed]) => [
+        settlementId,
+        Math.min(this.state.settlements[settlementId]?.population.citizens ?? 0, villasDestroyed * 2)
+      ])
+    ) as Record<string, number>;
     const nextBuildings: Record<string, BuildingState> = { ...this.state.buildings };
     for (const id of destroyed) {
       delete nextBuildings[id];
     }
     const nextSettlements = Object.fromEntries(
-      Object.entries(this.state.settlements).map(([id, settlement]) => [
-        id,
-        {
-          ...settlement,
-          buildingIds: settlement.buildingIds.filter((buildingId) => !destroyed.has(buildingId))
-        }
-      ])
+      Object.entries(this.state.settlements).map(([id, settlement]) => {
+        const villasDestroyed = destroyedVillasBySettlement[settlement.id] ?? 0;
+        const civilianDeaths = civilianDeathsBySettlement[settlement.id] ?? 0;
+        return [
+          id,
+          {
+            ...settlement,
+            buildingIds: settlement.buildingIds.filter((buildingId) => !destroyed.has(buildingId)),
+            population:
+              civilianDeaths === 0
+                ? settlement.population
+                : {
+                    ...settlement.population,
+                    citizens: settlement.population.citizens - civilianDeaths,
+                    militarizedCitizens: Math.min(
+                      settlement.population.militarizedCitizens,
+                      settlement.population.citizens - civilianDeaths
+                    ),
+                    health: Math.max(0, settlement.population.health - villasDestroyed * 6),
+                    happiness: Math.max(0, settlement.population.happiness - villasDestroyed * 10),
+                    loyalty: Math.max(0, settlement.population.loyalty - villasDestroyed * 6)
+                  }
+          }
+        ];
+      })
     ) as WorldState["settlements"];
     this.state = { ...this.state, buildings: nextBuildings, settlements: nextSettlements };
+    for (const [settlementId, villasDestroyed] of Object.entries(destroyedVillasBySettlement).sort(([left], [right]) =>
+      left.localeCompare(right)
+    )) {
+      const settlement = nextSettlements[settlementId];
+      const civilianDeaths = civilianDeathsBySettlement[settlementId] ?? 0;
+      this.eventWriter.emit(tick, "housing-destroyed", {
+        settlementId,
+        buildingKind: "villa",
+        villasDestroyed,
+        civilianDeaths,
+        remainingCitizens: settlement?.population.citizens ?? 0
+      });
+    }
   }
 
   private removeDestroyedCaravans(caravanIds: string[]): void {

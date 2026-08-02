@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.47.0 - 2026-08-01
+
+- Made civilian housing a real wartime target: destroying a completed Villa now causes immediate civilian deaths plus health, happiness, and loyalty losses recorded by `housing-destroyed`. Captive Hovels retain their distinct liberation behavior.
+
 ## 1.46.0 - 2026-08-01
 
 - Added deterministic local outbreaks for critically unhealthy, food-pressured settlements. Plagues run for three inspectable world ticks, reducing population, health, happiness, and loyalty without relying on hidden random rolls.
