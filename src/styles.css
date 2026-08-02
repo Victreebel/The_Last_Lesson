@@ -19,6 +19,10 @@ canvas {
   display: block;
 }
 
+canvas.the-last-lesson--high-contrast {
+  filter: contrast(1.38) saturate(1.16) brightness(1.08);
+}
+
 .sr-only {
   position: absolute;
   width: 1px;

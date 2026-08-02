@@ -183,7 +183,7 @@ const MINIMAP_WIDTH = 230;
 const MINIMAP_HEIGHT = 158;
 const WORLD_TICK_MILLISECONDS = 5000;
 const AUTO_SAVE_INTERVAL_TICKS = 5;
-const BOOK_PANEL_HEIGHT = 590;
+const BOOK_PANEL_HEIGHT = 634;
 const CAMERA_ZOOM_MIN = 0.72;
 const CAMERA_ZOOM_MAX = 1.5;
 const CAMERA_ZOOM_STEP = 0.1;
@@ -203,6 +203,7 @@ const LOCAL_SAVE_KEY = "the-last-lesson.primary-save.v1";
 const LOCAL_REPLAY_ORIGIN_KEY = "the-last-lesson.replay-origin.v1";
 const LOCAL_AUDIO_ENABLED_KEY = "the-last-lesson.audio-enabled.v1";
 const LOCAL_REDUCED_MOTION_KEY = "the-last-lesson.reduced-motion.v1";
+const LOCAL_HIGH_CONTRAST_KEY = "the-last-lesson.high-contrast.v1";
 const LOCAL_CAMPAIGN_CHRONICLE_KEY = "the-last-lesson.campaign-chronicle.v1";
 const LOCAL_CAMPAIGN_HONORS_KEY = "the-last-lesson.campaign-honors.v1";
 
@@ -273,9 +274,11 @@ export class MilestoneOneScene extends Phaser.Scene {
   private bookPanelBody!: Phaser.GameObjects.Text;
   private replayControlLabel!: Phaser.GameObjects.Text;
   private motionControlLabel!: Phaser.GameObjects.Text;
+  private visibilityControlLabel!: Phaser.GameObjects.Text;
   private lessonBannerHideTimer?: Phaser.Time.TimerEvent;
   private bookPanelExpanded = false;
   private reducedMotion = false;
+  private highContrast = false;
   private replayReview?: ReplayReviewState;
   private realmControl!: Phaser.GameObjects.Container;
   private realmControlLabel!: Phaser.GameObjects.Text;
@@ -388,6 +391,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.configureSimulationClock();
     this.restoreAudioPreference();
     this.restoreMotionPreference();
+    this.restoreHighContrastPreference();
 
     this.assignOpeningLabor();
     this.centerCameraOnSettlement(this.inspectedSettlementId);
@@ -403,7 +407,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     canvas.setAttribute("aria-describedby", "the-last-lesson-accessibility-brief");
     canvas.setAttribute(
       "aria-keyshortcuts",
-      "ArrowUp ArrowDown ArrowLeft ArrowRight B C H R L M A F Escape Space Control+1 Control+2 Control+3 Control+4 Control+5 Control+6 Control+7 Control+8 Control+9"
+      "ArrowUp ArrowDown ArrowLeft ArrowRight B C H R L M A F X Escape Space Control+1 Control+2 Control+3 Control+4 Control+5 Control+6 Control+7 Control+8 Control+9"
     );
     this.accessibilityAnnouncements = document.getElementById("the-last-lesson-announcements") ?? undefined;
   }
@@ -438,6 +442,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     bind("M", () => this.enterMoveMode());
     bind("A", () => this.enterAttackMode());
     bind("F", () => this.enterAttackMoveMode());
+    bind("X", () => this.toggleHighContrast());
     bind("ESC", () => this.cancelActiveCommand());
     keyboard.on("keydown", (event: KeyboardEvent) => {
       if (event.repeat || !this.canUseGameShortcut()) {
@@ -908,6 +913,37 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.updateUi([this.reducedMotion ? "Reduced motion enabled." : "Full motion enabled."]);
   }
 
+  private restoreHighContrastPreference(): void {
+    let storedPreference: string | null = null;
+    try {
+      storedPreference = window.localStorage.getItem(LOCAL_HIGH_CONTRAST_KEY);
+    } catch {
+      // Contrast preference is optional local presentation state.
+    }
+    this.highContrast = storedPreference === null
+      ? window.matchMedia("(prefers-contrast: more)").matches
+      : storedPreference === "true";
+    this.applyHighContrastPreference();
+  }
+
+  private toggleHighContrast(): void {
+    this.highContrast = !this.highContrast;
+    this.applyHighContrastPreference();
+    try {
+      window.localStorage.setItem(LOCAL_HIGH_CONTRAST_KEY, String(this.highContrast));
+    } catch {
+      // Contrast preference is optional local presentation state.
+    }
+    this.updateUi([this.highContrast ? "High contrast enabled." : "Standard contrast enabled."]);
+  }
+
+  private applyHighContrastPreference(): void {
+    const canvas = this.game.canvas;
+    canvas.classList.toggle("the-last-lesson--high-contrast", this.highContrast);
+    canvas.dataset.contrastMode = this.highContrast ? "high" : "standard";
+    this.visibilityControlLabel.setText(this.highContrast ? "VISIBILITY // HIGH" : "VISIBILITY // STANDARD");
+  }
+
   private restoreCampaignChronicle(): void {
     try {
       const parsed: unknown = JSON.parse(window.localStorage.getItem(LOCAL_CAMPAIGN_CHRONICLE_KEY) ?? "{}");
@@ -1274,6 +1310,13 @@ export class MilestoneOneScene extends Phaser.Scene {
       fontSize: "10px",
       color: UI_COLORS.text
     });
+    const visibilityButton = this.add.rectangle(18, 580, 434, 34, UI_COLORS.command, 1).setOrigin(0);
+    visibilityButton.setStrokeStyle(1, UI_COLORS.trim);
+    this.visibilityControlLabel = this.add.text(126, 591, "VISIBILITY // STANDARD", {
+      fontFamily: "Arial Black, Arial",
+      fontSize: "10px",
+      color: UI_COLORS.text
+    });
     this.bookPanel = this.add.container(0, 0, [
       background,
       title,
@@ -1291,7 +1334,9 @@ export class MilestoneOneScene extends Phaser.Scene {
       replayButton,
       this.replayControlLabel,
       motionButton,
-      this.motionControlLabel
+      this.motionControlLabel,
+      visibilityButton,
+      this.visibilityControlLabel
     ]);
     this.bookPanel.setScrollFactor(0).setDepth(70).setVisible(false);
     this.updateBookOfLessons();
@@ -1326,6 +1371,10 @@ export class MilestoneOneScene extends Phaser.Scene {
     }
     if (localY >= 536 && localY < 570) {
       this.toggleReducedMotion();
+      return;
+    }
+    if (localY >= 580 && localY < 614) {
+      this.toggleHighContrast();
     }
   }
 

@@ -26,7 +26,7 @@ The current browser prototype is a playable single-player campaign: establish th
 - An authoritative end-of-reign debrief records campaign duration, thrones taken, lessons taught, heir guidance, Faith held, and the Civic Record of captives taken, integrated, and released.
 - The end-of-reign debrief can immediately replay the current theatre or return to Campaign Theatre selection, preserving a smooth path between scenarios.
 - Responsive tactical presentation: phone-sized views reflow the header and command surface, preserve the campaign choice, and suppress minimap/intel chrome that cannot fit without obscuring play.
-- Local `SFX` and `MOTION` preferences keep optional tactical audio and transient visual effects under player control without affecting the simulation, saves, replays, or multiplayer authority. Motion defaults to the browser's reduced-motion preference until the player chooses otherwise.
+- Local `SFX`, `MOTION`, and `VISIBILITY` preferences keep optional tactical audio, transient visual effects, and high-contrast presentation under player control without affecting the simulation, saves, replays, or multiplayer authority. Motion and contrast default to the relevant browser accessibility preference until the player chooses otherwise.
 - A painterly isometric building atlas renders every construction type while retaining explicit ownership tint, terrain-aware labels, and the existing deterministic selection and placement hitboxes.
 - Painterly formation markers distinguish militia, spears, archers, raiders, scout hounds, and Warships at a glance while preserving tactical labels, ownership tint, and selection feedback.
 
@@ -72,6 +72,7 @@ For container deployment, health checks, and the required `wss://` production bo
 - `B`, `H`, `R`, and `L`: toggle the Build, Heir, Realm, and Book panels.
 - `M` and `A`: enter move and attack targeting modes.
 - `F`: enter advance mode. Selected battalions march to the designated position, engage visible enemies encountered en route, then resume their advance.
+- `X`: toggle high-contrast tactical presentation. The same local preference is available in the Book of Lessons as `VISIBILITY`.
 - `Ctrl`/`Cmd` + `1` through `9`: assign selected Crown battalions to a control group; press its number to recall surviving members and press it twice to center the camera on them.
 - `Esc`: cancel building placement, close open command panels, or clear the current selection.
 - `VERIFY REPLAY`: confirm that the active reign can be reproduced from its opening world and command history.

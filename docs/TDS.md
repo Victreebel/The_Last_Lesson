@@ -80,6 +80,7 @@ The scene exposes the same command state through pointer controls and keyboard c
 | `B`, `H`, `R`, `L` | Toggle Build, Heir, Realm, and Book panels. Realm and Book remain mutually exclusive. |
 | `M`, `A` | Enter movement or attack targeting mode. |
 | `F` | Enter advance mode. Selected battalions receive deterministic attack-move orders that retain a final destination while engaging visible nearby enemies. |
+| `X` | Toggle locally persisted high-contrast presentation. This is renderer-only and may never affect simulation, save, replay, or multiplayer authority. |
 | `Ctrl`/`Cmd` + `1` through `9` | Bind the selected Crown battalions to a presentation-only control group; press the number to select its surviving members, or press it twice to center the camera on them. |
 | `Space` | Toggle the local presentation clock when the player is the authority. |
 | `Esc` | Cancel placement first; otherwise close panels; otherwise clear selection. |
@@ -1465,7 +1466,7 @@ Each addition must preserve deterministic command replay and the simulation/pres
 
 ## 30. Current Readiness Statement
 
-The Last Lesson is in active vertical-slice production. Its frozen architecture, deterministic simulation, teaching loop, authored scenarios, save/replay path, and playable local-network co-op have been implemented and verified. The browser entry point now also exposes a named, focusable application canvas, a screen-reader-only control briefing, and deliberate-command announcements without coupling assistive presentation to simulation events. The static release exposes a scoped install manifest and service worker: navigations are refreshed from the network when available, while the installed shell and same-origin game assets use cache-first offline retrieval. Service-worker state is presentation delivery only and must never participate in simulation, save, replay, or multiplayer authority. New work should prioritize player onboarding, content depth, balance, and release delivery over unbounded new mechanics.
+The Last Lesson is in active vertical-slice production. Its frozen architecture, deterministic simulation, teaching loop, authored scenarios, save/replay path, and playable local-network co-op have been implemented and verified. The browser entry point now also exposes a named, focusable application canvas, a screen-reader-only control briefing, deliberate-command announcements, reduced-motion support, and a locally persisted high-contrast presentation mode without coupling assistive presentation to simulation events. The static release exposes a scoped install manifest and service worker: navigations are refreshed from the network when available, while the installed shell and same-origin game assets use cache-first offline retrieval. Service-worker state is presentation delivery only and must never participate in simulation, save, replay, or multiplayer authority. New work should prioritize player onboarding, content depth, balance, and release delivery over unbounded new mechanics.
 
 ---
 

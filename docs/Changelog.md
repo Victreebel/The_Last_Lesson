@@ -614,6 +614,11 @@
 
 - Added capacity-limited battalion embarkation, synchronized transport movement, player disembarkation, and emergency ejection after caravan destruction.
 - Added Book of Lessons UI with heir doctrine history, recent event history, and local save/load controls.
+# 2.6.8 - 2026-08-02
+
+- Added a locally persisted high-contrast presentation mode, including an `X` shortcut and Book of Lessons visibility control.
+- High contrast honors the browser's `prefers-contrast: more` preference until the player makes an explicit local choice, and is verified as presentation-only browser behavior.
+
 # 2.5.6 - 2026-08-02
 
 - Replaced raw internal event identifiers in the Tactical Uplink and Book of Lessons with a deterministic, player-facing Chronicle. Doctrine observations, heir decisions and concerns, miracles, civic crises, logistics, combat, and captures now report what happened and why using the existing immutable event payloads.

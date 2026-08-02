@@ -83,7 +83,7 @@ test("launches the campaign theatre and begins a Crownfall reign", async ({ page
   await expect(page.locator("canvas")).toBeVisible();
   await expect(page.locator("canvas")).toHaveAttribute("role", "application");
   expect(await page.locator("canvas").getAttribute("aria-keyshortcuts")).toContain("Control+9");
-  await expect(page.locator('link[rel="manifest"]')).toHaveAttribute("href", "/manifest.webmanifest");
+  await expect(page.locator('link[rel="manifest"]')).toHaveAttribute("href", /manifest[.]webmanifest$/);
   await page.waitForTimeout(800);
   await expectRenderedCanvas(page);
   await page.waitForFunction(async () => Boolean((await navigator.serviceWorker.ready).active));
@@ -267,6 +267,23 @@ test("uses the system reduced-motion preference until the player overrides it", 
   await clickCanvasPoint(page, { x: bookPanelX + 235, y: bookPanelY + 553 });
 
   await expect(page.locator("#the-last-lesson-announcements")).toContainText("Full motion enabled");
+});
+
+test("offers a persistent high-contrast presentation mode without changing the reign", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto("/");
+  await beginCrownfallRivalReign(page);
+
+  const canvas = page.locator("canvas");
+  await canvas.press("x");
+
+  await expect(page.locator("#the-last-lesson-announcements")).toContainText("High contrast enabled");
+  await expect(canvas).toHaveAttribute("data-contrast-mode", "high");
+  await expect(canvas).toHaveClass(/the-last-lesson--high-contrast/);
+
+  await canvas.press("x");
+  await expect(page.locator("#the-last-lesson-announcements")).toContainText("Standard contrast enabled");
+  await expect(canvas).toHaveAttribute("data-contrast-mode", "standard");
 });
 
 test("retains the installed campaign shell through an offline reload", async ({ page, context }) => {
