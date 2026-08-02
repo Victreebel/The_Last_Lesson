@@ -41,5 +41,6 @@ describe("campaign scenarios", () => {
     expect(capital.buildingIds).toContain("building-stonewall-gate");
     expect(world.buildings["building-stonewall-wall-1"].complete).toBe(true);
     expect(world.empires["empire-player"].resources.iron).toBe(10);
+    expect(capital.population).toMatchObject({ farmers: 6, builders: 2 });
   });
 });

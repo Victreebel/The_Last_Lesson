@@ -362,6 +362,8 @@ AI may only use information available to its empire.
 
 Scenario content may alter opening state, structures, resources, and pressures, but must not change the fixed tick order or introduce non-deterministic rules. The campaign theatre selects a scenario first, then a Rival Doctrine difficulty profile.
 
+When an authored opening defines a non-zero starting labor allocation, the presentation layer must enqueue that allocation unchanged at the first simulation tick. Openings without authored labor use the standard Crown allocation. This preserves scenario identity without placing UI-specific behavior in the simulation.
+
 The Tactical Uplink's Imperial Mandate is presentation-only and scenario-aware. It leads Rivergate toward an initial supply wagon, Ashen Oath toward resolving its captive population, and Stonewall toward raising then garrisoning a defensive battalion before continuing through the standard reconnaissance and throne-capture progression.
 
 ### 7.3 Scout Hounds

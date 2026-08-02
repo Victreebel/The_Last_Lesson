@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.61.0 - 2026-08-01
+
+- Preserved scenario-authored opening labor allocations instead of overwriting them with the generic Crown setup command. Stonewall now starts with its intended farming and construction workforce.
+
 ## 1.60.0 - 2026-08-01
 
 - Bound the standard `pnpm dev` server to an IPv4-reachable address so the local browser game at `http://127.0.0.1:5173/` launches reliably.

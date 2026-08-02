@@ -286,17 +286,7 @@ export class MilestoneOneScene extends Phaser.Scene {
 
     this.configureSimulationClock();
 
-    this.issueCommand({
-      type: "assign-labor",
-      payload: {
-        settlementId: "settlement-capital",
-        farmers: 8,
-        builders: 4,
-        lumberjacks: 6,
-        miners: 0,
-        luxuryWorkers: 0
-      }
-    });
+    this.assignOpeningLabor();
     this.renderWorld();
     this.updateUi(["The Crown is established."]);
   }
@@ -912,19 +902,35 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.selectedBuildingKind = null;
     this.mode = "select";
     this.clearPlacementPreview();
+    this.assignOpeningLabor();
+    this.renderWorld();
+    this.updateUi([message]);
+  }
+
+  private assignOpeningLabor(): void {
+    const settlement = this.simulation.getState().settlements["settlement-capital"];
+    if (!settlement) {
+      return;
+    }
+    const population = settlement.population;
+    const authoredLabor =
+      population.farmers +
+        population.builders +
+        population.lumberjacks +
+        population.miners +
+        population.luxuryWorkers >
+      0;
     this.issueCommand({
       type: "assign-labor",
       payload: {
-        settlementId: "settlement-capital",
-        farmers: 8,
-        builders: 4,
-        lumberjacks: 6,
-        miners: 0,
-        luxuryWorkers: 0
+        settlementId: settlement.id,
+        farmers: authoredLabor ? population.farmers : 8,
+        builders: authoredLabor ? population.builders : 4,
+        lumberjacks: authoredLabor ? population.lumberjacks : 6,
+        miners: authoredLabor ? population.miners : 0,
+        luxuryWorkers: authoredLabor ? population.luxuryWorkers : 0
       }
     });
-    this.renderWorld();
-    this.updateUi([message]);
   }
 
   private updateVictoryPanel(): void {
