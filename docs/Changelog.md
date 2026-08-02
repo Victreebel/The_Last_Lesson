@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.31.0 - 2026-08-01
+
+- Added an authoritative reign report to the match-resolution panel. It summarizes campaign duration, thrones captured, lessons taught, heirs guided, and retained Faith from deterministic world state and event history.
+- The report is presentation-only: it neither changes simulation state nor alters saved games, replays, or multiplayer determinism.
+
 ## 1.30.0 - 2026-08-01
 
 - Roads now provide religious reach when they form a corridor between hostile thrones, and enemy caravans project a smaller mobile religious influence near a settlement.

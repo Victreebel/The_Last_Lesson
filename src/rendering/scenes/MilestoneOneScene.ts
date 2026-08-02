@@ -9,6 +9,7 @@ import {
   restoreSaveGame,
   serializeSaveGame
 } from "../../simulation/save/SaveGame";
+import { createReignReport, formatReignDuration } from "../../simulation/reports/ReignReport";
 import {
   createInitialWorld,
   getBuildingCost,
@@ -670,7 +671,7 @@ export class MilestoneOneScene extends Phaser.Scene {
   }
 
   private createVictoryPanel(): void {
-    const background = this.add.rectangle(0, 0, 420, 206, UI_COLORS.panelDeep, 0.98).setOrigin(0);
+    const background = this.add.rectangle(0, 0, 420, 260, UI_COLORS.panelDeep, 0.98).setOrigin(0);
     background.setStrokeStyle(2, UI_COLORS.accent);
     background.setInteractive({ useHandCursor: false });
     background.on("pointerdown", (pointer: Phaser.Input.Pointer) => pointer.event.stopPropagation());
@@ -690,14 +691,14 @@ export class MilestoneOneScene extends Phaser.Scene {
       wordWrap: { width: 376 }
     });
     this.victoryDetail.setOrigin(0.5, 0).setPosition(210, 86);
-    const restartButton = this.add.rectangle(110, 150, 200, 34, UI_COLORS.commandActive, 1).setOrigin(0);
+    const restartButton = this.add.rectangle(110, 204, 200, 34, UI_COLORS.commandActive, 1).setOrigin(0);
     restartButton.setStrokeStyle(1, UI_COLORS.trim);
     restartButton.setInteractive({ useHandCursor: true });
     restartButton.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
       pointer.event.stopPropagation();
       this.restartCampaign();
     });
-    const restartLabel = this.add.text(132, 161, "BEGIN ANOTHER REIGN", {
+    const restartLabel = this.add.text(132, 215, "BEGIN ANOTHER REIGN", {
       fontFamily: "Arial Black, Arial",
       fontSize: "10px",
       color: UI_COLORS.text
@@ -804,17 +805,30 @@ export class MilestoneOneScene extends Phaser.Scene {
   }
 
   private updateVictoryPanel(): void {
-    const winner = this.simulation.getState().victory.winnerEmpireId;
-    if (!winner) {
+    const state = this.simulation.getState();
+    const report = createReignReport(state, this.simulation.getEventLog(), "empire-player");
+    if (!report) {
       this.victoryPanel.setVisible(false);
       return;
     }
-    const playerWon = winner === "empire-player";
+    const playerWon = report.winnerEmpireId === "empire-player";
     this.victoryTitle.setText(playerWon ? "THE CROWN ASCENDS" : "THE CROWN HAS FALLEN");
     this.victoryDetail.setText(
       playerWon
-        ? "Every rival throne has fallen. Your lessons now govern the realm."
-        : "The rival crown holds every throne. A different doctrine must rise."
+        ? [
+            "Every rival throne has fallen. Your lessons now govern the realm.",
+            "",
+            `REIGN ${formatReignDuration(report.durationSeconds)}  //  THRONES ${report.thronesCaptured}`,
+            `LESSONS ${report.lessonsTaught}  //  HEIRS GUIDED ${report.heirsGuided}`,
+            `FAITH HELD ${report.faithHeld}`
+          ].join("\\n")
+        : [
+            "The rival crown holds every throne. A different doctrine must rise.",
+            "",
+            `REIGN ${formatReignDuration(report.durationSeconds)}  //  THRONES ${report.thronesCaptured}`,
+            `LESSONS ${report.lessonsTaught}  //  HEIRS GUIDED ${report.heirsGuided}`,
+            `FAITH HELD ${report.faithHeld}`
+          ].join("\\n")
     );
     this.victoryPanel.setVisible(true);
   }
