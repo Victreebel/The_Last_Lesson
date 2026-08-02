@@ -104,6 +104,7 @@ Implemented:
 - Luxury Groves now support terrain-bound Plantations and a dedicated luxury labor assignment. Produced Luxury increases local happiness and devotion, feeding the existing Faith loop.
 - Rare settlement defection under catastrophic captive rebellion, rival religious pressure, collapsed loyalty, and absent local defense. Defection is a political transfer: it displaces rather than kills the governor, preserving the rule that only a fallen Castle kills an heir.
 - Frontier outposts now contribute bounded local religious pressure, while only local battalions calm a settlement's rebellion pressure. Both effects are surfaced in the existing explainability event stream.
+- Faith contribution is now likewise local to each settlement. Faith events expose their citizen, military, religious, and pressure components for player-facing explanation.
 
 ## Milestone 4: Persistence Foundation
 

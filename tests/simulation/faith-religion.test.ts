@@ -92,4 +92,27 @@ describe("faith and religion", () => {
     expect(simulation.getState().empires["empire-player"].resources.faith).toBeLessThan(30);
     expect(pressureEvent?.payload.wardPressure).toBe(18);
   });
+
+  it("counts only locally assigned military morale toward a settlement's faith", () => {
+    const initial = createInitialWorld(676767);
+    const remoteBattalion = initial.battalions["battalion-rival-1"];
+    const simulation = new Simulation({
+      ...initial,
+      battalions: {
+        ...initial.battalions,
+        [remoteBattalion.id]: {
+          ...remoteBattalion,
+          ownerEmpireId: "empire-player",
+          settlementId: "settlement-rival"
+        }
+      }
+    });
+
+    const result = simulation.tick();
+    const capitalFaith = result.events.find(
+      (event) => event.type === "faith-produced" && event.payload.settlementId === "settlement-capital"
+    );
+
+    expect(capitalFaith?.payload.militaryFaith).toBe(0);
+  });
 });

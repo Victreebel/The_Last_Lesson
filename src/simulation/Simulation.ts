@@ -2040,7 +2040,10 @@ export class Simulation {
       const empire = this.state.empires[settlement.ownerEmpireId];
       const militaryFaith = Math.floor(
         Object.values(this.state.battalions)
-          .filter((battalion) => battalion.ownerEmpireId === settlement.ownerEmpireId)
+          .filter(
+            (battalion) =>
+              battalion.ownerEmpireId === settlement.ownerEmpireId && battalion.settlementId === settlement.id
+          )
           .reduce(
             (total, battalion) =>
               total + (battalion.size * (battalion.morale + battalion.devotion)) / 200,
@@ -2082,7 +2085,11 @@ export class Simulation {
 
       this.eventWriter.emit(tick, "faith-produced", {
         settlementId: settlement.id,
-        amount: generatedFaith
+        amount: generatedFaith,
+        citizenFaith,
+        militaryFaith,
+        internalFaith: Math.floor(settlement.internalFaith / 50),
+        externalPressurePenalty: Math.floor(settlement.externalReligiousPressure / 50)
       });
     }
   }

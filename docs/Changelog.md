@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.42.0 - 2026-08-01
+
+- Corrected Faith generation so only a settlement's own battalions contribute military Faith; remote forces no longer multiply devotion across an empire.
+- `faith-produced` events now provide a source-level breakdown for citizen, military, internal-religion, and rival-pressure contributions.
+
 ## 1.41.0 - 2026-08-01
 
 - Enemy Outposts now project a bounded religious pressure beside castles, road corridors, and caravans. Pressure events expose every source.
