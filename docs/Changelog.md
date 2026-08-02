@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.73.0 - 2026-08-02
+
+- Added classic RTS control groups: bind selected Crown battalions with `Ctrl`/`Cmd` plus `1` through `9`, then recall the surviving group with its number key.
+- Kept control groups strictly presentation-side, pruning lost battalions from bindings without changing deterministic simulation, replays, or multiplayer authority.
+
 ## 1.72.0 - 2026-08-02
 
 - Added RTS keyboard controls for Build, Heir, Realm, Book, Move, and Attack modes, plus a layered `Esc` cancel flow for placement, panels, and selection.

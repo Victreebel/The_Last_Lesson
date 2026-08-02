@@ -207,6 +207,7 @@ export class MilestoneOneScene extends Phaser.Scene {
   private selectedBattalionId: string | null = null;
   private selectedCaravanId: string | null = null;
   private readonly selectedBattalionIds = new Set<string>();
+  private readonly controlGroups = new Map<number, readonly string[]>();
   private mode: ToolMode = "select";
   private topHud!: Phaser.GameObjects.Rectangle;
   private gameTitleText!: Phaser.GameObjects.Text;
@@ -330,6 +331,20 @@ export class MilestoneOneScene extends Phaser.Scene {
     bind("M", () => this.enterMoveMode());
     bind("A", () => this.enterAttackMode());
     bind("ESC", () => this.cancelActiveCommand());
+    keyboard.on("keydown", (event: KeyboardEvent) => {
+      if (event.repeat || !this.canUseGameShortcut()) {
+        return;
+      }
+      const slot = Number.parseInt(event.key, 10);
+      if (!Number.isInteger(slot) || slot < 1 || slot > 9) {
+        return;
+      }
+      if (event.ctrlKey || event.metaKey) {
+        this.assignControlGroup(slot);
+      } else {
+        this.recallControlGroup(slot);
+      }
+    });
   }
 
   private canUseGameShortcut(): boolean {
@@ -397,6 +412,58 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.realmPanelExpanded = false;
     this.updateRealmPanel();
     this.updateBookOfLessons();
+  }
+
+  private assignControlGroup(slot: number): void {
+    const battalionIds = [...this.selectedBattalionIds].filter(
+      (id) => this.simulation.getState().battalions[id]?.ownerEmpireId === "empire-player"
+    );
+    if (battalionIds.length === 0) {
+      this.updateUi([`Select Crown battalions before assigning group ${slot}.`]);
+      return;
+    }
+    this.controlGroups.set(slot, battalionIds);
+    this.updateUi([`Group ${slot} assigned to ${battalionIds.length} battalion(s).`]);
+  }
+
+  private recallControlGroup(slot: number): void {
+    const battalionIds = this.controlGroups.get(slot)?.filter(
+      (id) => this.simulation.getState().battalions[id]?.ownerEmpireId === "empire-player"
+    ) ?? [];
+    if (battalionIds.length === 0) {
+      this.controlGroups.delete(slot);
+      this.updateUi([`Group ${slot} has no active Crown battalions.`]);
+      return;
+    }
+    this.clearSelection();
+    battalionIds.forEach((id) => this.selectedBattalionIds.add(id));
+    this.selectedBattalionId = battalionIds[0];
+    this.updateUi([`Group ${slot} recalled: ${battalionIds.length} battalion(s) selected.`]);
+  }
+
+  private getActiveControlGroup(): number | undefined {
+    for (const [slot, battalionIds] of this.controlGroups) {
+      if (
+        battalionIds.length === this.selectedBattalionIds.size &&
+        battalionIds.every((id) => this.selectedBattalionIds.has(id))
+      ) {
+        return slot;
+      }
+    }
+    return undefined;
+  }
+
+  private pruneControlGroups(state: WorldState): void {
+    for (const [slot, battalionIds] of this.controlGroups) {
+      const survivingBattalions = battalionIds.filter(
+        (id) => state.battalions[id]?.ownerEmpireId === "empire-player"
+      );
+      if (survivingBattalions.length === 0) {
+        this.controlGroups.delete(slot);
+      } else if (survivingBattalions.length !== battalionIds.length) {
+        this.controlGroups.set(slot, survivingBattalions);
+      }
+    }
   }
 
   update(): void {
@@ -2658,6 +2725,7 @@ export class MilestoneOneScene extends Phaser.Scene {
 
   private renderWorld(): void {
     const state = this.simulation.getState();
+    this.pruneControlGroups(state);
 
     for (const building of Object.values(state.buildings)) {
       this.renderBuilding(building);
@@ -2944,12 +3012,14 @@ export class MilestoneOneScene extends Phaser.Scene {
         ? state.battalions[this.selectedBattalionIds.values().next().value as string]
         : undefined;
     const selectedTraits = selectedBattalion ? getBattalionTraits(selectedBattalion.battlefieldTraining) : [];
+    const activeControlGroup = this.getActiveControlGroup();
+    const controlGroupSummary = activeControlGroup ? `  //  GROUP ${activeControlGroup}` : "";
     const selectionSummary = selectedBattalion
-      ? `UNIT: ${getBattalionRank(selectedBattalion.experience)} ${selectedBattalion.specialization.toUpperCase()}  //  MORALE ${selectedBattalion.morale}  //  SUPPLY ${selectedBattalion.supply}  //  XP ${selectedBattalion.experience ?? 0}  //  ${selectedTraits.join(" / ") || "NO TRAIT"}`
+      ? `UNIT: ${getBattalionRank(selectedBattalion.experience)} ${selectedBattalion.specialization.toUpperCase()}  //  MORALE ${selectedBattalion.morale}  //  SUPPLY ${selectedBattalion.supply}  //  XP ${selectedBattalion.experience ?? 0}  //  ${selectedTraits.join(" / ") || "NO TRAIT"}${controlGroupSummary}`
       : this.selectedCaravanId
         ? "SELECTION: SUPPLY CARAVAN"
         : this.selectedBattalionIds.size
-          ? `SELECTION: ${this.selectedBattalionIds.size} BATTALIONS`
+          ? `SELECTION: ${this.selectedBattalionIds.size} BATTALIONS${controlGroupSummary}`
           : "SELECTION: NO UNIT SELECTED";
     this.resourceText.setText(
       this.scale.width < 640
