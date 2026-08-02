@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.5.5 - 2026-08-02
+
+- Made building, Realm, Heir, and end-of-reign controls consistently consume their pointer release before battlefield selection can run.
+
 ## 2.5.4 - 2026-08-02
 
 - Added cursor-anchored tactical wheel zoom with deterministic-state isolation and browser coverage for the continuous battlefield framing.

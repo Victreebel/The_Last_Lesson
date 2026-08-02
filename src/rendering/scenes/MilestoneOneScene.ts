@@ -1332,6 +1332,7 @@ export class MilestoneOneScene extends Phaser.Scene {
       button.setInteractive({ useHandCursor: true });
       button.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
         pointer.event.stopPropagation();
+        this.suppressNextPointerUp = true;
         this.selectCrownSeat(settlement.id, true);
       });
       const label = this.add.text(28, y + 6, this.getSettlementDisplayName(settlement.id), {
@@ -1403,6 +1404,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     restartButton.setInteractive({ useHandCursor: true });
     restartButton.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
       pointer.event.stopPropagation();
+      this.suppressNextPointerUp = true;
       this.restartCampaign();
     });
     const restartLabel = this.add.text(47, 255, "REPEAT THEATRE", {
@@ -1415,6 +1417,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     theatreButton.setInteractive({ useHandCursor: true });
     theatreButton.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
       pointer.event.stopPropagation();
+      this.suppressNextPointerUp = true;
       this.returnToCampaignTheatre();
     });
     const theatreLabel = this.add.text(234, 255, "CAMPAIGN THEATRE", {
@@ -2218,6 +2221,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     button.setInteractive({ useHandCursor: true });
     button.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
       pointer.event.stopPropagation();
+      this.suppressNextPointerUp = true;
       this.sendHeirFeedback(commandType);
     });
     const text = this.add.text(x + 12, y + 10, label, {
@@ -2398,6 +2402,7 @@ export class MilestoneOneScene extends Phaser.Scene {
       button.setInteractive({ useHandCursor: true });
       button.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
         pointer.event.stopPropagation();
+        this.suppressNextPointerUp = true;
         this.selectBuilding(option.kind);
       });
       const icon = this.add.rectangle(x + 10, y + 10, 18, 18, BUILDING_COLORS[option.kind], 1).setOrigin(0);
