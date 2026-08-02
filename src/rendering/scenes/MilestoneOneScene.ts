@@ -12,6 +12,7 @@ import { AudioDirector } from "../AudioDirector";
 import { getCombatFeedbackPresentation } from "../combatPresentation";
 import { describeGameEvent, selectTacticalReportEvents } from "../eventNarrative";
 import { getMiracleFeedbackPresentation } from "../miraclePresentation";
+import { getTerrainPresentation } from "../terrainPresentation";
 import { Simulation } from "../../simulation/Simulation";
 import type { GameCommand } from "../../simulation/commands/GameCommand";
 import type { GameEvent } from "../../simulation/events/GameEvent";
@@ -53,7 +54,6 @@ import {
   type ScenarioId,
   SCENARIO_PROFILES,
   type SettlementState,
-  type TerrainKind,
   type TerrainZone,
   type WorldState
 } from "../../simulation/state/WorldState";
@@ -173,39 +173,6 @@ const BUILDING_DISPLAY_LABELS: Record<BuildingKind, string> = {
   wall: "WALL",
   gate: "GATE",
   outpost: "OUTPOST"
-};
-
-const TERRAIN_COLORS: Record<TerrainKind, number> = {
-  grassland: 0x4b623a,
-  fertile: 0x758e3c,
-  forest: 0x28513a,
-  "iron-vein": 0x5c6670,
-  "luxury-grove": 0x987e45,
-  hills: 0x746b4f,
-  water: 0x2f667c,
-  marsh: 0x4a624f
-};
-
-const TERRAIN_SYMBOLS: Record<TerrainKind, string> = {
-  grassland: "G",
-  fertile: "F",
-  forest: "W",
-  "iron-vein": "I",
-  "luxury-grove": "L",
-  hills: "H",
-  water: "~",
-  marsh: "M"
-};
-
-const TERRAIN_DETAILS: Record<TerrainKind, string> = {
-  grassland: "OPEN BUILD GROUND",
-  fertile: "FARMS / FOOD",
-  forest: "LUMBER MILLS / WOOD",
-  "iron-vein": "MINES / IRON",
-  "luxury-grove": "PLANTATIONS / LUXURY",
-  hills: "SLOW / DEFENSE +",
-  water: "BLOCKS LAND UNITS",
-  marsh: "SLOW / UNBUILDABLE"
 };
 
 const BUILD_PANEL_WIDTH = 306;
@@ -654,7 +621,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.worldLayer.add(backdrop);
 
     const graphics = this.add.graphics();
-    graphics.fillStyle(TERRAIN_COLORS.grassland, 0.46);
+    graphics.fillStyle(getTerrainPresentation("grassland").color, 0.46);
     graphics.fillRect(0, 0, 1400, 900);
 
     for (let x = 0; x <= 1400; x += 80) {
@@ -676,20 +643,14 @@ export class MilestoneOneScene extends Phaser.Scene {
 
   private drawTerrainZone(graphics: Phaser.GameObjects.Graphics, zone: TerrainZone): void {
     const { bounds } = zone;
-    graphics.fillStyle(TERRAIN_COLORS[zone.kind], 0.64);
+    const presentation = getTerrainPresentation(zone.kind);
+    graphics.fillStyle(presentation.color, 0.64);
     graphics.fillRoundedRect(bounds.x, bounds.y, bounds.width, bounds.height, 12);
+    this.drawTerrainTexture(graphics, zone);
     graphics.lineStyle(2, 0xd6d1af, 0.35);
     graphics.strokeRoundedRect(bounds.x, bounds.y, bounds.width, bounds.height, 12);
 
-    if (zone.kind === "water") {
-      graphics.lineStyle(2, 0x9cc8d5, 0.32);
-      for (let x = bounds.x + 20; x < bounds.x + bounds.width - 12; x += 38) {
-        graphics.lineBetween(x, bounds.y + 32, x + 22, bounds.y + 32);
-        graphics.lineBetween(x + 8, bounds.y + 78, x + 30, bounds.y + 78);
-      }
-    }
-
-    const label = this.add.text(bounds.x + bounds.width / 2, bounds.y + 14, `[${TERRAIN_SYMBOLS[zone.kind]}] ${zone.label}\n${TERRAIN_DETAILS[zone.kind]}`, {
+    const label = this.add.text(bounds.x + bounds.width / 2, bounds.y + 14, `[${presentation.symbol}] ${zone.label}\n${presentation.detail}`, {
       fontFamily: "Arial Black, Arial",
       fontSize: "11px",
       color: "#f4f0d5",
@@ -699,6 +660,82 @@ export class MilestoneOneScene extends Phaser.Scene {
     });
     label.setOrigin(0.5, 0);
     this.worldLayer.add(label);
+  }
+
+  private drawTerrainTexture(graphics: Phaser.GameObjects.Graphics, zone: TerrainZone): void {
+    const { bounds } = zone;
+    const presentation = getTerrainPresentation(zone.kind);
+    const inset = 16;
+    const minX = bounds.x + inset;
+    const maxX = bounds.x + bounds.width - inset;
+    const minY = bounds.y + 44;
+    const maxY = bounds.y + bounds.height - inset;
+
+    switch (presentation.pattern) {
+      case "grass":
+        graphics.lineStyle(1, presentation.patternColor, 0.22);
+        for (let x = minX; x < maxX; x += 28) {
+          for (let y = minY; y < maxY; y += 34) {
+            graphics.lineBetween(x, y + 8, x + 3, y);
+          }
+        }
+        return;
+      case "furrows":
+        graphics.lineStyle(2, presentation.patternColor, 0.28);
+        for (let y = minY; y < maxY; y += 22) {
+          graphics.lineBetween(minX, y + 8, maxX, y - 8);
+        }
+        return;
+      case "canopy":
+        graphics.fillStyle(presentation.patternColor, 0.26);
+        for (let y = minY; y < maxY; y += 32) {
+          for (let x = minX + ((Math.floor((y - minY) / 32) % 2) * 14); x < maxX; x += 30) {
+            graphics.fillCircle(x, y, 8);
+            graphics.fillCircle(x + 5, y - 3, 5);
+          }
+        }
+        return;
+      case "veins":
+        graphics.lineStyle(2, presentation.patternColor, 0.38);
+        for (let x = minX; x < maxX - 18; x += 46) {
+          graphics.lineBetween(x, minY + 8, x + 16, minY + 28);
+          graphics.lineBetween(x + 16, minY + 28, x + 8, maxY - 18);
+          graphics.lineBetween(x + 8, maxY - 18, x + 27, maxY - 4);
+        }
+        return;
+      case "blooms":
+        graphics.fillStyle(presentation.patternColor, 0.34);
+        for (let y = minY; y < maxY; y += 34) {
+          for (let x = minX + ((Math.floor((y - minY) / 34) % 2) * 16); x < maxX; x += 38) {
+            graphics.fillCircle(x, y, 5);
+            graphics.fillCircle(x + 5, y + 3, 3);
+          }
+        }
+        return;
+      case "contours":
+        graphics.lineStyle(2, presentation.patternColor, 0.28);
+        for (let y = minY + 12; y < maxY; y += 30) {
+          graphics.strokeEllipse(bounds.x + bounds.width / 2, y, bounds.width - 40, 20);
+        }
+        return;
+      case "ripples":
+        graphics.lineStyle(2, presentation.patternColor, 0.34);
+        for (let x = minX; x < maxX - 22; x += 38) {
+          graphics.lineBetween(x, minY + 12, x + 22, minY + 12);
+          graphics.lineBetween(x + 8, Math.min(minY + 58, maxY), x + 30, Math.min(minY + 58, maxY));
+        }
+        return;
+      case "reeds":
+        graphics.fillStyle(0x2b3f35, 0.26);
+        for (let x = minX; x < maxX; x += 48) {
+          graphics.fillEllipse(x + 14, maxY - 12, 30, 11);
+        }
+        graphics.lineStyle(2, presentation.patternColor, 0.32);
+        for (let x = minX; x < maxX; x += 22) {
+          graphics.lineBetween(x, maxY - 10, x + 3, minY + 24);
+        }
+        return;
+    }
   }
 
   private createUi(): void {
@@ -2084,10 +2121,10 @@ export class MilestoneOneScene extends Phaser.Scene {
     const mapY = (value: number) => y + (value / 900) * height;
 
     this.minimapGraphics.clear();
-    this.minimapGraphics.fillStyle(TERRAIN_COLORS.grassland, 1);
+    this.minimapGraphics.fillStyle(getTerrainPresentation("grassland").color, 1);
     this.minimapGraphics.fillRect(x, y, width, height);
     for (const zone of state.terrainZones) {
-      this.minimapGraphics.fillStyle(TERRAIN_COLORS[zone.kind], 1);
+      this.minimapGraphics.fillStyle(getTerrainPresentation(zone.kind).color, 1);
       this.minimapGraphics.fillRect(
         mapX(zone.bounds.x),
         mapY(zone.bounds.y),

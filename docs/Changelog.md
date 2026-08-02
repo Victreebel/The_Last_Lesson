@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.6 - 2026-08-02
+
+- Added terrain-specific environmental signatures to the tactical map. Every terrain zone now pairs its existing label and symbol with a distinct deterministic texture treatment, improving terrain recognition and color-independent readability without changing authoritative terrain rules.
+
 ## 2.6.5 - 2026-08-02
 
 - Added `pnpm balance:report`, a deterministic standard-opening playtest across Crownfall, Rivergate, Ashen Oath, and Stonewall. It reports survival, economy, force, rival pressure timing, and scenario-specific opening outcomes, and it now runs under automated coverage.

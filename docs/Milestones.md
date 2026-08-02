@@ -24,6 +24,7 @@ Status: complete and expanded into a painterly, labeled tactical prototype.
 Implemented:
 
 - Phaser world view with grid terrain, explicit terrain symbols, and a painterly isometric building atlas.
+- Deterministic terrain signatures for grassland, fields, forests, iron veins, luxury groves, hills, water, and marshes, preserving clear labels while making terrain readable through pattern as well as color.
 - Camera panning with arrow keys.
 - UI controls for farm placement, battalion creation, movement, attacking, and manual ticks.
 - Simulation-backed food, wood, iron, and faith readouts.
