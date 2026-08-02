@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.44.0 - 2026-08-01
+
+- Added persistent battalion experience and derived Militia, Regular, Veteran, Elite, and Legendary ranks. Combat awards experience transparently, while experienced forces lose less morale when completely unsupplied.
+
 ## 1.43.0 - 2026-08-01
 
 - Added terrain-compatible Moats to the construction console. Completed enemy moats halve battalion and land-caravan movement through their perimeter, producing clear siege geometry without special-case pathfinding.

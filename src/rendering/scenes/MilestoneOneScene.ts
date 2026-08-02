@@ -15,6 +15,7 @@ import { stableHash } from "../../simulation/hash/stableHash";
 import { createReplayRecord, runReplayRecord } from "../../simulation/replay/ReplayRecord";
 import {
   createInitialWorld,
+  getBattalionRank,
   getBuildingCost,
   isPositionVisibleToEmpire,
   isBuildingTerrainCompatible,
@@ -2653,7 +2654,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     const suffix = battalion.id.split("-").at(-1) ?? "1";
     return battalion.specialization === "hounds"
       ? `HOUNDS ${suffix}\n${battalion.size} SCOUTS`
-      : `${battalion.specialization.toUpperCase()} ${suffix}\n${battalion.size} TROOPS`;
+      : `${getBattalionRank(battalion.experience)} ${battalion.specialization.toUpperCase()}\n${battalion.size} TROOPS`;
   }
 
   private getCaravanLabel(caravan: CaravanState): string {

@@ -555,6 +555,10 @@ Each unit has:
 
 Damage reduces defense. Defense functions as a life bar.
 
+### 11.1a Battalion Experience
+
+Battalions retain `0-100` experience. Successful attacks grant one experience, while defeating an enemy battalion grants twelve. Rank is derived rather than separately stored: Militia (`0-9`), Regular (`10-29`), Veteran (`30-59`), Elite (`60-89`), and Legendary (`90-100`). Ranks do not inflate attack or defense. Instead, experience reduces morale loss from total supply collapse, reflecting better discipline under hardship. Experience events expose every award for the Book of Lessons and battlefield UI.
+
 ### 11.2 Garrison and Siege
 
 Walls and outposts may garrison units. When units are inside a valid garrison, the structure's defense substitutes for the unit's defense until the structure falls.

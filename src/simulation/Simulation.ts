@@ -307,7 +307,8 @@ export class Simulation {
         attackCooldownRemaining: 0,
         morale: 70,
         devotion: 55,
-        supply: 100
+        supply: 100,
+        experience: 0
       };
 
       this.state = {
@@ -1388,7 +1389,8 @@ export class Simulation {
           attackCooldownRemaining: 0,
           morale: 70,
           devotion: 55,
-          supply: 100
+          supply: 100,
+          experience: 0
         };
         this.state = {
           ...this.state,
@@ -2294,7 +2296,8 @@ export class Simulation {
           distance(building.position, battalion.position) <= (building.kind === "road" ? 64 : 120)
       );
       const nextSupply = Math.max(0, Math.min(100, battalion.supply + (supplied ? 5 : -2)));
-      const nextMorale = nextSupply === 0 ? Math.max(0, battalion.morale - 2) : battalion.morale;
+      const moraleLoss = Math.max(0, 2 - Math.floor((battalion.experience ?? 0) / 50));
+      const nextMorale = nextSupply === 0 ? Math.max(0, battalion.morale - moraleLoss) : battalion.morale;
       nextBattalions[battalion.id] = {
         ...battalion,
         supply: nextSupply,
@@ -2304,7 +2307,8 @@ export class Simulation {
         this.eventWriter.emit(tick, "supply-changed", {
           battalionId: battalion.id,
           supply: nextSupply,
-          supplied
+          supplied,
+          moraleLoss
         });
       }
     }
@@ -2416,9 +2420,10 @@ export class Simulation {
             (battalion.morale / 100) *
             specializationMultiplier *
             supplyMultiplier) /
-            terrainDefenseMultiplier(defenderTerrain)
+          terrainDefenseMultiplier(defenderTerrain)
         )
       );
+      let experienceGain = 1;
 
       if (targetBattalion) {
         const nextDefense = Math.max(0, targetBattalion.defense - damage);
@@ -2426,6 +2431,7 @@ export class Simulation {
           const { [targetBattalion.id]: _destroyed, ...remainingBattalions } = battalions;
           battalions = remainingBattalions;
           defeatedBattalions.push({ attackerId: battalion.id, defender: targetBattalion });
+          experienceGain = 12;
           this.eventWriter.emit(tick, "entity-destroyed", { entityId: targetBattalion.id });
         } else {
           battalions = {
@@ -2468,13 +2474,21 @@ export class Simulation {
 
       const attackingBattalion = battalions[battalion.id];
       if (attackingBattalion) {
+        const previousExperience = attackingBattalion.experience ?? 0;
+        const experience = Math.min(100, previousExperience + experienceGain);
         battalions = {
           ...battalions,
           [battalion.id]: {
             ...attackingBattalion,
-            attackCooldownRemaining: battalion.attackCooldownTicks
+            attackCooldownRemaining: battalion.attackCooldownTicks,
+            experience
           }
         };
+        this.eventWriter.emit(tick, "battalion-experienced", {
+          battalionId: battalion.id,
+          gained: experience - previousExperience,
+          experience
+        });
       }
 
       this.eventWriter.emit(tick, "damage-dealt", {

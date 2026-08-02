@@ -14,7 +14,7 @@ The current browser prototype is a playable single-player campaign: establish th
 - Plantations generate global Luxury while improving their settlement's happiness and devotion, creating a peaceful route into stronger Faith generation.
 - Moats create approachable but costly siege geometry, halving enemy movement while they cross the defended perimeter.
 - Population, food, local growth, starvation, captives, rebellion, faith, religion, and miracles. Bless Harvest, Inspire Army, and Divine Judgment give Faith distinct economic, battlefield, and religious responses; road corridors, caravans, and frontier outposts also carry religious influence between empires. Faith reports separately explain citizen, local military, internal-religion, and rival-pressure contributions. A catastrophic, ungarrisoned settlement can defect under overwhelming rival pressure, replacing its governor without killing them.
-- Battalion specializations, scout hounds, supply, morale, visibility, enemy scouting, combat feedback, and empire-scoped victory.
+- Battalion specializations, persistent combat experience and ranks, scout hounds, supply, morale, visibility, enemy scouting, combat feedback, and empire-scoped victory.
 - Heirs with inspectable doctrine, utility decisions, concerns, rewards, punishments, and live lesson feedback.
 - Multi-settlement Crown management through castle selection and the compact `REALM` navigator.
 - A campaign-opening rival doctrine choice: `DISCIPLE`, `RIVAL`, or `ARCHITECT` changes only the rival's opening grace and doctrine-learning pace, never grants hidden resources or combat bonuses.

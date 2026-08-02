@@ -220,6 +220,17 @@ export interface BattalionState {
   readonly morale: number;
   readonly devotion: number;
   readonly supply: number;
+  readonly experience?: number;
+}
+
+export type BattalionRank = "Militia" | "Regular" | "Veteran" | "Elite" | "Legendary";
+
+export function getBattalionRank(experience = 0): BattalionRank {
+  if (experience >= 90) return "Legendary";
+  if (experience >= 60) return "Elite";
+  if (experience >= 30) return "Veteran";
+  if (experience >= 10) return "Regular";
+  return "Militia";
 }
 
 export interface DoctrineRule {
@@ -530,7 +541,8 @@ export function createInitialWorld(
         attackCooldownRemaining: 0,
         morale: 70,
         devotion: 55,
-        supply: 100
+        supply: 100,
+        experience: 0
       }
     },
     caravans: {},

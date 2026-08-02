@@ -106,6 +106,7 @@ Implemented:
 - Frontier outposts now contribute bounded local religious pressure, while only local battalions calm a settlement's rebellion pressure. Both effects are surfaced in the existing explainability event stream.
 - Faith contribution is now likewise local to each settlement. Faith events expose their citizen, military, religious, and pressure components for player-facing explanation.
 - Moats now complete the original defensive construction set. They halve enemy battalion and land-caravan movement in their perimeter and expose the modifier in movement events.
+- Battalions now persist combat experience and derive Militia through Legendary ranks. Experience rewards successful fighting and gives veterans stronger morale discipline during supply collapse without direct attack-stat inflation.
 
 ## Milestone 4: Persistence Foundation
 
