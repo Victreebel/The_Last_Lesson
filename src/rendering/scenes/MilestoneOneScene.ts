@@ -823,6 +823,12 @@ export class MilestoneOneScene extends Phaser.Scene {
       });
       controls.push(button, label, detail);
     });
+    const beginPrompt = this.add.text(20, 222, "BEGIN REIGN // SELECT RIVAL DOCTRINE", {
+      fontFamily: "Arial Black, Arial",
+      fontSize: "9px",
+      color: "#e2bd61"
+    });
+    controls.push(beginPrompt);
     const difficulties: RivalDifficulty[] = ["disciple", "rival", "architect"];
     difficulties.forEach((difficulty, index) => {
       const profile = RIVAL_DIFFICULTY_PROFILES[difficulty];
@@ -834,9 +840,9 @@ export class MilestoneOneScene extends Phaser.Scene {
         pointer.event.stopPropagation();
         this.startCampaign(difficulty);
       });
-      const label = this.add.text(x + 12, 259, profile.label, {
+      const label = this.add.text(x + 12, 259, `BEGIN // ${profile.label}`, {
         fontFamily: "Arial Black, Arial",
-        fontSize: "12px",
+        fontSize: "10px",
         color: UI_COLORS.text,
         wordWrap: { width: 112 }
       });

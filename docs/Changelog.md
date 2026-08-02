@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.59.0 - 2026-08-01
+
+- Clarified the Campaign Theatre launch affordance: the rival-doctrine cards now explicitly begin a new reign instead of reading like passive difficulty information.
+
 ## 1.58.0 - 2026-08-01
 
 - Preserved the Stonewall opening in save/load normalization and added a round-trip regression test.
