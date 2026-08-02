@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.4.0 - 2026-08-02
+
+- The Book of Lessons can now export and import versioned portable `.tll` reign archives. Each archive contains the active deterministic save and its campaign opening world, preserving replay verification when a player moves a reign between browsers or devices.
+
 ## 2.3.1 - 2026-08-02
 
 - The main verification workflow now builds the authoritative multiplayer Docker image after its deterministic and browser gates, preventing an unvalidated container from becoming the first production deployment.

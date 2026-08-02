@@ -17,6 +17,13 @@ import {
   serializeSaveGame,
   type SaveGame
 } from "../../simulation/save/SaveGame";
+import {
+  createPortableSaveArchive,
+  createPortableSaveFilename,
+  deserializePortableSaveArchive,
+  serializePortableSaveArchive,
+  type PortableSaveArchive
+} from "../../simulation/save/PortableSave";
 import { createReignReport, formatReignDuration } from "../../simulation/reports/ReignReport";
 import { stableHash } from "../../simulation/hash/stableHash";
 import { createReplayRecord, runReplayRecord } from "../../simulation/replay/ReplayRecord";
@@ -204,6 +211,7 @@ const MINIMAP_WIDTH = 230;
 const MINIMAP_HEIGHT = 158;
 const WORLD_TICK_MILLISECONDS = 5000;
 const AUTO_SAVE_INTERVAL_TICKS = 5;
+const BOOK_PANEL_HEIGHT = 590;
 const UI_COLORS = {
   panel: 0x12191a,
   panelDeep: 0x0b1011,
@@ -515,6 +523,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.realmPanelExpanded = false;
     this.updateRealmPanel();
     this.updateBookOfLessons();
+    this.updateUi([this.bookPanelExpanded ? "Book of Lessons opened." : "Book of Lessons closed."]);
   }
 
   private assignControlGroup(slot: number): void {
@@ -676,8 +685,6 @@ export class MilestoneOneScene extends Phaser.Scene {
   private createTopHud(): void {
     this.topHud = this.add.rectangle(0, 0, 1, 58, UI_COLORS.panelDeep, 0.96).setOrigin(0);
     this.topHud.setScrollFactor(0);
-    this.topHud.setInteractive({ useHandCursor: false });
-    this.topHud.on("pointerdown", (pointer: Phaser.Input.Pointer) => pointer.event.stopPropagation());
     this.topHud.setDepth(40);
 
     this.gameTitleText = this.add.text(18, 10, "THE LAST LESSON", {
@@ -1103,11 +1110,6 @@ export class MilestoneOneScene extends Phaser.Scene {
   private createBookOfLessons(): void {
     const control = this.add.rectangle(190, 14, 118, 30, UI_COLORS.command, 1).setOrigin(0);
     control.setStrokeStyle(1, UI_COLORS.trim);
-    control.setInteractive({ useHandCursor: true });
-    control.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
-      pointer.event.stopPropagation();
-      this.toggleBookOfLessons();
-    });
     this.bookControlLabel = this.add.text(200, 23, "BOOK [+]", {
       fontFamily: "Arial Black, Arial",
       fontSize: "10px",
@@ -1116,7 +1118,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.bookControl = this.add.container(0, 0, [control, this.bookControlLabel]);
     this.bookControl.setScrollFactor(0).setDepth(41);
 
-    const background = this.add.rectangle(0, 0, 470, 546, UI_COLORS.panelDeep, 0.98).setOrigin(0);
+    const background = this.add.rectangle(0, 0, 470, BOOK_PANEL_HEIGHT, UI_COLORS.panelDeep, 0.98).setOrigin(0);
     background.setStrokeStyle(2, UI_COLORS.accent);
     background.setInteractive({ useHandCursor: false });
     background.on("pointerdown", (pointer: Phaser.Input.Pointer) => pointer.event.stopPropagation());
@@ -1134,18 +1136,8 @@ export class MilestoneOneScene extends Phaser.Scene {
     });
     const saveButton = this.add.rectangle(18, 360, 204, 34, UI_COLORS.commandActive, 1).setOrigin(0);
     saveButton.setStrokeStyle(1, UI_COLORS.trim);
-    saveButton.setInteractive({ useHandCursor: true });
-    saveButton.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
-      pointer.event.stopPropagation();
-      this.saveLocalGame();
-    });
     const loadButton = this.add.rectangle(248, 360, 204, 34, UI_COLORS.command, 1).setOrigin(0);
     loadButton.setStrokeStyle(1, UI_COLORS.trim);
-    loadButton.setInteractive({ useHandCursor: true });
-    loadButton.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
-      pointer.event.stopPropagation();
-      this.loadLocalGame();
-    });
     const saveLabel = this.add.text(30, 371, "SAVE LOCAL", {
       fontFamily: "Arial Black, Arial",
       fontSize: "10px",
@@ -1156,38 +1148,37 @@ export class MilestoneOneScene extends Phaser.Scene {
       fontSize: "10px",
       color: UI_COLORS.text
     });
-    const verifyButton = this.add.rectangle(18, 404, 434, 34, UI_COLORS.command, 1).setOrigin(0);
+    const exportButton = this.add.rectangle(18, 404, 204, 34, UI_COLORS.commandActive, 1).setOrigin(0);
+    exportButton.setStrokeStyle(1, UI_COLORS.trim);
+    const importButton = this.add.rectangle(248, 404, 204, 34, UI_COLORS.command, 1).setOrigin(0);
+    importButton.setStrokeStyle(1, UI_COLORS.trim);
+    const exportLabel = this.add.text(38, 415, "EXPORT .TLL", {
+      fontFamily: "Arial Black, Arial",
+      fontSize: "10px",
+      color: UI_COLORS.text
+    });
+    const importLabel = this.add.text(270, 415, "IMPORT .TLL", {
+      fontFamily: "Arial Black, Arial",
+      fontSize: "10px",
+      color: UI_COLORS.text
+    });
+    const verifyButton = this.add.rectangle(18, 448, 434, 34, UI_COLORS.command, 1).setOrigin(0);
     verifyButton.setStrokeStyle(1, UI_COLORS.trim);
-    verifyButton.setInteractive({ useHandCursor: true });
-    verifyButton.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
-      pointer.event.stopPropagation();
-      this.verifyCurrentReplay();
-    });
-    const verifyLabel = this.add.text(150, 415, "VERIFY REPLAY", {
+    const verifyLabel = this.add.text(150, 459, "VERIFY REPLAY", {
       fontFamily: "Arial Black, Arial",
       fontSize: "10px",
       color: UI_COLORS.text
     });
-    const replayButton = this.add.rectangle(18, 448, 434, 34, UI_COLORS.commandActive, 1).setOrigin(0);
+    const replayButton = this.add.rectangle(18, 492, 434, 34, UI_COLORS.commandActive, 1).setOrigin(0);
     replayButton.setStrokeStyle(1, UI_COLORS.trim);
-    replayButton.setInteractive({ useHandCursor: true });
-    replayButton.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
-      pointer.event.stopPropagation();
-      this.toggleReplayReview();
-    });
-    this.replayControlLabel = this.add.text(164, 459, "REVIEW REIGN", {
+    this.replayControlLabel = this.add.text(164, 503, "REVIEW REIGN", {
       fontFamily: "Arial Black, Arial",
       fontSize: "10px",
       color: UI_COLORS.text
     });
-    const motionButton = this.add.rectangle(18, 492, 434, 34, UI_COLORS.command, 1).setOrigin(0);
+    const motionButton = this.add.rectangle(18, 536, 434, 34, UI_COLORS.command, 1).setOrigin(0);
     motionButton.setStrokeStyle(1, UI_COLORS.trim);
-    motionButton.setInteractive({ useHandCursor: true });
-    motionButton.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
-      pointer.event.stopPropagation();
-      this.toggleReducedMotion();
-    });
-    this.motionControlLabel = this.add.text(138, 503, "MOTION // FULL", {
+    this.motionControlLabel = this.add.text(138, 547, "MOTION // FULL", {
       fontFamily: "Arial Black, Arial",
       fontSize: "10px",
       color: UI_COLORS.text
@@ -1200,6 +1191,10 @@ export class MilestoneOneScene extends Phaser.Scene {
       loadButton,
       saveLabel,
       loadLabel,
+      exportButton,
+      importButton,
+      exportLabel,
+      importLabel,
       verifyButton,
       verifyLabel,
       replayButton,
@@ -1209,6 +1204,38 @@ export class MilestoneOneScene extends Phaser.Scene {
     ]);
     this.bookPanel.setScrollFactor(0).setDepth(70).setVisible(false);
     this.updateBookOfLessons();
+  }
+
+  private handleBookPointerDown(localX: number, localY: number): void {
+    this.suppressNextPointerUp = true;
+
+    if (localY >= 360 && localY < 394) {
+      if (localX < 230) {
+        this.saveLocalGame();
+      } else {
+        this.loadLocalGame();
+      }
+      return;
+    }
+    if (localY >= 404 && localY < 438) {
+      if (localX < 230) {
+        this.exportPortableSave();
+      } else {
+        this.requestPortableSaveImport();
+      }
+      return;
+    }
+    if (localY >= 448 && localY < 482) {
+      this.verifyCurrentReplay();
+      return;
+    }
+    if (localY >= 492 && localY < 526) {
+      this.toggleReplayReview();
+      return;
+    }
+    if (localY >= 536 && localY < 570) {
+      this.toggleReducedMotion();
+    }
   }
 
   private createRealmPanel(): void {
@@ -1686,28 +1713,87 @@ export class MilestoneOneScene extends Phaser.Scene {
         this.updateUi(["No local save is available."]);
         return;
       }
-      this.disconnectFromMultiplayer();
-      this.simulation = restoreSaveGame(deserializeSaveGame(serialized));
-      this.campaignDifficulty = this.simulation.getState().rivalDifficulty;
-      this.campaignScenario = this.simulation.getState().scenarioId;
-      this.restoreReplayOrigin();
-      this.campaignSetupPending = false;
-      this.campaignSetupPanel.setVisible(false);
-      this.campaignSetupInput?.setVisible(false).disableInteractive();
-      this.paused = false;
-      this.pauseControlLabel.setText("PAUSE");
-      this.inspectedSettlementId = "settlement-capital";
-      this.lastLessonEventId = undefined;
-      this.lessonBanner.setVisible(false);
-      this.replayReview = undefined;
-      this.clearSelection();
-      this.clearControlGroups();
-      this.centerCameraOnSettlement(this.inspectedSettlementId);
-      this.renderWorld();
+      const save = deserializeSaveGame(serialized);
+      this.restoreSavedReign(save, this.readLocalReplayOrigin() ?? save.world);
       this.updateUi(["Local save restored."]);
     } catch {
       this.updateUi(["Local save could not be restored."]);
     }
+  }
+
+  private exportPortableSave(): void {
+    if (this.remoteAuthority) {
+      this.updateUi(["Leave multiplayer before exporting a local reign."]);
+      return;
+    }
+    try {
+      const archive = createPortableSaveArchive(this.simulation, this.campaignInitialWorld);
+      const data = new Blob([serializePortableSaveArchive(archive)], { type: "application/json" });
+      const url = URL.createObjectURL(data);
+      const download = document.createElement("a");
+      download.href = url;
+      download.download = createPortableSaveFilename(this.simulation.getState());
+      download.click();
+      window.setTimeout(() => URL.revokeObjectURL(url), 0);
+      this.updateUi(["Portable reign exported from the Book of Lessons."]);
+    } catch {
+      this.updateUi(["Portable save could not be exported in this browser."]);
+    }
+  }
+
+  private requestPortableSaveImport(): void {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".tll,application/json";
+    input.style.display = "none";
+    input.addEventListener(
+      "change",
+      () => {
+        const file = input.files?.[0];
+        input.remove();
+        if (file) {
+          void this.importPortableSave(file);
+        }
+      },
+      { once: true }
+    );
+    document.body.append(input);
+    input.click();
+  }
+
+  private async importPortableSave(file: File): Promise<void> {
+    try {
+      const archive = deserializePortableSaveArchive(await file.text());
+      this.restorePortableSave(archive);
+      this.updateUi(["Portable reign restored. The Book retains its original lesson history."]);
+    } catch {
+      this.updateUi(["That .tll archive could not be restored."]);
+    }
+  }
+
+  private restorePortableSave(archive: PortableSaveArchive): void {
+    this.restoreSavedReign(archive.save, archive.campaignInitialWorld);
+  }
+
+  private restoreSavedReign(save: SaveGame, campaignInitialWorld: WorldState): void {
+    this.disconnectFromMultiplayer();
+    this.simulation = restoreSaveGame(save);
+    this.campaignInitialWorld = structuredClone(campaignInitialWorld);
+    this.campaignDifficulty = this.simulation.getState().rivalDifficulty;
+    this.campaignScenario = this.simulation.getState().scenarioId;
+    this.campaignSetupPending = false;
+    this.campaignSetupPanel.setVisible(false);
+    this.campaignSetupInput?.setVisible(false).disableInteractive();
+    this.paused = false;
+    this.pauseControlLabel.setText("PAUSE");
+    this.inspectedSettlementId = "settlement-capital";
+    this.lastLessonEventId = undefined;
+    this.lessonBanner.setVisible(false);
+    this.replayReview = undefined;
+    this.clearSelection();
+    this.clearControlGroups();
+    this.centerCameraOnSettlement(this.inspectedSettlementId);
+    this.renderWorld();
   }
 
   private hasLocalSave(): boolean {
@@ -1730,19 +1816,20 @@ export class MilestoneOneScene extends Phaser.Scene {
     }
   }
 
-  private restoreReplayOrigin(): void {
+  private readLocalReplayOrigin(): WorldState | undefined {
     try {
       const serialized = window.localStorage.getItem(LOCAL_REPLAY_ORIGIN_KEY);
       if (!serialized) {
-        return;
+        return undefined;
       }
       const candidate = JSON.parse(serialized) as Partial<WorldState>;
       if (typeof candidate.tick === "number" && typeof candidate.seed === "number" && candidate.empires && candidate.settlements) {
-        this.campaignInitialWorld = candidate as WorldState;
+        return candidate as WorldState;
       }
     } catch {
-      // The active save remains valid even if its optional replay origin was not retained.
+      // A local save remains valid even if its optional replay origin was not retained.
     }
+    return undefined;
   }
 
   private verifyCurrentReplay(): void {
@@ -2320,9 +2407,12 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.audioControl.setScale(narrow ? 0.7 : 1);
     this.audioControl.setPosition(narrow ? -168 : compact ? -246 : 0, narrow ? 48 : 0);
     this.resourceText.setPosition(compact ? 18 : 758, narrow ? 88 : compact ? 47 : 19);
-    this.bookControl.setScale(narrow ? 0.7 : 1);
+    const headerControlScale = narrow ? 0.7 : 1;
+    const headerControlOffsetX = narrow ? -115 : 0;
+    const headerControlOffsetY = narrow ? 48 : 0;
+    this.bookControl.setScale(headerControlScale);
     this.realmControl.setScale(narrow ? 0.7 : 1);
-    this.bookControl.setPosition(narrow ? -115 : 0, narrow ? 48 : 0);
+    this.bookControl.setPosition(headerControlOffsetX, headerControlOffsetY);
     this.realmControl.setPosition(narrow ? -113 : 0, narrow ? 48 : 0);
     const bookScale = narrow ? Math.min(1, (width - 32) / 470) : 1;
     const realmScale = narrow ? Math.min(1, (width - 32) / 384) : 1;
@@ -2334,7 +2424,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.campaignSetupPanel.setScale(campaignScale);
     this.bookPanel.setPosition(
       Math.max(16, Math.round((width - 470 * bookScale) / 2)),
-      Math.max(topHeight + 18, Math.round((height - 546 * bookScale) / 2))
+      Math.max(topHeight + 18, Math.round((height - BOOK_PANEL_HEIGHT * bookScale) / 2))
     );
     this.realmPanel.setPosition(
       Math.max(16, Math.round((width - 384 * realmScale) / 2)),
@@ -2476,6 +2566,18 @@ export class MilestoneOneScene extends Phaser.Scene {
   }
 
   private handlePointerDown(pointer: Phaser.Input.Pointer): void {
+    if (this.isPrimaryClick(pointer) && this.isBookControlPointer(pointer)) {
+      this.toggleBookOfLessons();
+      return;
+    }
+
+    if (this.isPrimaryClick(pointer) && this.bookPanelExpanded && this.isBookPanelPointer(pointer)) {
+      const localX = (pointer.x - this.bookPanel.x) / this.bookPanel.scaleX;
+      const localY = (pointer.y - this.bookPanel.y) / this.bookPanel.scaleY;
+      this.handleBookPointerDown(localX, localY);
+      return;
+    }
+
     if (pointer.y < this.topHud.height) {
       return;
     }
@@ -2505,6 +2607,23 @@ export class MilestoneOneScene extends Phaser.Scene {
     if (this.mode === "building") {
       this.updatePlacementPreview(worldPoint);
     }
+  }
+
+  private isBookControlPointer(pointer: Phaser.Input.Pointer): boolean {
+    const narrow = this.scale.width < 640;
+    const scale = narrow ? 0.7 : 1;
+    const x = 190 * scale + (narrow ? -115 : 0);
+    const y = 14 * scale + (narrow ? 48 : 0);
+    return pointer.x >= x && pointer.x < x + 118 * scale && pointer.y >= y && pointer.y < y + 30 * scale;
+  }
+
+  private isBookPanelPointer(pointer: Phaser.Input.Pointer): boolean {
+    return (
+      pointer.x >= this.bookPanel.x &&
+      pointer.x < this.bookPanel.x + 470 * this.bookPanel.scaleX &&
+      pointer.y >= this.bookPanel.y &&
+      pointer.y < this.bookPanel.y + BOOK_PANEL_HEIGHT * this.bookPanel.scaleY
+    );
   }
 
   private handlePointerMove(pointer: Phaser.Input.Pointer): void {

@@ -34,6 +34,19 @@ async function beginCrownfallRivalReign(page: Page): Promise<void> {
   await expect(page.locator("#the-last-lesson-announcements")).toContainText("CROWNFALL reign begins");
 }
 
+async function clickCanvasPoint(page: Page, point: { x: number; y: number }): Promise<void> {
+  const canvas = page.locator("canvas");
+  const bounds = await canvas.boundingBox();
+  if (!bounds) {
+    throw new Error("Tactical canvas did not expose a layout box.");
+  }
+  const resolution = await canvas.evaluate((element: HTMLCanvasElement) => ({ width: element.width, height: element.height }));
+  await page.mouse.click(
+    bounds.x + (point.x / resolution.width) * bounds.width,
+    bounds.y + (point.y / resolution.height) * bounds.height
+  );
+}
+
 test("launches the campaign theatre and begins a Crownfall reign", async ({ page }) => {
   const pageErrors: Error[] = [];
   const assetUrls: string[] = [];
@@ -65,6 +78,31 @@ test("renders a usable tactical canvas on a phone-sized viewport", async ({ page
   await expectRenderedCanvas(page);
   await beginCrownfallRivalReign(page);
   expect(pageErrors).toEqual([]);
+});
+
+test("exports a portable reign archive from the Book of Lessons", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto("/");
+  await beginCrownfallRivalReign(page);
+  await clickCanvasPoint(page, { x: 249, y: 29 });
+  await expect(page.locator("#the-last-lesson-announcements")).toContainText("Book of Lessons opened");
+
+  const resolution = await page.locator("canvas").evaluate((element: HTMLCanvasElement) => ({
+    width: element.width,
+    height: element.height
+  }));
+  const topHeight = resolution.width < 640 ? 122 : resolution.width < 900 ? 94 : 58;
+  const bookScale = resolution.width < 640 ? Math.min(1, (resolution.width - 32) / 470) : 1;
+  const bookPanelX = Math.max(16, Math.round((resolution.width - 470 * bookScale) / 2));
+  const bookPanelY = Math.max(topHeight + 18, Math.round((resolution.height - 590 * bookScale) / 2));
+
+  const download = page.waitForEvent("download");
+  await clickCanvasPoint(page, {
+    x: bookPanelX + 120 * bookScale,
+    y: bookPanelY + 421 * bookScale
+  });
+
+  await expect((await download).suggestedFilename()).toMatch(/^the-last-lesson-crownfall-tick-\d+\.tll$/);
 });
 
 test("retains the installed campaign shell through an offline reload", async ({ page, context }) => {
