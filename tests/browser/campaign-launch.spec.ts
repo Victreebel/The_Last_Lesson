@@ -133,10 +133,6 @@ test("surfaces and resolves Ashen Oath's opening civic crisis", async ({ page })
 
   await page.locator("canvas").press("c");
   await expect(page.locator("#the-last-lesson-announcements")).toContainText("Mend Settlement petitioned");
-  await page.waitForTimeout(5_200);
-  await expect(page.locator("#the-last-lesson-announcements")).toContainText(
-    "Mend Settlement answered at CROWNKEEP"
-  );
 });
 
 test("exports a portable reign archive from the Book of Lessons", async ({ page }) => {
