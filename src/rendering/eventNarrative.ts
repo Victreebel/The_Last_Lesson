@@ -6,6 +6,41 @@ export interface EventNarrativeContext {
   readonly entityName: (id: string | undefined) => string;
 }
 
+const TACTICAL_EVENT_PRIORITY: Partial<Record<GameEvent["type"], number>> = {
+  "victory-achieved": 100,
+  "settlement-captured": 100,
+  "settlement-defected": 100,
+  "miracle-cast": 95,
+  starvation: 90,
+  "plague-started": 90,
+  "plague-spread": 90,
+  "housing-destroyed": 90,
+  "heir-concern": 85,
+  "heir-decision": 80,
+  "doctrine-observed": 75,
+  "doctrine-reinforced": 75,
+  "doctrine-disciplined": 75,
+  "battle-morale-shifted": 70,
+  "entity-destroyed": 70,
+  "captives-liberated": 70,
+  "captive-escape": 70,
+  "religious-pressure-changed": 60,
+  "supply-delivered": 55,
+  "supply-changed": 55
+};
+
+/**
+ * Background economy events remain in the Book, while the Uplink favors the
+ * consequential reports a commander needs to react to right now.
+ */
+export const selectTacticalReportEvents = (events: readonly GameEvent[], limit = 5): GameEvent[] => {
+  const strategic = events.filter((event) => (TACTICAL_EVENT_PRIORITY[event.type] ?? 0) > 0);
+  const source = strategic.length > 0 ? strategic : events;
+  return [...source]
+    .sort((left, right) => (TACTICAL_EVENT_PRIORITY[left.type] ?? 0) - (TACTICAL_EVENT_PRIORITY[right.type] ?? 0))
+    .slice(-limit);
+};
+
 const getString = (event: GameEvent, key: string): string | undefined => {
   const value = event.payload[key];
   return typeof value === "string" ? value : undefined;

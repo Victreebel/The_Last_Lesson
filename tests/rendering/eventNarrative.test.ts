@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { describeGameEvent } from "../../src/rendering/eventNarrative";
+import { describeGameEvent, selectTacticalReportEvents } from "../../src/rendering/eventNarrative";
 import type { GameEvent } from "../../src/simulation/events/GameEvent";
 
 const context = {
@@ -51,5 +51,20 @@ describe("event narrative", () => {
         context
       )
     ).toBe("Mend Settlement answered at Crownkeep, restoring 30 health and ending the plague.");
+  });
+
+  it("keeps decisive reports ahead of routine production in the Tactical Uplink", () => {
+    const reports = selectTacticalReportEvents([
+      event("faith-produced", { settlementId: "settlement-capital", amount: 4 }),
+      event("miracle-cast", {
+        miracle: "mend-settlement",
+        settlementId: "settlement-capital",
+        restoredHealth: 30,
+        plagueCleansed: true
+      }),
+      event("doctrine-observed", { heirId: "heir-capital", action: "mend-settlement", confidence: 22 })
+    ]);
+
+    expect(reports.at(-1)?.type).toBe("miracle-cast");
   });
 });

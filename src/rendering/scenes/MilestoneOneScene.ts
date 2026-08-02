@@ -7,7 +7,7 @@ import type { RemoteConnectionState } from "../../networking/RemoteAuthorityClie
 import type { AuthoritySnapshot } from "../../networking/LocalAuthority";
 import type { ServerMessage } from "../../networking/protocol";
 import { AudioDirector } from "../AudioDirector";
-import { describeGameEvent } from "../eventNarrative";
+import { describeGameEvent, selectTacticalReportEvents } from "../eventNarrative";
 import { Simulation } from "../../simulation/Simulation";
 import type { GameCommand } from "../../simulation/commands/GameCommand";
 import type { GameEvent } from "../../simulation/events/GameEvent";
@@ -978,7 +978,7 @@ export class MilestoneOneScene extends Phaser.Scene {
       this.updateUi(["Replay reached the live reign's current tick. Return to continue commanding."]);
       return;
     }
-    this.updateUi(result.events.map((event) => this.describeEvent(event)).slice(-5));
+    this.updateUi(this.getTacticalReports(result.events));
   }
 
   private openMultiplayerLobby(): void {
@@ -1078,7 +1078,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.renderWorld();
     this.playCombatFeedback(snapshot.recentEvents);
     this.playMiracleFeedback(snapshot.recentEvents);
-    this.updateUi(snapshot.recentEvents.map((event) => this.describeEvent(event)).slice(-5));
+    this.updateUi(this.getTacticalReports(snapshot.recentEvents));
   }
 
   private createLessonBanner(): void {
@@ -3926,6 +3926,10 @@ export class MilestoneOneScene extends Phaser.Scene {
       heirName: (id) => state.heirs[id ?? ""]?.name ?? "AN HEIR",
       entityName: (id) => this.getEntityDisplayName(id)
     });
+  }
+
+  private getTacticalReports(events: readonly GameEvent[]): string[] {
+    return selectTacticalReportEvents(events).map((event) => this.describeEvent(event));
   }
 
   private getEntityDisplayName(id: string | undefined): string {
