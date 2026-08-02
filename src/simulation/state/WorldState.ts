@@ -154,6 +154,7 @@ export interface SettlementState {
   readonly internalFaith: number;
   readonly externalReligiousPressure: number;
   readonly religiousWardTicks: number;
+  readonly plagueTicks?: number;
   readonly pressures: SettlementPressures;
 }
 
@@ -401,6 +402,7 @@ export function createInitialWorld(
         internalFaith: 50,
         externalReligiousPressure: 0,
         religiousWardTicks: 0,
+        plagueTicks: 0,
         pressures: {
           food: 20,
           supply: 0,
@@ -443,6 +445,7 @@ export function createInitialWorld(
         internalFaith: 45,
         externalReligiousPressure: 0,
         religiousWardTicks: 0,
+        plagueTicks: 0,
         pressures: {
           food: 20,
           supply: 0,
@@ -485,6 +488,7 @@ export function createInitialWorld(
         internalFaith: 42,
         externalReligiousPressure: 0,
         religiousWardTicks: 0,
+        plagueTicks: 0,
         pressures: {
           food: 24,
           supply: 0,

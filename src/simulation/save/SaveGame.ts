@@ -80,7 +80,8 @@ export function deserializeSaveGame(serialized: string): SaveGame {
             },
             religiousWardTicks: Number.isInteger(settlement.religiousWardTicks)
               ? settlement.religiousWardTicks
-              : 0
+              : 0,
+            plagueTicks: Number.isInteger(settlement.plagueTicks) ? settlement.plagueTicks : 0
           }
         ])
       )

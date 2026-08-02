@@ -108,6 +108,7 @@ Implemented:
 - Moats now complete the original defensive construction set. They halve enemy battalion and land-caravan movement in their perimeter and expose the modifier in movement events.
 - Battalions now persist combat experience and derive Militia through Legendary ranks. Experience rewards successful fighting and gives veterans stronger morale discipline during supply collapse without direct attack-stat inflation.
 - Civic Memory now records captives taken, integrated, and released as durable history rather than an abstract morality meter. Unresolved captivity adds explainable rebellion pressure across an empire.
+- Settlement health now has a deterministic plague cycle. Critical health plus food pressure starts a short localized outbreak, with visible deaths and social consequences across three world ticks.
 
 ## Milestone 4: Persistence Foundation
 

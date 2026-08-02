@@ -99,6 +99,7 @@ export class Simulation {
       this.updateEconomy(nextTick);
       this.updateConstruction(nextTick);
       this.updatePopulation(nextTick);
+      this.updateSickness(nextTick);
       this.updateBattalionMovement(nextTick);
       this.updateCaravanMovement(nextTick);
       this.updateCaravanDeliveries(nextTick);
@@ -1779,6 +1780,55 @@ export class Simulation {
       };
       if (births > 0) {
         this.eventWriter.emit(tick, "population-grown", { settlementId: settlement.id, births });
+      }
+    }
+  }
+
+  private updateSickness(tick: number): void {
+    for (const settlement of Object.values(this.state.settlements).sort((left, right) =>
+      left.id.localeCompare(right.id)
+    )) {
+      const population = settlement.population;
+      const totalPopulation = population.citizens + population.captives;
+      const startsOutbreak =
+        (settlement.plagueTicks ?? 0) === 0 &&
+        totalPopulation >= 12 &&
+        population.health <= 35 &&
+        settlement.pressures.food >= 30;
+      const plagueTicks = settlement.plagueTicks ?? 0;
+      if (!startsOutbreak && plagueTicks === 0) {
+        continue;
+      }
+
+      const activeTicks = startsOutbreak ? 3 : plagueTicks;
+      const nextPlagueTicks = Math.max(0, activeTicks - 1);
+      const deaths = Math.min(population.citizens, Math.max(1, Math.floor(totalPopulation / 24)));
+      const nextPopulation = {
+        ...population,
+        citizens: population.citizens - deaths,
+        militarizedCitizens: Math.min(population.militarizedCitizens, population.citizens - deaths),
+        health: Math.max(0, population.health - 4),
+        happiness: Math.max(0, population.happiness - 4),
+        loyalty: Math.max(0, population.loyalty - 2)
+      };
+      this.state = {
+        ...this.state,
+        settlements: {
+          ...this.state.settlements,
+          [settlement.id]: { ...settlement, plagueTicks: nextPlagueTicks, population: nextPopulation }
+        }
+      };
+
+      if (startsOutbreak) {
+        this.eventWriter.emit(tick, "plague-started", { settlementId: settlement.id, plagueTicks: 3 });
+      }
+      this.eventWriter.emit(tick, "plague-spread", {
+        settlementId: settlement.id,
+        deaths,
+        plagueTicks: nextPlagueTicks
+      });
+      if (nextPlagueTicks === 0) {
+        this.eventWriter.emit(tick, "plague-ended", { settlementId: settlement.id });
       }
     }
   }

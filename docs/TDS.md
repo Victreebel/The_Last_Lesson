@@ -458,6 +458,8 @@ Population points are gained every world tick from food production and housing c
 
 Citizens require Villas. Captives require Hovels. Insufficient housing should be prevented by construction rules and UI warnings. If caused by destruction, overflow population enters emergency state and becomes vulnerable to death, escape, or rebellion.
 
+Critically weakened settlements can suffer a localized outbreak. An outbreak begins only when health is `35` or lower, food pressure is at least `30`, and at least twelve people live in the settlement. It lasts three world ticks, reducing citizens, health, happiness, and loyalty. This is deterministic pressure, not a hidden random roll, and start, spread, and end events make every stage inspectable.
+
 ### 9.3 Captive Rules
 
 Captives:

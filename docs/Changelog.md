@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.46.0 - 2026-08-01
+
+- Added deterministic local outbreaks for critically unhealthy, food-pressured settlements. Plagues run for three inspectable world ticks, reducing population, health, happiness, and loyalty without relying on hidden random rolls.
+
 ## 1.45.0 - 2026-08-01
 
 - Added an empire-level Civic Record for captives taken, integrated, and released. This factual moral memory creates an explainable unresolved-captivity burden in rebellion pressure rather than a generic morality score.
