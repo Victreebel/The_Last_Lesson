@@ -33,6 +33,13 @@ pnpm dev
 
 Open the URL printed by Vite, normally `http://127.0.0.1:5173/`.
 
+To inspect the production bundle locally:
+
+```sh
+pnpm build
+pnpm preview
+```
+
 ## Core Controls
 
 - Arrow keys: pan the tactical camera.
@@ -56,6 +63,8 @@ pnpm test
 ```
 
 The test suite covers deterministic simulation, saves, captures, doctrine learning, faith/religion, population, terrain, combat specialization, logistics, naval transport, garrisons, captive policy, visibility, and campaign scale.
+
+GitHub Actions runs this same test-and-build gate for every pull request and every push to `main`.
 
 ## Stack
 

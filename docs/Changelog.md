@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.65.0 - 2026-08-01
+
+- Added a GitHub Actions quality gate that installs with the locked dependency graph, runs the full deterministic suite, and builds the browser release on every pull request and main-branch push.
+- Added `pnpm preview` for a production-bundle local smoke test.
+
 ## 1.64.0 - 2026-08-01
 
 - Added deterministic clear-muster selection around a Castle. New player-trained and heir-trained battalions now avoid overlapping buildings and existing field forces; Stonewall's first defender no longer spawns on its gate.
