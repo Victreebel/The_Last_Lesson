@@ -218,7 +218,11 @@ export class Simulation {
       }
 
       const buildingCount = settlement.buildingIds.length + 1;
-      const buildingId = `building-${command.payload.kind}-${tick}-${buildingCount}`;
+      const buildingId = this.createUniqueEntityId(
+        `building-${command.payload.kind}-${tick}-${buildingCount}`,
+        this.state.buildings,
+        settlement.id
+      );
       const buildingStats = getBuildingStats(command.payload.kind);
       const building: BuildingState = {
         id: buildingId,
@@ -300,7 +304,11 @@ export class Simulation {
       }
 
       const castle = this.state.buildings[settlement.centralBuildingId];
-      const battalionId = `battalion-${tick}-${settlement.battalionIds.length + 1}`;
+      const battalionId = this.createUniqueEntityId(
+        `battalion-${tick}-${settlement.battalionIds.length + 1}`,
+        this.state.battalions,
+        settlement.id
+      );
       const battalion: BattalionState = {
         id: battalionId,
         ownerEmpireId: settlement.ownerEmpireId,
@@ -375,7 +383,11 @@ export class Simulation {
         return;
       }
       const castle = this.state.buildings[settlement.centralBuildingId];
-      const caravanId = `caravan-${tick}-${settlement.caravanIds.length + 1}`;
+      const caravanId = this.createUniqueEntityId(
+        `caravan-${tick}-${settlement.caravanIds.length + 1}`,
+        this.state.caravans,
+        settlement.id
+      );
       const caravan: CaravanState = {
         id: caravanId,
         ownerEmpireId: settlement.ownerEmpireId,
@@ -426,7 +438,11 @@ export class Simulation {
         this.eventWriter.emit(tick, "command-rejected", { commandId: command.id });
         return;
       }
-      const shipId = `ship-${tick}-${settlement.caravanIds.length + 1}`;
+      const shipId = this.createUniqueEntityId(
+        `ship-${tick}-${settlement.caravanIds.length + 1}`,
+        this.state.caravans,
+        settlement.id
+      );
       const ship: CaravanState = {
         id: shipId, ownerEmpireId: settlement.ownerEmpireId, settlementId: settlement.id, kind: "ship", position: launch,
         cargoFood: foodLoad, capacity: 52, passengerBattalionIds: [], defense: 110, maxDefense: 110, speed: 56
@@ -1824,6 +1840,24 @@ export class Simulation {
     const lumberjacks = release(population.lumberjacks);
     const farmers = release(population.farmers);
     return { ...population, farmers, builders, lumberjacks, miners, luxuryWorkers };
+  }
+
+  private createUniqueEntityId(
+    baseId: string,
+    entities: Readonly<Record<string, unknown>>,
+    settlementId: string
+  ): string {
+    if (!entities[baseId]) {
+      return baseId;
+    }
+
+    let ordinal = 2;
+    let candidate = `${baseId}-${settlementId}-${ordinal}`;
+    while (entities[candidate]) {
+      ordinal += 1;
+      candidate = `${baseId}-${settlementId}-${ordinal}`;
+    }
+    return candidate;
   }
 
   private updateEconomy(tick: number): void {

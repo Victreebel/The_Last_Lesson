@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.90.0 - 2026-08-02
+
+- Hardened runtime entity creation for multi-settlement reigns. Same-tick building, battalion, caravan, and Warship production now resolves a deterministic settlement-scoped suffix only when its legacy-shaped base ID is already occupied.
+- Added a replay regression proving simultaneous Crown production in two settlements remains independently addressable rather than overwriting one creation with the other.
+
 ## 1.89.0 - 2026-08-02
 
 - Mobilizing citizens into a player- or governor-raised battalion now deterministically retires excess civilian labor, preserving food production after construction, luxury, mining, and lumber roles.
