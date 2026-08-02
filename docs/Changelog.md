@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.2.3 - 2026-08-02
+
+- Production builds now generate a content-addressed service worker that precaches the exact shell, split engine, art, manifest, and icons in the emitted artifact. Browser coverage verifies an installed campaign survives an offline reload.
+
 ## 2.2.2 - 2026-08-02
 
 - Extended the production browser gate so a phone-sized campaign theatre must select the Crownfall Rival doctrine and begin a reign, not merely draw a nonblank canvas.

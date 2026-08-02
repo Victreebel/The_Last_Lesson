@@ -66,3 +66,21 @@ test("renders a usable tactical canvas on a phone-sized viewport", async ({ page
   await beginCrownfallRivalReign(page);
   expect(pageErrors).toEqual([]);
 });
+
+test("retains the installed campaign shell through an offline reload", async ({ page, context }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto("/");
+  await expect(page.locator("canvas")).toBeVisible();
+  await page.waitForFunction(async () => Boolean((await navigator.serviceWorker.ready).active));
+  await page.waitForFunction(() => Boolean(navigator.serviceWorker.controller));
+
+  await context.setOffline(true);
+  try {
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await expect(page.locator("canvas")).toBeVisible();
+    await page.waitForTimeout(500);
+    await expectRenderedCanvas(page);
+  } finally {
+    await context.setOffline(false);
+  }
+});
