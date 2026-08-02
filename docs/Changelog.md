@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.84.0 - 2026-08-02
+
+- Expanded the Heir console's latest-lesson record to show doctrine domain, observed condition, intended purpose, and confidence alongside the governor's autonomous utility decision.
+- Kept the expanded explanation presentation-only: doctrine formation, confidence, rewards, punishments, saves, replays, and multiplayer authority are unchanged.
+
 ## 1.83.0 - 2026-08-02
 
 - Added a persistent `MOTION // FULL` / `MOTION // REDUCED` preference in the Book of Lessons.

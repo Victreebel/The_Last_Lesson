@@ -1882,8 +1882,8 @@ export class MilestoneOneScene extends Phaser.Scene {
       this.heirPanelBody
     ]);
     this.heirPanel.setScrollFactor(0).setDepth(40).setSize(HEIR_PANEL_WIDTH, 48);
-    this.addHeirFeedbackButton(14, 258, "REWARD", UI_COLORS.commandActive, "reward-heir");
-    this.addHeirFeedbackButton(146, 258, "PUNISH", UI_COLORS.danger, "punish-heir");
+    this.addHeirFeedbackButton(14, 304, "REWARD", UI_COLORS.commandActive, "reward-heir");
+    this.addHeirFeedbackButton(146, 304, "PUNISH", UI_COLORS.danger, "punish-heir");
     this.updateHeirPanel();
   }
 
@@ -1915,7 +1915,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     const heir = this.getActiveHeir();
     const doctrines = this.getHeirDoctrines(heir);
     const lastDoctrine = heir?.lastDoctrineId ? this.simulation.getState().doctrines[heir.lastDoctrineId] : undefined;
-    const height = this.heirPanelExpanded ? 350 : 48;
+    const height = this.heirPanelExpanded ? 396 : 48;
 
     this.heirPanelBg.setSize(HEIR_PANEL_WIDTH, height);
     this.heirPanel.setSize(HEIR_PANEL_WIDTH, height);
@@ -1935,8 +1935,11 @@ export class MilestoneOneScene extends Phaser.Scene {
     if (this.heirPanelExpanded) {
       const convictionLines = doctrines.length
         ? doctrines
-            .slice(0, 3)
-            .map((doctrine) => `- ${doctrine.preferredAction.toUpperCase()}  ${doctrine.confidence}%`)
+            .slice(0, 2)
+            .map(
+              (doctrine) =>
+                `- ${doctrine.domain.toUpperCase()} // ${doctrine.preferredAction.toUpperCase()}  ${doctrine.confidence}%`
+            )
         : ["- No observed doctrine yet."];
       this.heirPanelBody.setText(
         [
@@ -1948,8 +1951,10 @@ export class MilestoneOneScene extends Phaser.Scene {
           "",
           "LAST LESSON:",
           lastDoctrine
-            ? `${lastDoctrine.preferredAction.toUpperCase()}  //  ${lastDoctrine.confidence}%`
+            ? `${lastDoctrine.domain.toUpperCase()} // ${lastDoctrine.preferredAction.toUpperCase()}  ${lastDoctrine.confidence}%`
             : "Awaiting the God-King's example.",
+          lastDoctrine ? `WHEN: ${lastDoctrine.condition.toUpperCase()}` : "WHEN: A command is observed.",
+          lastDoctrine ? `PURPOSE: ${lastDoctrine.goal.toUpperCase()}` : "PURPOSE: SHAPE FUTURE GOVERNANCE.",
           "",
           "GOVERNANCE:",
           heir?.lastDecision
