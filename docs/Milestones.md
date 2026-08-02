@@ -126,6 +126,7 @@ Implemented:
 - Runtime production now protects same-tick multi-settlement commands from entity-ID collisions. A deterministic settlement-scoped suffix preserves separately created buildings, battalions, caravans, and Warships without changing existing single-settlement replay identifiers.
 - Campaign-health coverage now also validates the 180-tick campaign clock in all four theatres: a standard economic opening remains viable while a rival expedition has begun to damage the Crown throne, creating pressure without an unattended early defeat.
 - The Tactical Uplink now projects the selected Rival Doctrine opening countdown before hostile contact, making the campaign's fair early pressure legible without revealing fogged battlefield state.
+- The static single-player build now has a GitHub Pages release pipeline. It independently runs the release gate, builds with the repository subpath, and deploys the verified artifact when Pages is enabled for the repository.
 
 ## Milestone 4: Persistence Foundation
 

@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.94.0 - 2026-08-02
+
+- Added an automated GitHub Pages release workflow. Every `main` push now rebuilds the verified static campaign with the repository base path and deploys it through GitHub Pages once that publishing source is enabled in repository settings.
+- Kept the public release boundary honest: Pages serves the full single-player campaign, while authoritative multiplayer still requires its own WebSocket host.
+
 ## 1.93.0 - 2026-08-02
 
 - Added an opening Rival Doctrine countdown to the Tactical Uplink. It makes the selected fair-difficulty grace window legible before the first enemy is visible, giving a new reign a clear strategic tempo without disclosing hidden units or changing the simulation.

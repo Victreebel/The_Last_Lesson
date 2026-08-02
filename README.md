@@ -86,6 +86,12 @@ pnpm check
 
 GitHub Actions runs the same check for every pull request and `main` push, then retains the verified web build as the `the-last-lesson-web` artifact for fourteen days.
 
+## Web Release
+
+Every verified `main` push also runs a GitHub Pages deployment workflow with the repository base path configured for the static build. Enable GitHub Pages with **GitHub Actions** as the publishing source once in the repository settings; after the first successful deployment, the campaign will be available at `https://victreebel.github.io/The_Last_Lesson/`.
+
+GitHub Pages serves the complete single-player experience. Multiplayer still requires a separately hosted WebSocket authority, so public matchmaking and account-backed online play remain a later delivery milestone.
+
 ```sh
 pnpm build
 pnpm test
