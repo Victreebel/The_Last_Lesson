@@ -833,6 +833,10 @@ Rebellion Pressure =
 
 No single threshold should be the only cause of rebellion.
 
+### 15.4a Moral Memory
+
+Each empire records factual captive actions: captives taken, integrated, and released. This is not a good/evil meter. The unresolved captivity burden is derived as `max(0, floor((taken - integrated - released * 2) / 4))` and contributes directly to rebellion pressure. Releasing and integrating people are therefore strategic acts with a persistent social consequence. `moral-memory-changed` events expose the exact record after every action.
+
 ### 15.5 Settlement Defection
 
 Defection is a rare territorial failure, not another damage mechanic. A settlement defects only when all of the following are true on a world tick:

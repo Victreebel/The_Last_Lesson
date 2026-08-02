@@ -708,6 +708,7 @@ export class Simulation {
         settlementId: settlement.id,
         count
       });
+      this.recordMoralMemory(settlement.ownerEmpireId, "captivesIntegrated", count, tick);
       this.observePlayerCommand(command, tick);
       return;
     }
@@ -742,6 +743,7 @@ export class Simulation {
         count,
         reason: "royal-decree"
       });
+      this.recordMoralMemory(settlement.ownerEmpireId, "captivesReleased", count, tick);
       this.observePlayerCommand(command, tick);
       return;
     }
@@ -1267,6 +1269,7 @@ export class Simulation {
           count,
           heirId: currentHeir.id
         });
+        this.recordMoralMemory(currentSettlement.ownerEmpireId, "captivesIntegrated", count, tick);
         this.recordHeirDecision(
           currentHeir.id,
           "Assimilate captives",
@@ -1852,6 +1855,7 @@ export class Simulation {
       const captiveRatio = totalPopulation === 0 ? 0 : (settlement.population.captives / totalPopulation) * 100;
       const captiveCapacity = this.getCaptiveCapacity(settlement.id);
       const overcrowding = Math.max(0, settlement.population.captives - captiveCapacity);
+      const moralBurden = this.getMoralBurden(this.state.empires[settlement.ownerEmpireId]);
       const rebellionPressure = Math.max(
         0,
         Math.min(
@@ -1862,7 +1866,8 @@ export class Simulation {
               settlement.internalFaith * 0.3 -
               settlement.population.loyalty * 0.25 -
               garrisonStrength * 1.5 +
-              overcrowding * 4
+              overcrowding * 4 +
+              moralBurden
           )
         )
       );
@@ -1887,6 +1892,7 @@ export class Simulation {
           roadPressure: pressureSources.roads,
           caravanPressure: pressureSources.caravans,
           outpostPressure: pressureSources.outposts,
+          moralBurden,
           wardPressure,
           rebellionPressure
         });
@@ -1933,6 +1939,14 @@ export class Simulation {
         0
       );
     return Math.min(18, influence);
+  }
+
+  private getMoralBurden(empire: WorldState["empires"][string] | undefined): number {
+    const memory = empire?.moralMemory;
+    if (!memory) {
+      return 0;
+    }
+    return Math.max(0, Math.floor((memory.captivesTaken - memory.captivesIntegrated - memory.captivesReleased * 2) / 4));
   }
 
   private moatMovementMultiplier(ownerEmpireId: string, position: Position): number {
@@ -2716,7 +2730,27 @@ export class Simulation {
         settlementId: captorSettlement.id,
         count: capturedCount
       });
+      this.recordMoralMemory(captorSettlement.ownerEmpireId, "captivesTaken", capturedCount, tick);
     }
+  }
+
+  private recordMoralMemory(
+    empireId: string,
+    field: keyof import("./state/WorldState").MoralMemory,
+    count: number,
+    tick: number
+  ): void {
+    const empire = this.state.empires[empireId];
+    if (!empire || count <= 0) {
+      return;
+    }
+    const memory = empire.moralMemory ?? { captivesTaken: 0, captivesIntegrated: 0, captivesReleased: 0 };
+    const nextMemory = { ...memory, [field]: memory[field] + count };
+    this.state = {
+      ...this.state,
+      empires: { ...this.state.empires, [empire.id]: { ...empire, moralMemory: nextMemory } }
+    };
+    this.eventWriter.emit(tick, "moral-memory-changed", { empireId, field, count, ...nextMemory });
   }
 
   private captureSettlement(attacker: BattalionState, castleId: string, tick: number): void {

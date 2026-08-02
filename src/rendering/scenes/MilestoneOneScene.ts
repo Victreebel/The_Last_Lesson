@@ -2695,7 +2695,8 @@ export class MilestoneOneScene extends Phaser.Scene {
         `POPULATION: ${settlement.population.citizens}/${this.getCitizenCapacity(settlement.id)}  //  MILITARY: ${settlement.population.militarizedCitizens}  //  GROWTH: ${settlement.population.growthProgress}/80`,
         `LABOR: FARM ${settlement.population.farmers}  BUILD ${settlement.population.builders}  LUMBER ${settlement.population.lumberjacks}  MINE ${settlement.population.miners}  LUX ${settlement.population.luxuryWorkers}`,
         `CAPTIVES: ${settlement.population.captives}/${this.getCaptiveCapacity(settlement.id)}  //  REBELLION: ${settlement.pressures.rebellion}%`,
-        `FAITH: ${settlement.internalFaith}  //  RIVAL PRESSURE: ${settlement.externalReligiousPressure}`
+        `FAITH: ${settlement.internalFaith}  //  RIVAL PRESSURE: ${settlement.externalReligiousPressure}`,
+        `CIVIC RECORD: TAKEN ${empire.moralMemory?.captivesTaken ?? 0}  //  INTEGRATED ${empire.moralMemory?.captivesIntegrated ?? 0}  //  RELEASED ${empire.moralMemory?.captivesReleased ?? 0}`
       ].join("\n")
     );
     const victory = state.victory.winnerEmpireId;

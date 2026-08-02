@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.45.0 - 2026-08-01
+
+- Added an empire-level Civic Record for captives taken, integrated, and released. This factual moral memory creates an explainable unresolved-captivity burden in rebellion pressure rather than a generic morality score.
+
 ## 1.44.0 - 2026-08-01
 
 - Added persistent battalion experience and derived Militia, Regular, Veteran, Elite, and Legendary ranks. Combat awards experience transparently, while experienced forces lose less morale when completely unsupplied.

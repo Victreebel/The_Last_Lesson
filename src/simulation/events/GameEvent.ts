@@ -32,6 +32,7 @@ export type EventType =
   | "captives-taken"
   | "captives-assimilated"
   | "captives-released"
+  | "moral-memory-changed"
   | "captives-liberated"
   | "captive-escape"
   | "doctrine-observed"
