@@ -6,6 +6,7 @@ import { stableHash } from "./hash/stableHash";
 import { SeededRandom } from "./random/SeededRandom";
 import {
   isBuildingTerrainCompatible,
+  isBuildingPlacementClear,
   getBuildingCost,
   getBattalionTraits,
   isPositionVisibleToEmpire,
@@ -202,10 +203,14 @@ export class Simulation {
       const cost = getBuildingCost(command.payload.kind);
       if (
         !isBuildingTerrainCompatible(command.payload.kind, terrain) ||
+        !isBuildingPlacementClear(this.state, command.payload.kind, position) ||
         empire.resources.wood < cost.wood ||
         empire.resources.iron < cost.iron
       ) {
-        this.eventWriter.emit(tick, "command-rejected", { commandId: command.id });
+        this.eventWriter.emit(tick, "command-rejected", {
+          commandId: command.id,
+          reason: !isBuildingPlacementClear(this.state, command.payload.kind, position) ? "occupied" : "invalid-placement"
+        });
         return;
       }
 

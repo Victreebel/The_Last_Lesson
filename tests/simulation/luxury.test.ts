@@ -11,7 +11,7 @@ describe("luxury production", () => {
       issuedBy: "player-1",
       tick: 1,
       type: "place-building",
-      payload: { settlementId: "settlement-capital", kind: "plantation", position: { x: 1100, y: 690 } }
+      payload: { settlementId: "settlement-capital", kind: "plantation", position: { x: 1060, y: 650 } }
     });
     simulation.enqueueCommand({
       id: "assign-luxury-labor",

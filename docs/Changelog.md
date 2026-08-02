@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.52.0 - 2026-08-01
+
+- Added authoritative foundation-clearance rules. Building placement now rejects overlapping structures before resources are spent, and the tactical preview uses the same rule.
+
 ## 1.51.0 - 2026-08-01
 
 - Added explicit Retreat to Crown orders. Retreat clears a battalion's target, routes it to its home Castle, carries a small morale cost, and becomes an observable military lesson.

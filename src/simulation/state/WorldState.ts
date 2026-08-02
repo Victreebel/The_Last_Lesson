@@ -812,6 +812,38 @@ export function getBuildingCost(kind: BuildingKind): ResourceCost {
   }
 }
 
+export function getBuildingFootprint(kind: BuildingKind): number {
+  switch (kind) {
+    case "road":
+      return 17;
+    case "outpost":
+    case "hovel":
+      return 24;
+    case "farm":
+    case "villa":
+    case "mine":
+    case "lumber-mill":
+    case "plantation":
+    case "moat":
+    case "wall":
+    case "gate":
+      return 28;
+    case "town-square":
+    case "military-quarters":
+      return 32;
+    case "castle":
+      return 38;
+  }
+}
+
+export function isBuildingPlacementClear(state: WorldState, kind: BuildingKind, position: Position): boolean {
+  const footprint = getBuildingFootprint(kind);
+  return !Object.values(state.buildings).some((building) =>
+    Math.hypot(building.position.x - position.x, building.position.y - position.y) <
+    footprint + getBuildingFootprint(building.kind)
+  );
+}
+
 export function terrainMovementMultiplier(terrain: TerrainKind): number {
   switch (terrain) {
     case "forest":

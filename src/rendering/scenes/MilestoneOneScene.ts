@@ -19,6 +19,7 @@ import {
   getBattalionTraits,
   getBuildingCost,
   isPositionVisibleToEmpire,
+  isBuildingPlacementClear,
   isBuildingTerrainCompatible,
   terrainAtPosition,
   type BattalionState,
@@ -1916,7 +1917,10 @@ export class MilestoneOneScene extends Phaser.Scene {
       return false;
     }
 
-    if (!isBuildingTerrainCompatible(kind, terrainAtPosition(this.simulation.getState(), position))) {
+    if (
+      !isBuildingTerrainCompatible(kind, terrainAtPosition(this.simulation.getState(), position)) ||
+      !isBuildingPlacementClear(this.simulation.getState(), kind, position)
+    ) {
       return false;
     }
 
