@@ -1,6 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
 import sharp from "sharp";
 
+const BOOK_PANEL_HEIGHT = 634;
+
 async function expectRenderedCanvas(page: Page): Promise<void> {
   const screenshot = await page.locator("canvas").screenshot();
   const { data } = await sharp(screenshot).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
@@ -149,7 +151,7 @@ test("exports a portable reign archive from the Book of Lessons", async ({ page 
   const topHeight = resolution.width < 640 ? 122 : resolution.width < 900 ? 94 : 58;
   const bookScale = resolution.width < 640 ? Math.min(1, (resolution.width - 32) / 470) : 1;
   const bookPanelX = Math.max(16, Math.round((resolution.width - 470 * bookScale) / 2));
-  const bookPanelY = Math.max(topHeight + 18, Math.round((resolution.height - 590 * bookScale) / 2));
+  const bookPanelY = Math.max(topHeight + 18, Math.round((resolution.height - BOOK_PANEL_HEIGHT * bookScale) / 2));
 
   const download = page.waitForEvent("download");
   await clickCanvasPoint(page, {
@@ -173,7 +175,7 @@ test("restores an exported portable reign archive through the Book of Lessons", 
   const topHeight = resolution.width < 640 ? 122 : resolution.width < 900 ? 94 : 58;
   const bookScale = resolution.width < 640 ? Math.min(1, (resolution.width - 32) / 470) : 1;
   const bookPanelX = Math.max(16, Math.round((resolution.width - 470 * bookScale) / 2));
-  const bookPanelY = Math.max(topHeight + 18, Math.round((resolution.height - 590 * bookScale) / 2));
+  const bookPanelY = Math.max(topHeight + 18, Math.round((resolution.height - BOOK_PANEL_HEIGHT * bookScale) / 2));
 
   const download = page.waitForEvent("download");
   await clickCanvasPoint(page, {
@@ -208,7 +210,7 @@ test("rejects a malformed portable archive without replacing the reign", async (
     height: element.height
   }));
   const bookPanelX = Math.max(16, Math.round((resolution.width - 470) / 2));
-  const bookPanelY = Math.max(58 + 18, Math.round((resolution.height - 590) / 2));
+  const bookPanelY = Math.max(58 + 18, Math.round((resolution.height - BOOK_PANEL_HEIGHT) / 2));
   const chooser = page.waitForEvent("filechooser");
   await clickCanvasPoint(page, { x: bookPanelX + 350, y: bookPanelY + 421 });
   await (await chooser).setFiles({
@@ -263,7 +265,7 @@ test("uses the system reduced-motion preference until the player overrides it", 
     height: element.height
   }));
   const bookPanelX = Math.max(16, Math.round((resolution.width - 470) / 2));
-  const bookPanelY = Math.max(58 + 18, Math.round((resolution.height - 590) / 2));
+  const bookPanelY = Math.max(58 + 18, Math.round((resolution.height - BOOK_PANEL_HEIGHT) / 2));
   await clickCanvasPoint(page, { x: bookPanelX + 235, y: bookPanelY + 553 });
 
   await expect(page.locator("#the-last-lesson-announcements")).toContainText("Full motion enabled");
