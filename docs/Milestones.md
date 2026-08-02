@@ -125,6 +125,7 @@ Implemented:
 - Military mobilization now consumes civilian labor capacity. The simulation reconciles labor after recruitment and civilian losses, while governors retain a minimum farm workforce before fielding an additional battalion. Governor-generated battalion IDs are settlement-scoped so simultaneous recruitment remains safe and inspectable.
 - Runtime production now protects same-tick multi-settlement commands from entity-ID collisions. A deterministic settlement-scoped suffix preserves separately created buildings, battalions, caravans, and Warships without changing existing single-settlement replay identifiers.
 - Campaign-health coverage now also validates the 180-tick campaign clock in all four theatres: a standard economic opening remains viable while a rival expedition has begun to damage the Crown throne, creating pressure without an unattended early defeat.
+- The Tactical Uplink now projects the selected Rival Doctrine opening countdown before hostile contact, making the campaign's fair early pressure legible without revealing fogged battlefield state.
 
 ## Milestone 4: Persistence Foundation
 

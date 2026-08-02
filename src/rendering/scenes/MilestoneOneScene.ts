@@ -3692,6 +3692,11 @@ export class MilestoneOneScene extends Phaser.Scene {
       return "THE GOVERNING CASTLE HAS FALLEN.";
     }
 
+    const rivalOpeningTicks = RIVAL_DIFFICULTY_PROFILES[state.rivalDifficulty].openingGraceTicks - state.tick;
+    if (rivalOpeningTicks > 0) {
+      return `RIVAL DOCTRINE PREPARES FOR WAR IN ${rivalOpeningTicks} TICKS.`;
+    }
+
     const nearestEnemy = [...Object.values(state.battalions), ...Object.values(state.buildings)]
       .filter(
         (entity) =>

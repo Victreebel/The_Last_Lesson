@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.93.0 - 2026-08-02
+
+- Added an opening Rival Doctrine countdown to the Tactical Uplink. It makes the selected fair-difficulty grace window legible before the first enemy is visible, giving a new reign a clear strategic tempo without disclosing hidden units or changing the simulation.
+
 ## 1.92.0 - 2026-08-02
 
 - Corrected the tactical HUD stacking rule for the expanded Build palette. The minimap now moves beneath the palette when space permits and hides cleanly when the viewport cannot hold both, preventing construction controls from obscuring strategic navigation.
