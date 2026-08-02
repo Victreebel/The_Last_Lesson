@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.53.0 - 2026-08-01
+
+- Taught governing heirs to preserve exhausted field forces. When a visible enemy closes on a low-morale or low-supply battalion, the heir now orders an explainable Retreat to Crown rather than committing it to a doomed fight.
+
 ## 1.52.0 - 2026-08-01
 
 - Added authoritative foundation-clearance rules. Building placement now rejects overlapping structures before resources are spent, and the tactical preview uses the same rule.

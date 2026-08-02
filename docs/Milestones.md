@@ -115,6 +115,7 @@ Implemented:
 - Battalions now derive terrain and siege traits from actual engagements. Forest, hills, and marsh expertise improves contextual movement; repeated structure attacks create a bounded siege specialization.
 - The command dock now includes an explicit Retreat to Crown order. It cancels an engagement, returns selected field forces to their home Castle, carries a small morale cost, and produces an observable lesson.
 - Building placement now has simulation-authoritative footprint clearance shared with the tactical placement preview, preventing overlapping foundations and wasted resources.
+- Governing heirs now independently retreat low-morale or low-supply field forces from visible enemy pressure, producing a rewardable or punishable preservation lesson.
 
 ## Milestone 4: Persistence Foundation
 

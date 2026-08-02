@@ -1138,6 +1138,43 @@ export class Simulation {
         currentEmpire?.id === "empire-rival" &&
         tick >= RIVAL_DIFFICULTY_PROFILES[this.state.rivalDifficulty].openingGraceTicks;
 
+      const retreatCandidate = ownBattalions
+        .filter((battalion) => !battalion.garrisonedInBuildingId && !battalion.embarkedInCaravanId)
+        .sort((left, right) => left.morale - right.morale || left.supply - right.supply || left.id.localeCompare(right.id))[0];
+      if (
+        castle &&
+        nearestEnemy &&
+        retreatCandidate &&
+        (retreatCandidate.morale <= 35 || retreatCandidate.supply <= 15)
+      ) {
+        this.state = {
+          ...this.state,
+          battalions: {
+            ...this.state.battalions,
+            [retreatCandidate.id]: {
+              ...retreatCandidate,
+              targetId: undefined,
+              destination: castle.position,
+              morale: Math.max(0, retreatCandidate.morale - 2)
+            }
+          }
+        };
+        this.eventWriter.emit(tick, "battalion-retreated", {
+          battalionId: retreatCandidate.id,
+          settlementId: currentSettlement.id,
+          moraleCost: 2,
+          heirId: currentHeir.id
+        });
+        this.recordHeirDecision(
+          currentHeir.id,
+          "Retreat to Crown",
+          "A nearby enemy could destroy an exhausted field force before it could be resupplied.",
+          80 + Math.max(0, 35 - retreatCandidate.morale) + Math.max(0, 15 - retreatCandidate.supply),
+          tick
+        );
+        continue;
+      }
+
       const farmUtility =
         Math.max(0, 56 - currentSettlement.localFood) * 2 +
         Math.max(0, 8 - currentSettlement.population.farmers) * 10 +
