@@ -122,6 +122,7 @@ Implemented:
 - Warships now use water-appropriate movement rather than the land-unit water penalty. Land fortifications remain a land-only movement concern.
 - Field battalions now support deterministic attack-move orders: they advance toward a chosen destination, engage visible enemies along the route, and resume their march after combat. The command is replay-safe, multiplayer-authorized, and observed as military doctrine.
 - Rival settlements now open with sustainable terrain-valid farms on labeled fertile fields. Scenario-health coverage verifies 72 ticks of viable rival economies and the Crown's standard opening-farm response across every authored theatre.
+- Military mobilization now consumes civilian labor capacity. The simulation reconciles labor after recruitment and civilian losses, while governors retain a minimum farm workforce before fielding an additional battalion. Governor-generated battalion IDs are settlement-scoped so simultaneous recruitment remains safe and inspectable.
 
 ## Milestone 4: Persistence Foundation
 

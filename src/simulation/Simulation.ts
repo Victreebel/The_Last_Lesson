@@ -19,6 +19,7 @@ import {
   type BattalionState,
   type BuildingState,
   type CaravanState,
+  type CitizenPopulation,
   type DoctrineRule,
   type HeirState,
   type Position,
@@ -319,6 +320,10 @@ export class Simulation {
         supply: 100,
         experience: 0
       };
+      const nextPopulation = this.rebalanceLaborForAvailableCitizens({
+        ...settlement.population,
+        militarizedCitizens: settlement.population.militarizedCitizens + (isScoutPack ? 0 : size)
+      });
 
       this.state = {
         ...this.state,
@@ -342,10 +347,7 @@ export class Simulation {
           [settlement.id]: {
             ...settlement,
             battalionIds: [...settlement.battalionIds, battalionId],
-            population: {
-              ...settlement.population,
-              militarizedCitizens: settlement.population.militarizedCitizens + (isScoutPack ? 0 : size)
-            },
+            population: nextPopulation,
             localFood: settlement.localFood - size * profile.foodPerUnit
           }
         }
@@ -1271,8 +1273,20 @@ export class Simulation {
         Math.max(0, 56 - currentSettlement.localFood) * 2 +
         Math.max(0, 8 - currentSettlement.population.farmers) * 10 +
         this.getDoctrineUtility(currentHeir, "Prioritize farm labor");
+      const completedFarmCapacity = currentSettlement.buildingIds.reduce((capacity, buildingId) => {
+        const building = this.state.buildings[buildingId];
+        return capacity + (building?.kind === "farm" && building.complete ? 8 : 0);
+      }, 0);
+      const recruitSize = Math.min(8, availableCitizens);
+      const minimumFarmWorkforce =
+        completedFarmCapacity > 0
+          ? Math.min(completedFarmCapacity, Math.max(4, currentSettlement.population.farmers))
+          : 0;
+      const canMobilizeWithoutAbandoningFood = availableCitizens - recruitSize >= minimumFarmWorkforce;
       const recruitUtility =
-        availableCitizens >= 6 && (ownBattalions.length === 0 || (rivalOpeningComplete && ownBattalions.length < 2))
+        availableCitizens >= 6 &&
+        canMobilizeWithoutAbandoningFood &&
+        (ownBattalions.length === 0 || (rivalOpeningComplete && ownBattalions.length < 2))
           ? 48 + Math.max(0, 260 - enemyDistance) / 5 + this.getDoctrineUtility(currentHeir, "Raise a battalion")
           : 0;
       const defendUtility =
@@ -1558,9 +1572,9 @@ export class Simulation {
         recruitUtility >= 30 &&
         castle
       ) {
-        const size = Math.min(8, availableCitizens);
+        const size = recruitSize;
         const profile = getBattalionProfile("militia");
-        const battalionId = `battalion-governed-${tick}-${settlement.battalionIds.length + 1}`;
+        const battalionId = `battalion-governed-${settlement.id}-${tick}-${settlement.battalionIds.length + 1}`;
         const battalion: BattalionState = {
           id: battalionId,
           ownerEmpireId: settlement.ownerEmpireId,
@@ -1580,6 +1594,10 @@ export class Simulation {
           supply: 100,
           experience: 0
         };
+        const nextPopulation = this.rebalanceLaborForAvailableCitizens({
+          ...settlement.population,
+          militarizedCitizens: settlement.population.militarizedCitizens + size
+        });
         this.state = {
           ...this.state,
           battalions: { ...this.state.battalions, [battalionId]: battalion },
@@ -1588,10 +1606,7 @@ export class Simulation {
             [settlement.id]: {
               ...settlement,
               battalionIds: [...settlement.battalionIds, battalionId],
-              population: {
-                ...settlement.population,
-                militarizedCitizens: settlement.population.militarizedCitizens + size
-              }
+              population: nextPopulation
             }
           }
         };
@@ -1783,6 +1798,34 @@ export class Simulation {
     });
   }
 
+  private rebalanceLaborForAvailableCitizens(population: CitizenPopulation): CitizenPopulation {
+    const availableCitizens = Math.max(0, population.citizens - population.militarizedCitizens);
+    const assignedWorkers =
+      population.farmers +
+      population.builders +
+      population.lumberjacks +
+      population.miners +
+      population.luxuryWorkers;
+    if (assignedWorkers <= availableCitizens) {
+      return population;
+    }
+
+    let workersToRelease = assignedWorkers - availableCitizens;
+    const release = (assigned: number): number => {
+      const released = Math.min(assigned, workersToRelease);
+      workersToRelease -= released;
+      return assigned - released;
+    };
+
+    // Preserve food production as long as possible when military service or casualties shrink the workforce.
+    const builders = release(population.builders);
+    const luxuryWorkers = release(population.luxuryWorkers);
+    const miners = release(population.miners);
+    const lumberjacks = release(population.lumberjacks);
+    const farmers = release(population.farmers);
+    return { ...population, farmers, builders, lumberjacks, miners, luxuryWorkers };
+  }
+
   private updateEconomy(tick: number): void {
     for (const settlement of Object.values(this.state.settlements).sort((a, b) =>
       a.id.localeCompare(b.id)
@@ -1924,6 +1967,15 @@ export class Simulation {
         const shortage = foodRequired - settlement.localFood;
         const deaths = Math.min(population.citizens, Math.max(1, Math.ceil(shortage / 6)));
         const survivingCitizens = population.citizens - deaths;
+        const nextPopulation = this.rebalanceLaborForAvailableCitizens({
+          ...population,
+          citizens: survivingCitizens,
+          militarizedCitizens: Math.min(population.militarizedCitizens, survivingCitizens),
+          happiness: Math.max(0, population.happiness - 5),
+          loyalty: Math.max(0, population.loyalty - 3),
+          health: Math.max(0, population.health - 8),
+          growthProgress: 0
+        });
         this.state = {
           ...this.state,
           settlements: {
@@ -1931,15 +1983,7 @@ export class Simulation {
             [settlement.id]: {
               ...settlement,
               localFood: 0,
-              population: {
-                ...population,
-                citizens: survivingCitizens,
-                militarizedCitizens: Math.min(population.militarizedCitizens, survivingCitizens),
-                happiness: Math.max(0, population.happiness - 5),
-                loyalty: Math.max(0, population.loyalty - 3),
-                health: Math.max(0, population.health - 8),
-                growthProgress: 0
-              },
+              population: nextPopulation,
               pressures: {
                 ...settlement.pressures,
                 food: Math.min(100, settlement.pressures.food + shortage * 5)
@@ -2002,14 +2046,14 @@ export class Simulation {
       const activeTicks = startsOutbreak ? 3 : plagueTicks;
       const nextPlagueTicks = Math.max(0, activeTicks - 1);
       const deaths = Math.min(population.citizens, Math.max(1, Math.floor(totalPopulation / 24)));
-      const nextPopulation = {
+      const nextPopulation = this.rebalanceLaborForAvailableCitizens({
         ...population,
         citizens: population.citizens - deaths,
         militarizedCitizens: Math.min(population.militarizedCitizens, population.citizens - deaths),
         health: Math.max(0, population.health - 4),
         happiness: Math.max(0, population.happiness - 4),
         loyalty: Math.max(0, population.loyalty - 2)
-      };
+      });
       this.state = {
         ...this.state,
         settlements: {
@@ -3075,7 +3119,7 @@ export class Simulation {
             population:
               civilianDeaths === 0
                 ? settlement.population
-                : {
+                : this.rebalanceLaborForAvailableCitizens({
                     ...settlement.population,
                     citizens: settlement.population.citizens - civilianDeaths,
                     militarizedCitizens: Math.min(
@@ -3085,7 +3129,7 @@ export class Simulation {
                     health: Math.max(0, settlement.population.health - villasDestroyed * 6),
                     happiness: Math.max(0, settlement.population.happiness - villasDestroyed * 10),
                     loyalty: Math.max(0, settlement.population.loyalty - villasDestroyed * 6)
-                  }
+                  })
           }
         ];
       })

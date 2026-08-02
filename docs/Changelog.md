@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.89.0 - 2026-08-02
+
+- Mobilizing citizens into a player- or governor-raised battalion now deterministically retires excess civilian labor, preserving food production after construction, luxury, mining, and lumber roles.
+- Starvation, sickness, and Villa-loss population reductions use the same labor-capacity reconciliation, preventing phantom worker output after civilian losses.
+- Governors now retain a minimum farm workforce before raising an additional battalion, keeping their economic opening viable while preserving military pressure.
+- Made governor-raised battalion identities settlement-scoped so simultaneous governors cannot overwrite one another's new field force.
+- Added population and governor regressions covering workforce mobilization, civilian losses, sustained farm labor, and concurrent governor recruitment.
+
 ## 1.88.0 - 2026-08-02
 
 - Added a `CAMPAIGN THEATRE` path to the end-of-reign debrief, letting players return directly to scenario selection after a victory or defeat.

@@ -117,4 +117,16 @@ describe("heir governance", () => {
     expect(heir.concern?.category).toBe("starvation");
     expect(result.events.some((event) => event.type === "heir-concern")).toBe(true);
   });
+
+  it("preserves a food workforce before recruiting a second governed battalion", () => {
+    const simulation = new Simulation(createInitialWorld(112361, "rival"));
+
+    simulation.runTicks(12);
+
+    const settlement = simulation.getState().settlements["settlement-rival"];
+    expect(settlement.battalionIds).toHaveLength(2);
+    expect(settlement.population.militarizedCitizens).toBe(16);
+    expect(settlement.population.farmers).toBe(6);
+    expect(settlement.localFood).toBeGreaterThan(60);
+  });
 });

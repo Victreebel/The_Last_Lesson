@@ -3,6 +3,78 @@ import { Simulation } from "../../src/simulation/Simulation";
 import { createInitialWorld } from "../../src/simulation/state/WorldState";
 
 describe("population", () => {
+  it("releases civilian labor when citizens are mobilized into a battalion", () => {
+    const initial = createInitialWorld(7171);
+    const simulation = new Simulation({
+      ...initial,
+      settlements: {
+        ...initial.settlements,
+        "settlement-capital": {
+          ...initial.settlements["settlement-capital"],
+          population: {
+            ...initial.settlements["settlement-capital"].population,
+            farmers: 8,
+            builders: 4,
+            lumberjacks: 6,
+            miners: 4,
+            luxuryWorkers: 2
+          }
+        }
+      }
+    });
+    simulation.enqueueCommand({
+      id: "mobilize-eight",
+      issuedBy: "player-1",
+      tick: 1,
+      type: "create-battalion",
+      payload: { settlementId: "settlement-capital", size: 8, specialization: "militia" }
+    });
+
+    simulation.tick();
+    const population = simulation.getState().settlements["settlement-capital"].population;
+    const assignedWorkers =
+      population.farmers + population.builders + population.lumberjacks + population.miners + population.luxuryWorkers;
+
+    expect(population.militarizedCitizens).toBe(8);
+    expect(assignedWorkers).toBeLessThanOrEqual(population.citizens - population.militarizedCitizens);
+    expect(population.farmers).toBe(8);
+    expect(population.builders).toBe(0);
+    expect(population.luxuryWorkers).toBe(0);
+    expect(population.miners).toBe(2);
+  });
+
+  it("releases labor when starvation reduces the available population", () => {
+    const initial = createInitialWorld(7271);
+    const simulation = new Simulation({
+      ...initial,
+      settlements: {
+        ...initial.settlements,
+        "settlement-capital": {
+          ...initial.settlements["settlement-capital"],
+          localFood: 0,
+          population: {
+            ...initial.settlements["settlement-capital"].population,
+            farmers: 8,
+            builders: 4,
+            lumberjacks: 6,
+            miners: 4,
+            luxuryWorkers: 2
+          }
+        }
+      }
+    });
+
+    simulation.tick();
+    const population = simulation.getState().settlements["settlement-capital"].population;
+    const assignedWorkers =
+      population.farmers + population.builders + population.lumberjacks + population.miners + population.luxuryWorkers;
+
+    expect(population.citizens).toBe(23);
+    expect(assignedWorkers).toBeLessThanOrEqual(population.citizens - population.militarizedCitizens);
+    expect(population.farmers).toBe(8);
+    expect(population.builders).toBe(3);
+  });
+
   it("turns sustained surplus food and villa capacity into citizen growth", () => {
     const initial = createInitialWorld(7272);
     const simulation = new Simulation({
