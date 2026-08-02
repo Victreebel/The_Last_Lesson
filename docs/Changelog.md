@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.35.0 - 2026-08-01
+
+- Added a transport-free `LocalAuthority` host that owns simulation time, command IDs, and immutable snapshots for deterministic local co-op and future network transport.
+- Added coverage proving two clients can submit commands to one authority and receive a state/event hash matching the replay system exactly.
+
 ## 1.34.0 - 2026-08-01
 
 - Added Divine Judgment: an 18-Faith settlement ward that temporarily counters external religious pressure while raising local Faith, loyalty, and devotion.

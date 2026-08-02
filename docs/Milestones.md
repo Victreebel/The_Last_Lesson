@@ -109,3 +109,24 @@ Implemented:
 - Versioned save serialization and validation.
 - Deterministic load/resume with pending commands and event-ID continuity.
 - Deterministic command-log replay.
+
+## Milestone 5: Local Multiplayer Authority
+
+Status: foundation complete.
+
+Implemented:
+
+- Transport-free local authority that exclusively owns simulation time and command IDs.
+- Explicit client connect/disconnect lifecycle with immutable state snapshots.
+- Next-tick command intent scheduling for multiple connected local clients.
+- Snapshot state and event hashes proven against the deterministic replay path.
+
+Acceptance:
+
+- Two connected clients can submit to one authority.
+- The authority snapshot exactly matches an equivalent deterministic replay.
+- Client-side mutation of a returned snapshot cannot modify host state.
+
+Deferred production work:
+
+- WebSocket transport, authentication, matchmaking, reconnects, and anti-cheat.

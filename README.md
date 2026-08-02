@@ -8,6 +8,7 @@ The current browser prototype is a playable single-player campaign: establish th
 
 - Deterministic five-second simulation ticks, save/load, command logs, and replay-safe state.
 - Versioned replay records that preserve an opening world, applied command log, and duration for deterministic verification and future player-facing replay review.
+- A tested local authoritative host foundation that accepts multiple co-op clients and broadcasts immutable deterministic snapshots; online transport remains a later production milestone.
 - Real-time battlefield camera, selection, movement, attack orders, garrisons, land caravans, and Warships.
 - Terrain-bound construction and harvesting: fertile farms, forest lumber mills, iron mines, roads, walls, gates, outposts, and housing.
 - Population, food, local growth, starvation, captives, rebellion, faith, religion, and miracles. Bless Harvest, Inspire Army, and Divine Judgment give Faith distinct economic, battlefield, and religious responses; road corridors and caravans also carry religious influence between empires.

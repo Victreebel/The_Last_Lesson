@@ -950,6 +950,24 @@ The simulation must not depend on local-only state. If a player command cannot b
 
 Milestone 0 and Milestone 1 do not need live multiplayer. They must still use command logs and deterministic simulation so multiplayer can be added later.
 
+### 20.4 Local Authority Foundation
+
+`networking/LocalAuthority.ts` is the transport-free host implementation used by local co-op and networking tests.
+
+```ts
+interface LocalAuthority {
+  connect(connection: LocalClientConnection): AuthoritySnapshot;
+  disconnect(clientId: PlayerId): void;
+  submit(clientId: PlayerId, intent: CommandIntent): GameCommand;
+  advance(): AuthoritySnapshot;
+  getSnapshot(): AuthoritySnapshot;
+}
+```
+
+The authority owns tick assignment and command IDs. A connected client submits an intent only; the host schedules it for the next deterministic tick, advances the sole simulation instance, and returns an immutable snapshot containing world state, state hash, event-log hash, recent events, and connected clients. A client must not mutate simulation state or choose its own timestamp.
+
+This is intentionally an in-process boundary. WebSocket transport, authentication, matchmaking, reconnection, and anti-cheat remain production networking work; they must adapt this contract rather than duplicate simulation logic.
+
 ---
 
 ## 21. UI Architecture
