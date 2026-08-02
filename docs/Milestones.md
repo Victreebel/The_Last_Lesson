@@ -96,6 +96,7 @@ Implemented:
 - Tactical Uplink threat forecast that summarizes the active settlement's most urgent food, rebellion, religious, or observed military risk.
 - Adjustable 1x/2x/3x live presentation speed for accelerating tactical downtime without changing deterministic tick rules.
 - Campaign-opening Rival Doctrine profiles for fair, transparent difficulty that changes rival learning pace and opening grace rather than granting raw simulation bonuses.
+- Automatic local recovery saves every five ticks and a Continue Local Reign opening action, verified through a refresh-and-resume browser pass.
 
 ## Milestone 4: Persistence Foundation
 

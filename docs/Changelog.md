@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.28.0 - 2026-08-01
+
+- Added local recovery saves every five world ticks. They are renderer-owned persistence only and cannot interrupt or mutate simulation execution.
+- The opening Rival Doctrine screen now offers `CONTINUE LOCAL REIGN` when a recoverable local save exists.
+
 ## 1.27.0 - 2026-08-01
 
 - Added a campaign-opening Rival Doctrine choice: `DISCIPLE`, `RIVAL`, and `ARCHITECT` provide transparent rival-governance difficulty profiles.

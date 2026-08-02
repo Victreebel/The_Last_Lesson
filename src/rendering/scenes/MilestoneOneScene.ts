@@ -130,6 +130,7 @@ const DRAG_THRESHOLD = 10;
 const MINIMAP_WIDTH = 230;
 const MINIMAP_HEIGHT = 158;
 const WORLD_TICK_MILLISECONDS = 5000;
+const AUTO_SAVE_INTERVAL_TICKS = 5;
 const UI_COLORS = {
   panel: 0x12191a,
   panelDeep: 0x0b1011,
@@ -433,6 +434,7 @@ export class MilestoneOneScene extends Phaser.Scene {
 
   private advanceSimulation(): void {
     const result = this.simulation.tick();
+    this.recordAutoSave(result.tick);
     this.renderWorld();
     this.playCombatFeedback(result.events);
     this.updateUi(result.events.map((event) => event.type).slice(-5));
@@ -705,7 +707,9 @@ export class MilestoneOneScene extends Phaser.Scene {
   }
 
   private createCampaignSetupPanel(): void {
-    const background = this.add.rectangle(0, 0, 470, 252, UI_COLORS.panelDeep, 0.98).setOrigin(0);
+    const hasSavedReign = this.hasLocalSave();
+    const panelHeight = hasSavedReign ? 294 : 252;
+    const background = this.add.rectangle(0, 0, 470, panelHeight, UI_COLORS.panelDeep, 0.98).setOrigin(0);
     background.setStrokeStyle(2, UI_COLORS.accent);
     background.setInteractive({ useHandCursor: false });
     background.on("pointerdown", (pointer: Phaser.Input.Pointer) => pointer.event.stopPropagation());
@@ -750,7 +754,23 @@ export class MilestoneOneScene extends Phaser.Scene {
       );
       controls.push(button, label, detail);
     });
+    if (hasSavedReign) {
+      const continueButton = this.add.rectangle(20, 220, 430, 42, UI_COLORS.commandActive, 1).setOrigin(0);
+      continueButton.setStrokeStyle(1, UI_COLORS.trim);
+      continueButton.setInteractive({ useHandCursor: true });
+      continueButton.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+        pointer.event.stopPropagation();
+        this.loadLocalGame();
+      });
+      const continueLabel = this.add.text(140, 234, "CONTINUE LOCAL REIGN", {
+        fontFamily: "Arial Black, Arial",
+        fontSize: "11px",
+        color: UI_COLORS.text
+      });
+      controls.push(continueButton, continueLabel);
+    }
     this.campaignSetupPanel = this.add.container(0, 0, controls);
+    this.campaignSetupPanel.setSize(470, panelHeight);
     this.campaignSetupPanel.setScrollFactor(0).setDepth(100).setVisible(true);
   }
 
@@ -851,6 +871,8 @@ export class MilestoneOneScene extends Phaser.Scene {
       this.campaignDifficulty = this.simulation.getState().rivalDifficulty;
       this.campaignSetupPending = false;
       this.campaignSetupPanel.setVisible(false);
+      this.paused = false;
+      this.pauseControlLabel.setText("PAUSE");
       this.inspectedSettlementId = "settlement-capital";
       this.lastLessonEventId = undefined;
       this.lessonBanner.setVisible(false);
@@ -859,6 +881,25 @@ export class MilestoneOneScene extends Phaser.Scene {
       this.updateUi(["Local save restored."]);
     } catch {
       this.updateUi(["Local save could not be restored."]);
+    }
+  }
+
+  private hasLocalSave(): boolean {
+    try {
+      return window.localStorage.getItem(LOCAL_SAVE_KEY) !== null;
+    } catch {
+      return false;
+    }
+  }
+
+  private recordAutoSave(tick: number): void {
+    if (tick % AUTO_SAVE_INTERVAL_TICKS !== 0) {
+      return;
+    }
+    try {
+      window.localStorage.setItem(LOCAL_SAVE_KEY, serializeSaveGame(createSaveGame(this.simulation)));
+    } catch {
+      // Saving is optional presentation persistence and must never interrupt simulation.
     }
   }
 
@@ -1342,7 +1383,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     );
     this.campaignSetupPanel.setPosition(
       Math.max(16, Math.round((width - 470) / 2)),
-      Math.max(topHeight + 18, Math.round((height - 252) / 2))
+      Math.max(topHeight + 18, Math.round((height - this.campaignSetupPanel.height) / 2))
     );
     this.intelPanel.setPosition(16, topHeight + 14);
     this.commandDock.setPosition(16, Math.max(topHeight + 220, height - 396));
