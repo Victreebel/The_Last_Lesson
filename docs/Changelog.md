@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.81.0 - 2026-08-02
+
+- Added deterministic opening-health coverage for Crownfall, Rivergate, Ashen Oath, and Stonewall. Each scenario must survive its first twelve unattended ticks with a living Crown settlement and no premature victory, and reproduce its full state and event history exactly from the same seed.
+
 ## 1.80.0 - 2026-08-02
 
 - Added a persistent `SFX ON/OFF` header control for optional tactical Web Audio.
