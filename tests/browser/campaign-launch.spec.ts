@@ -57,6 +57,7 @@ test("launches the campaign theatre and begins a Crownfall reign", async ({ page
   await page.goto("/");
   await expect(page.locator("canvas")).toBeVisible();
   await expect(page.locator("canvas")).toHaveAttribute("role", "application");
+  expect(await page.locator("canvas").getAttribute("aria-keyshortcuts")).toContain("Control+9");
   await expect(page.locator('link[rel="manifest"]')).toHaveAttribute("href", "/manifest.webmanifest");
   await page.waitForTimeout(800);
   await expectRenderedCanvas(page);
@@ -182,6 +183,36 @@ test("pauses a local reign when the tactical map is hidden", async ({ page }) =>
 
   await page.locator("canvas").press("Space");
   await expect(page.locator("#the-last-lesson-announcements")).toContainText("Simulation resumed");
+});
+
+test("uses the system reduced-motion preference until the player overrides it", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.matchMedia = ((query: string) =>
+      ({
+        matches: query === "(prefers-reduced-motion: reduce)",
+        media: query,
+        onchange: null,
+        addEventListener: () => undefined,
+        removeEventListener: () => undefined,
+        addListener: () => undefined,
+        removeListener: () => undefined,
+        dispatchEvent: () => false
+      }) as MediaQueryList) as typeof window.matchMedia;
+  });
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto("/");
+  await beginCrownfallRivalReign(page);
+  await clickCanvasPoint(page, { x: 249, y: 29 });
+
+  const resolution = await page.locator("canvas").evaluate((element: HTMLCanvasElement) => ({
+    width: element.width,
+    height: element.height
+  }));
+  const bookPanelX = Math.max(16, Math.round((resolution.width - 470) / 2));
+  const bookPanelY = Math.max(58 + 18, Math.round((resolution.height - 590) / 2));
+  await clickCanvasPoint(page, { x: bookPanelX + 235, y: bookPanelY + 553 });
+
+  await expect(page.locator("#the-last-lesson-announcements")).toContainText("Full motion enabled");
 });
 
 test("retains the installed campaign shell through an offline reload", async ({ page, context }) => {

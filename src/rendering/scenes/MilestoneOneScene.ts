@@ -419,6 +419,10 @@ export class MilestoneOneScene extends Phaser.Scene {
     canvas.setAttribute("role", "application");
     canvas.setAttribute("aria-label", "The Last Lesson tactical map and command interface");
     canvas.setAttribute("aria-describedby", "the-last-lesson-accessibility-brief");
+    canvas.setAttribute(
+      "aria-keyshortcuts",
+      "ArrowUp ArrowDown ArrowLeft ArrowRight B H R L M A F Escape Space Control+1 Control+2 Control+3 Control+4 Control+5 Control+6 Control+7 Control+8 Control+9"
+    );
     this.accessibilityAnnouncements = document.getElementById("the-last-lesson-announcements") ?? undefined;
   }
 
@@ -828,11 +832,15 @@ export class MilestoneOneScene extends Phaser.Scene {
   }
 
   private restoreMotionPreference(): void {
+    let storedPreference: string | null = null;
     try {
-      this.reducedMotion = window.localStorage.getItem(LOCAL_REDUCED_MOTION_KEY) === "true";
+      storedPreference = window.localStorage.getItem(LOCAL_REDUCED_MOTION_KEY);
     } catch {
-      this.reducedMotion = false;
+      // A browser may deny local storage, so the system accessibility preference remains the fallback.
     }
+    this.reducedMotion = storedPreference === null
+      ? window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      : storedPreference === "true";
     this.motionControlLabel.setText(this.reducedMotion ? "MOTION // REDUCED" : "MOTION // FULL");
   }
 

@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.4.3 - 2026-08-02
+
+- The tactical application now publishes its keyboard shortcuts through `aria-keyshortcuts` and defaults motion effects to the browser's reduced-motion preference until the player selects a local override.
+- Added browser coverage for both the keyboard accessibility contract and the system-motion default, while preserving the existing local preference behavior.
+
 ## 2.4.2 - 2026-08-02
 
 - Local active reigns now pause when the tactical browser tab is hidden and require an intentional resume on return. This protects real-time campaigns from advancing while the player is away without altering simulation state or host-owned multiplayer time.
