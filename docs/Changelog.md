@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.68.0 - 2026-08-01
+
+- Hardened the authoritative command boundary: clients may command only their own empire's settlements, heirs, battalions, buildings, and transports. The deterministic fixture-only Faith grant command is rejected from connected clients.
+- Added coverage for cross-empire command rejection and arbitrary Faith-grant rejection.
+
 ## 1.67.0 - 2026-08-01
 
 - Added an in-game `MULTI` lobby that joins named WebSocket rooms as the Crown, renders host-owned snapshots, forwards the existing RTS command intents, and prevents client-local pause or speed changes from desynchronizing a match. The header explicitly identifies host-controlled time while connected.

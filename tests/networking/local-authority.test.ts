@@ -14,12 +14,12 @@ describe("local authoritative networking", () => {
       type: "assign-labor",
       payload: { settlementId: "settlement-capital", farmers: 8, builders: 4, lumberjacks: 6, miners: 0 }
     });
-    const faith = authority.submit("player-2", {
-      type: "generate-faith",
-      payload: { empireId: "empire-player", amount: 6 }
+    const miracle = authority.submit("player-2", {
+      type: "cast-miracle",
+      payload: { empireId: "empire-player", kind: "bless-harvest" }
     });
     const snapshot = authority.advance();
-    const replay = runReplay({ initialWorld, commands: [labor, faith], ticks: 1 });
+    const replay = runReplay({ initialWorld, commands: [labor, miracle], ticks: 1 });
 
     expect(snapshot.tick).toBe(1);
     expect(snapshot.connectedClients.map((client) => client.clientId)).toEqual(["player-1", "player-2"]);
@@ -40,6 +40,24 @@ describe("local authoritative networking", () => {
         payload: { empireId: "empire-player", amount: 1 }
       })
     ).toThrow("Client player-2 is not connected to this authority.");
+  });
+
+  it("rejects attempts to command a different empire or mint Faith", () => {
+    const authority = new LocalAuthority(createInitialWorld(614));
+    authority.connect({ clientId: "player-1", empireId: "empire-player" });
+
+    expect(() =>
+      authority.submit("player-1", {
+        type: "assign-labor",
+        payload: { settlementId: "settlement-rival", farmers: 8, builders: 0, lumberjacks: 0, miners: 0 }
+      })
+    ).toThrow("not authorized");
+    expect(() =>
+      authority.submit("player-1", {
+        type: "generate-faith",
+        payload: { empireId: "empire-player", amount: 999 }
+      })
+    ).toThrow("not authorized");
   });
 
   it("prepares the host-owned opening labor order without overriding a player's first command", () => {

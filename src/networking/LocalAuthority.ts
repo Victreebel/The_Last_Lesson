@@ -85,8 +85,12 @@ export class LocalAuthority {
   }
 
   submit(clientId: PlayerId, intent: CommandIntent): GameCommand {
-    if (!this.clients.has(clientId)) {
+    const connection = this.clients.get(clientId);
+    if (!connection) {
       throw new Error(`Client ${clientId} is not connected to this authority.`);
+    }
+    if (!this.isIntentAuthorized(connection.empireId, intent)) {
+      throw new Error("This command is not authorized for the connected empire.");
     }
 
     const command = {
@@ -98,6 +102,53 @@ export class LocalAuthority {
     this.commandSequence += 1;
     this.simulation.enqueueCommand(command);
     return structuredClone(command);
+  }
+
+  private isIntentAuthorized(empireId: EmpireId, intent: CommandIntent): boolean {
+    const state = this.simulation.getState();
+    const ownsSettlement = (settlementId: string) => state.settlements[settlementId]?.ownerEmpireId === empireId;
+    const ownsBattalion = (battalionId: string) => state.battalions[battalionId]?.ownerEmpireId === empireId;
+    const ownsCaravan = (caravanId: string) => state.caravans[caravanId]?.ownerEmpireId === empireId;
+    const ownsBuilding = (buildingId: string) => state.buildings[buildingId]?.ownerEmpireId === empireId;
+    const ownsHeir = (heirId: string) => state.heirs[heirId]?.ownerEmpireId === empireId;
+
+    switch (intent.type) {
+      case "assign-labor":
+      case "place-building":
+      case "create-battalion":
+      case "create-caravan":
+      case "create-ship":
+      case "assimilate-captives":
+      case "release-captives":
+        return ownsSettlement(intent.payload.settlementId);
+      case "move-battalion":
+      case "retreat-battalion":
+        return ownsBattalion(intent.payload.battalionId);
+      case "move-caravan":
+      case "disembark-caravan":
+        return ownsCaravan(intent.payload.caravanId);
+      case "embark-battalion":
+        return ownsBattalion(intent.payload.battalionId) && ownsCaravan(intent.payload.caravanId);
+      case "garrison-battalion":
+        return ownsBattalion(intent.payload.battalionId) && ownsBuilding(intent.payload.buildingId);
+      case "attack-with-ship":
+        return ownsCaravan(intent.payload.shipId);
+      case "attack-target":
+        return ownsBattalion(intent.payload.battalionId);
+      case "reward-heir":
+      case "punish-heir":
+        return ownsHeir(intent.payload.heirId);
+      case "cast-miracle":
+        return (
+          intent.payload.empireId === empireId &&
+          (!intent.payload.settlementId || ownsSettlement(intent.payload.settlementId)) &&
+          (!intent.payload.targetId || ownsBattalion(intent.payload.targetId))
+        );
+      case "generate-faith":
+        // This developer-only command exists for deterministic test fixtures;
+        // no connected player may mint an arbitrary miracle resource.
+        return false;
+    }
   }
 
   advance(): AuthoritySnapshot {

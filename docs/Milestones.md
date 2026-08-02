@@ -144,6 +144,7 @@ Implemented:
 - A named-room `ws` host that validates messages, advances the only simulation instance, and cleans up empty rooms.
 - In-game `MULTI` connection lobby, authoritative browser snapshot rendering, and host-owned time controls.
 - Host-prepared opening labor, with a genuine tick-one player order deterministically taking precedence.
+- Per-intent empire authorization: connected players cannot command rival assets or create Faith outside the civilization simulation.
 
 Acceptance:
 
@@ -153,4 +154,4 @@ Acceptance:
 
 Deferred production work:
 
-- Account identity, matchmaking, reconnects, rate limiting, and anti-cheat.
+- Account identity, matchmaking, reconnects, rate limiting, and broader anti-cheat.
