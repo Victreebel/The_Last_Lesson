@@ -2268,7 +2268,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.eventText.setText(
       victory
         ? `VICTORY // ${state.empires[victory]?.name.toUpperCase() ?? "THE WINNER"} HOLDS EVERY THRONE.`
-        : `MANDATE: ${this.getImperialMandate()}\nLATEST INTEL: ${events.join(" // ")}`
+        : `MANDATE: ${this.getImperialMandate()}\nTHREAT: ${this.getThreatForecast(settlement)}\nLATEST INTEL: ${events.at(-1) ?? "NO NEW REPORTS."}`
     );
     this.updateHeirPanel();
     this.updateLessonBanner();
@@ -2313,5 +2313,38 @@ export class MilestoneOneScene extends Phaser.Scene {
       return "SCOUT THE FRONTIER AND FIND THE RIVAL THRONE.";
     }
     return "BREAK THE RIVAL CASTLE AND TAKE THE THRONE.";
+  }
+
+  private getThreatForecast(settlement: SettlementState): string {
+    const state = this.simulation.getState();
+    const castle = state.buildings[settlement.centralBuildingId];
+    if (settlement.localFood < 20 || settlement.pressures.food >= 45) {
+      return "FOOD RESERVES ARE STRAINED.";
+    }
+    if (settlement.pressures.rebellion >= 45) {
+      return "CAPTIVE UNREST IS RISING.";
+    }
+    if (settlement.externalReligiousPressure >= 15) {
+      return "RIVAL RELIGION IS UNDERMINING THE SEAT.";
+    }
+    if (!castle) {
+      return "THE GOVERNING CASTLE HAS FALLEN.";
+    }
+
+    const nearestEnemy = [...Object.values(state.battalions), ...Object.values(state.buildings)]
+      .filter(
+        (entity) =>
+          entity.ownerEmpireId !== "empire-player" &&
+          isPositionVisibleToEmpire(state, "empire-player", entity.position)
+      )
+      .map((entity) => Math.hypot(entity.position.x - castle.position.x, entity.position.y - castle.position.y))
+      .sort((left, right) => left - right)[0];
+    if (nearestEnemy !== undefined && nearestEnemy <= 260) {
+      return `HOSTILES OBSERVED ${Math.round(nearestEnemy)}M FROM THE CASTLE.`;
+    }
+    if (nearestEnemy !== undefined) {
+      return "RIVAL FORCES ARE OBSERVED BEYOND THE PERIMETER.";
+    }
+    return "NO IMMEDIATE THREAT IS OBSERVED.";
   }
 }

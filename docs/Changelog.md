@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.25.0 - 2026-08-01
+
+- Added a live threat forecast to the Tactical Uplink. It prioritizes low food, captive unrest, religious pressure, and observed hostile proximity for the active command seat.
+
 ## 1.24.0 - 2026-08-01
 
 - Added `RELEASE` captive orders. A royal decree releases up to four captives from the active settlement, trading labor for happiness, loyalty, devotion, internal Faith, and reduced rebellion exposure.
