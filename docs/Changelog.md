@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.55.0 - 2026-08-01
+
+- Made construction labor authoritative. Foundations now need assigned builders, each builder progresses one deterministic site per tick, and stalled sites emit an explainable event instead of silently completing.
+
 ## 1.54.0 - 2026-08-01
 
 - Made defensive works spatially meaningful. Hostile Walls now severely slow nearby land movement while Gates form a comparatively faster breach route; the effects vanish when defenses fall.

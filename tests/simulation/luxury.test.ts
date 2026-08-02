@@ -21,7 +21,7 @@ describe("luxury production", () => {
       payload: {
         settlementId: "settlement-capital",
         farmers: 0,
-        builders: 0,
+        builders: 1,
         lumberjacks: 0,
         miners: 0,
         luxuryWorkers: 6

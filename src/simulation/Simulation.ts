@@ -1774,6 +1774,7 @@ export class Simulation {
 
   private updateConstruction(tick: number): void {
     const updatedBuildings: Record<string, BuildingState> = {};
+    const buildersAssigned: Record<string, number> = {};
 
     for (const building of Object.values(this.state.buildings).sort((a, b) =>
       a.id.localeCompare(b.id)
@@ -1782,6 +1783,20 @@ export class Simulation {
         updatedBuildings[building.id] = building;
         continue;
       }
+
+      const settlement = this.state.settlements[building.settlementId];
+      const availableBuilders = settlement?.population.builders ?? 0;
+      const assignedBuilders = buildersAssigned[building.settlementId] ?? 0;
+      if (assignedBuilders >= availableBuilders) {
+        updatedBuildings[building.id] = building;
+        this.eventWriter.emit(tick, "construction-stalled", {
+          buildingId: building.id,
+          settlementId: building.settlementId,
+          reason: "no-builders"
+        });
+        continue;
+      }
+      buildersAssigned[building.settlementId] = assignedBuilders + 1;
 
       const nextRemainingTicks = Math.max(0, building.remainingBuildTicks - 1);
       updatedBuildings[building.id] = {

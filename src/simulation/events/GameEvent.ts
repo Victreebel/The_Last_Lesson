@@ -17,6 +17,7 @@ export type EventType =
   | "religious-pressure-changed"
   | "building-placed"
   | "construction-progressed"
+  | "construction-stalled"
   | "battalion-created"
   | "caravan-created"
   | "ship-created"

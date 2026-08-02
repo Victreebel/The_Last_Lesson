@@ -117,6 +117,7 @@ Implemented:
 - Building placement now has simulation-authoritative footprint clearance shared with the tactical placement preview, preventing overlapping foundations and wasted resources.
 - Governing heirs now independently retreat low-morale or low-supply field forces from visible enemy pressure, producing a rewardable or punishable preservation lesson.
 - Walls and Gates now affect local hostile movement. Gates provide a deliberately less restrictive breach path, so defensive layout changes actual battlefield choices.
+- Construction now requires assigned builders. Builder capacity deterministically allocates progress among foundations, and a site with no available labor visibly stalls rather than advancing for free.
 
 ## Milestone 4: Persistence Foundation
 
