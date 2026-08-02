@@ -3897,6 +3897,10 @@ export class MilestoneOneScene extends Phaser.Scene {
     );
 
     if (state.scenarioId === "ashen-oath") {
+      const afflictedSettlement = playerSettlements.find((settlement) => (settlement.plagueTicks ?? 0) > 0);
+      if (afflictedSettlement) {
+        return `MEND ${this.getSettlementDisplayName(afflictedSettlement.id)}: END THE PLAGUE.`;
+      }
       const captiveCount = playerSettlements.reduce((total, settlement) => total + settlement.population.captives, 0);
       if (captiveCount > 0) {
         return "SECURE THE CAPTIVES: ASSIMILATE OR RELEASE THEM.";

@@ -46,7 +46,7 @@ export const SCENARIO_PROFILES: Record<ScenarioId, ScenarioProfile> = {
   },
   "ashen-oath": {
     label: "ASHEN OATH",
-    summary: "Captives, rival roads, and religious pressure test the legitimacy of your rule."
+    summary: "A plague-struck captive settlement tests mercy, recovery, and religious legitimacy."
   },
   stonewall: {
     label: "STONEWALL",
@@ -739,7 +739,15 @@ function applyScenario(world: WorldState, scenarioId: ScenarioId): WorldState {
         ...capital,
         buildingIds: [...capital.buildingIds, hovelId],
         internalFaith: 34,
-        population: { ...capital.population, captives: 12, happiness: 62, loyalty: 68, devotion: 54 }
+        plagueTicks: 3,
+        population: {
+          ...capital.population,
+          captives: 12,
+          happiness: 62,
+          loyalty: 68,
+          devotion: 54,
+          health: 44
+        }
       },
       "settlement-rival": {
         ...world.settlements["settlement-rival"],

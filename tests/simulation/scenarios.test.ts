@@ -20,7 +20,7 @@ describe("campaign scenarios", () => {
     expect(world.buildings["building-rivergate-town-square"].complete).toBe(true);
   });
 
-  it("starts Ashen Oath with captives and a rival religious road corridor", () => {
+  it("starts Ashen Oath with a recoverable plague, captives, and a rival religious road corridor", () => {
     const simulation = new Simulation(createInitialWorld(712, "rival", "ashen-oath"));
     const result = simulation.tick();
     const capital = simulation.getState().settlements["settlement-capital"];
@@ -29,9 +29,34 @@ describe("campaign scenarios", () => {
     );
 
     expect(capital.population.captives).toBe(12);
+    expect(capital.population.health).toBeLessThan(44);
+    expect(capital.plagueTicks).toBe(2);
     expect(capital.buildingIds).toContain("building-ashen-hovel");
     expect(capital.externalReligiousPressure).toBeGreaterThan(0);
     expect(pressureEvent?.payload.roadPressure).toBeGreaterThan(0);
+  });
+
+  it("lets Ashen Oath's opening Faith cure the civic crisis immediately", () => {
+    const simulation = new Simulation(createInitialWorld(715, "rival", "ashen-oath"));
+    simulation.enqueueCommand({
+      id: "ashen-mend",
+      issuedBy: "player-1",
+      tick: 1,
+      type: "cast-miracle",
+      payload: {
+        empireId: "empire-player",
+        kind: "mend-settlement",
+        settlementId: "settlement-capital"
+      }
+    });
+
+    const result = simulation.tick();
+    const capital = simulation.getState().settlements["settlement-capital"];
+
+    expect(capital.plagueTicks).toBe(0);
+    expect(capital.population.health).toBeGreaterThan(70);
+    expect(result.events.some((event) => event.type === "plague-spread")).toBe(false);
+    expect(result.events.some((event) => event.type === "miracle-cast" && event.payload.miracle === "mend-settlement")).toBe(true);
   });
 
   it("starts Stonewall with a defensible gate line and civic reserves", () => {

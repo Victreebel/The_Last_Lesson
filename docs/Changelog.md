@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.5.1 - 2026-08-02
+
+- Ashen Oath now begins with a bounded civic plague and a first Mandate to use Mend Settlement. The opening Faith reserve can cure it immediately; delaying remains survivable but has an explicit human cost before the captive and religious-pressure decisions begin.
+- Added scenario coverage for both the authored outbreak and its first-tick deterministic cure.
+
 ## 2.5.0 - 2026-08-02
 
 - Added `MEND SETTLEMENT`, a 14-Faith civic recovery miracle. It restores health, clears an active plague, and reinforces loyalty, devotion, and internal Faith without restoring lost population or infrastructure.
