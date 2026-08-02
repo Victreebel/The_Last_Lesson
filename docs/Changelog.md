@@ -4,6 +4,7 @@
 
 - Added persistent browser-local Crown identities for multiplayer rooms and made `REJOIN` reconnect directly to the retained authoritative room after a socket loss.
 - Added regression coverage for stable local identity generation and same-identity room recovery without adding account, token, or alternate authority state.
+- Added a host-side per-identity command budget, retaining ordinary rapid construction while rejecting command floods before they reach authoritative simulation scheduling.
 
 ## 2.5.6 - 2026-08-02
 

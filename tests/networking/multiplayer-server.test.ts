@@ -126,6 +126,54 @@ describe("multiplayer WebSocket transport", () => {
 
     returningClient.close();
   });
+
+  it("bounds command bursts without changing authoritative command timing", async () => {
+    const server = new MultiplayerServer({
+      tickIntervalMs: 60_000,
+      maxIntentsPerWindow: 2,
+      intentWindowMs: 60_000
+    });
+    servers.push(server);
+    const port = await server.listen(0);
+    const client = new WebSocket(`ws://127.0.0.1:${port}`);
+    await waitForOpen(client);
+    const joined = waitForMessage(client);
+    client.send(
+      JSON.stringify({
+        type: "join-match",
+        roomId: "rate-limit",
+        clientId: "player-one",
+        empireId: "empire-player"
+      })
+    );
+    await expect(joined).resolves.toMatchObject({ type: "joined-match" });
+
+    const intent = {
+      type: "assign-labor",
+      payload: {
+        settlementId: "settlement-capital",
+        farmers: 6,
+        builders: 2,
+        lumberjacks: 0,
+        miners: 0,
+        luxuryWorkers: 0
+      }
+    };
+    const first = waitForMessage(client);
+    client.send(JSON.stringify({ type: "submit-intent", intent }));
+    await expect(first).resolves.toMatchObject({ type: "command-accepted", command: { tick: 1 } });
+    const second = waitForMessage(client);
+    client.send(JSON.stringify({ type: "submit-intent", intent }));
+    await expect(second).resolves.toMatchObject({ type: "command-accepted", command: { tick: 1 } });
+    const limited = waitForMessage(client);
+    client.send(JSON.stringify({ type: "submit-intent", intent }));
+    await expect(limited).resolves.toEqual({
+      type: "protocol-error",
+      message: "Command rate limit reached. Wait a moment before issuing more orders."
+    });
+
+    client.close();
+  });
 });
 
 function waitForOpen(client: WebSocket): Promise<void> {

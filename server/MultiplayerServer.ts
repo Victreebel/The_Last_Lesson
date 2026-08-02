@@ -19,6 +19,8 @@ const DEFAULT_MATCH_SETUP: MatchSetup = {
 export interface MultiplayerServerOptions {
   readonly tickIntervalMs?: number;
   readonly idleRoomTtlMs?: number;
+  readonly maxIntentsPerWindow?: number;
+  readonly intentWindowMs?: number;
 }
 
 interface ConnectedClient {
@@ -30,12 +32,15 @@ interface ConnectedClient {
 class MultiplayerRoom {
   private readonly authority: LocalAuthority;
   private readonly clients = new Map<string, WebSocket>();
+  private readonly intentTimestamps = new Map<string, number[]>();
   private interval?: ReturnType<typeof setInterval>;
 
   constructor(
     readonly id: string,
     setup: MatchSetup,
-    private readonly tickIntervalMs: number
+    private readonly tickIntervalMs: number,
+    private readonly maxIntentsPerWindow: number,
+    private readonly intentWindowMs: number
   ) {
     this.authority = new LocalAuthority(createInitialWorld(setup.seed, setup.rivalDifficulty, setup.scenarioId));
     this.authority.prepareOpeningLabor();
@@ -66,6 +71,7 @@ class MultiplayerRoom {
   }
 
   submit(clientId: string, intent: Parameters<LocalAuthority["submit"]>[1]) {
+    this.consumeIntentBudget(clientId);
     return this.authority.submit(clientId, intent);
   }
 
@@ -92,6 +98,19 @@ class MultiplayerRoom {
       socket.close();
     }
     this.clients.clear();
+    this.intentTimestamps.clear();
+  }
+
+  private consumeIntentBudget(clientId: string): void {
+    const now = Date.now();
+    const windowStart = now - this.intentWindowMs;
+    const recent = (this.intentTimestamps.get(clientId) ?? []).filter((timestamp) => timestamp > windowStart);
+    if (recent.length >= this.maxIntentsPerWindow) {
+      this.intentTimestamps.set(clientId, recent);
+      throw new Error("Command rate limit reached. Wait a moment before issuing more orders.");
+    }
+    recent.push(now);
+    this.intentTimestamps.set(clientId, recent);
   }
 
   private ensureTicking(): void {
@@ -123,10 +142,14 @@ export class MultiplayerServer {
   private readonly idleRoomCleanup = new Map<string, ReturnType<typeof setTimeout>>();
   private readonly tickIntervalMs: number;
   private readonly idleRoomTtlMs: number;
+  private readonly maxIntentsPerWindow: number;
+  private readonly intentWindowMs: number;
 
   constructor(options: MultiplayerServerOptions = {}) {
     this.tickIntervalMs = options.tickIntervalMs ?? 5000;
     this.idleRoomTtlMs = options.idleRoomTtlMs ?? 120_000;
+    this.maxIntentsPerWindow = options.maxIntentsPerWindow ?? 48;
+    this.intentWindowMs = options.intentWindowMs ?? 5000;
   }
 
   async listen(port = 8787): Promise<number> {
@@ -256,7 +279,13 @@ export class MultiplayerServer {
   }
 
   private createRoom(roomId: string, setup?: MatchSetup): MultiplayerRoom {
-    const room = new MultiplayerRoom(roomId, setup ?? DEFAULT_MATCH_SETUP, this.tickIntervalMs);
+    const room = new MultiplayerRoom(
+      roomId,
+      setup ?? DEFAULT_MATCH_SETUP,
+      this.tickIntervalMs,
+      this.maxIntentsPerWindow,
+      this.intentWindowMs
+    );
     this.rooms.set(roomId, room);
     return room;
   }
