@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { getEarnedScenarioHonor, SCENARIO_HONORS, type CampaignHonor } from "../../campaign/CampaignHonors";
 import { getCampaignChapter, getCampaignProgression } from "../../campaign/CampaignProgression";
+import { createPlaytestRecord, createPlaytestRecordFilename, serializePlaytestRecord } from "../../campaign/PlaytestRecord";
 import { getImperialMandateProgress } from "../../campaign/ImperialMandate";
 import { getMandateGuidance, type MandateCommandControl } from "../../campaign/MandateGuidance";
 import { HEIR_FEEDBACK } from "../../learning/HeirFeedback";
@@ -1409,9 +1410,16 @@ export class MilestoneOneScene extends Phaser.Scene {
       fontSize: "10px",
       color: UI_COLORS.text
     });
-    const verifyButton = this.add.rectangle(18, 448, 434, 34, UI_COLORS.command, 1).setOrigin(0);
+    const verifyButton = this.add.rectangle(18, 448, 204, 34, UI_COLORS.command, 1).setOrigin(0);
     verifyButton.setStrokeStyle(1, UI_COLORS.trim);
-    const verifyLabel = this.add.text(150, 459, "VERIFY REPLAY", {
+    const verifyLabel = this.add.text(60, 459, "VERIFY REPLAY", {
+      fontFamily: "Arial Black, Arial",
+      fontSize: "10px",
+      color: UI_COLORS.text
+    });
+    const playtestButton = this.add.rectangle(248, 448, 204, 34, UI_COLORS.commandActive, 1).setOrigin(0);
+    playtestButton.setStrokeStyle(1, UI_COLORS.trim);
+    const playtestLabel = this.add.text(274, 459, "EXPORT PLAYTEST", {
       fontFamily: "Arial Black, Arial",
       fontSize: "10px",
       color: UI_COLORS.text
@@ -1451,6 +1459,8 @@ export class MilestoneOneScene extends Phaser.Scene {
       importLabel,
       verifyButton,
       verifyLabel,
+      playtestButton,
+      playtestLabel,
       replayButton,
       this.replayControlLabel,
       motionButton,
@@ -1482,7 +1492,11 @@ export class MilestoneOneScene extends Phaser.Scene {
       return;
     }
     if (localY >= 448 && localY < 482) {
-      this.verifyCurrentReplay();
+      if (localX < 230) {
+        this.verifyCurrentReplay();
+      } else {
+        this.exportPlaytestRecord();
+      }
       return;
     }
     if (localY >= 492 && localY < 526) {
@@ -2241,6 +2255,24 @@ export class MilestoneOneScene extends Phaser.Scene {
       this.updateUi(["Portable reign exported from the Book of Lessons."]);
     } catch {
       this.updateUi(["Portable save could not be exported in this browser."]);
+    }
+  }
+
+  private exportPlaytestRecord(): void {
+    try {
+      const state = this.simulation.getState();
+      const data = new Blob([serializePlaytestRecord(createPlaytestRecord(state, this.simulation.getEventLog()))], {
+        type: "application/json"
+      });
+      const url = URL.createObjectURL(data);
+      const download = document.createElement("a");
+      download.href = url;
+      download.download = createPlaytestRecordFilename(state);
+      download.click();
+      window.setTimeout(() => URL.revokeObjectURL(url), 0);
+      this.updateUi(["Local playtest record exported. No data was transmitted."]);
+    } catch {
+      this.updateUi(["Playtest record could not be exported in this browser."]);
     }
   }
 
