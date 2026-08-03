@@ -1697,6 +1697,15 @@ export class MilestoneOneScene extends Phaser.Scene {
         .setOrigin(0);
       button.setScrollFactor(0);
       button.setStrokeStyle(focused ? 3 : selected ? 2 : 1, focused ? 0xf7efc8 : selected ? UI_COLORS.accent : UI_COLORS.trim);
+      const terrainBadge = this.add
+        .rectangle(x + 6, y + 6, CAMPAIGN_THEATRE_LAYOUT.scenarioCardWidth - 12, 15, UI_COLORS.panelDeep, 0.84)
+        .setOrigin(0);
+      const terrainTag = this.add.text(x + 11, y + 10, profile.terrainTag, {
+        fontFamily: "Arial Black, Arial",
+        fontSize: "7px",
+        color: "#d7e5d9",
+        wordWrap: { width: CAMPAIGN_THEATRE_LAYOUT.scenarioCardWidth - 22 }
+      });
       const caption = this.add
         .rectangle(
           x,
@@ -1725,7 +1734,7 @@ export class MilestoneOneScene extends Phaser.Scene {
         color: UI_COLORS.muted,
         wordWrap: { width: 184 }
       });
-      controls.push(art, button, caption, label, detail);
+      controls.push(art, button, terrainBadge, terrainTag, caption, label, detail);
     });
     const beginPrompt = this.add.text(20, 272, "BEGIN REIGN // SELECT RIVAL DOCTRINE", {
       fontFamily: "Arial Black, Arial",

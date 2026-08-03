@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.22 - 2026-08-03
+
+- Added compact, content-driven terrain tags to every Campaign Theatre card. The campaign now communicates each chapter's decisive terrain identity at a glance, while selection and screen-reader focus retain the complete terrain lesson.
+
 ## 2.6.21 - 2026-08-03
 
 - Added selected-theatre terrain intelligence to Campaign Theatre and its keyboard/screen-reader focus announcements. Players can now see whether an opening teaches fertile expansion, river supply and warships, marsh recovery, or a ridge-and-gate defense before choosing a Rival Doctrine.

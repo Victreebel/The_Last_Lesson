@@ -5,10 +5,10 @@ import { createInitialWorld, SCENARIO_PROFILES, terrainAtPosition } from "../../
 describe("campaign scenarios", () => {
   it("publishes each theatre's actual terrain lesson before a reign begins", () => {
     expect(SCENARIO_PROFILES).toMatchObject({
-      crownfall: { terrainIntel: "FERTILE HEARTLAND // EXPANSION" },
-      rivergate: { terrainIntel: "NAVIGABLE RIVER // SUPPLY & WARSHIPS" },
-      "ashen-oath": { terrainIntel: "BLIGHTED MARSH // PLAGUE & CAPTIVES" },
-      stonewall: { terrainIntel: "HILL-FORT RIDGE // GATE DEFENSE" }
+      crownfall: { terrainTag: "FERTILE HEARTLAND", terrainIntel: "FERTILE HEARTLAND // EXPANSION" },
+      rivergate: { terrainTag: "NAVIGABLE RIVER", terrainIntel: "NAVIGABLE RIVER // SUPPLY & WARSHIPS" },
+      "ashen-oath": { terrainTag: "BLIGHTED MARSH", terrainIntel: "BLIGHTED MARSH // PLAGUE & CAPTIVES" },
+      stonewall: { terrainTag: "HILL-FORT RIDGE", terrainIntel: "HILL-FORT RIDGE // GATE DEFENSE" }
     });
   });
 
