@@ -147,6 +147,7 @@ Implemented:
 - Campaign Theatre maps now differ in authoritative terrain as well as their opening resources and rules: Rivergate expands a navigable southern waterway without closing the rival land route, Ashen Oath owns a blighted marsh belt, and Stonewall begins on a hill-fort ridge. Scenario, health, and balance suites protect those tactical identities.
 - A facilitator-ready four-Theatre playtest protocol now pairs human observation with the deterministic balance suite, defining the first-session, teaching-loop, difficulty-legibility, and viewport questions that must be answered before wider release.
 - Book of Lessons exports a versioned local `.playtest.json` evidence record for each facilitated session. The privacy-bounded artifact captures scenario, Rival Doctrine, tick, victory, Civic Record, and event-type counts only; its in-browser download and schema are covered by release tests.
+- The Book of Lessons now gives keyboard players a complete, visibly labeled `1` through `9` path to local saves, portable archives, replay review, local playtest evidence, and presentation preferences without interfering with normal battlefield control groups.
 
 ## Milestone 4: Persistence Foundation
 

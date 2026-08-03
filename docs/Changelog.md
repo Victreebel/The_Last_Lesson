@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.36 - 2026-08-03
+
+- The Book of Lessons is now fully keyboard-operable after opening it with `L`: its visibly numbered `1` through `9` actions cover local save/load, portable archives, replay verification/review, local playtest export, and presentation preferences. Battlefield control-group assignment remains unchanged outside the Book.
+
 ## 2.6.35 - 2026-08-03
 
 - The Book of Lessons now exports a compact local `.playtest.json` evidence record for facilitated sessions. It contains only the active theatre, Rival Doctrine, tick, victory, civic record, and event-type counts; no player, browser, profile, save, or network data leaves the game. Browser coverage verifies the actual download and schema alongside the deterministic unit contract.

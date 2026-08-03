@@ -460,7 +460,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     canvas.setAttribute("aria-describedby", "the-last-lesson-accessibility-brief");
     canvas.setAttribute(
       "aria-keyshortcuts",
-      "ArrowUp ArrowDown ArrowLeft ArrowRight Tab Enter B C D H R L M A F X Escape Space Control+1 Control+2 Control+3 Control+4 Control+5 Control+6 Control+7 Control+8 Control+9"
+      "ArrowUp ArrowDown ArrowLeft ArrowRight Tab Enter B C D H R L M A F X Escape Space 1 2 3 4 5 6 7 8 9 Control+1 Control+2 Control+3 Control+4 Control+5 Control+6 Control+7 Control+8 Control+9"
     );
     this.accessibilityAnnouncements = document.getElementById("the-last-lesson-announcements") ?? undefined;
   }
@@ -506,6 +506,9 @@ export class MilestoneOneScene extends Phaser.Scene {
         this.handleCampaignSetupKeyboard(event);
         return;
       }
+      if (this.handleBookShortcut(event)) {
+        return;
+      }
       const slot = Number.parseInt(event.key, 10);
       if (!Number.isInteger(slot) || slot < 1 || slot > 9) {
         return;
@@ -532,6 +535,30 @@ export class MilestoneOneScene extends Phaser.Scene {
       activeElement instanceof HTMLSelectElement ||
       activeElement instanceof HTMLTextAreaElement
     );
+  }
+
+  /** Book shortcuts are contextual, leaving battalion control groups unchanged during field command. */
+  private handleBookShortcut(event: KeyboardEvent): boolean {
+    if (!this.bookPanelExpanded || event.ctrlKey || event.metaKey || event.altKey) {
+      return false;
+    }
+    const action = {
+      "1": () => this.saveLocalGame(),
+      "2": () => this.loadLocalGame(),
+      "3": () => this.exportPortableSave(),
+      "4": () => this.requestPortableSaveImport(),
+      "5": () => this.verifyCurrentReplay(),
+      "6": () => this.exportPlaytestRecord(),
+      "7": () => this.toggleReplayReview(),
+      "8": () => this.toggleReducedMotion(),
+      "9": () => this.toggleHighContrast()
+    }[event.key];
+    if (!action) {
+      return false;
+    }
+    event.preventDefault();
+    action();
+    return true;
   }
 
   private handleCampaignSetupKeyboard(event: KeyboardEvent): void {
@@ -1012,12 +1039,12 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.reducedMotion = storedPreference === null
       ? window.matchMedia("(prefers-reduced-motion: reduce)").matches
       : storedPreference === "true";
-    this.motionControlLabel.setText(this.reducedMotion ? "MOTION // REDUCED" : "MOTION // FULL");
+    this.motionControlLabel.setText(this.reducedMotion ? "8 MOTION // REDUCED" : "8 MOTION // FULL");
   }
 
   private toggleReducedMotion(): void {
     this.reducedMotion = !this.reducedMotion;
-    this.motionControlLabel.setText(this.reducedMotion ? "MOTION // REDUCED" : "MOTION // FULL");
+    this.motionControlLabel.setText(this.reducedMotion ? "8 MOTION // REDUCED" : "8 MOTION // FULL");
     try {
       window.localStorage.setItem(LOCAL_REDUCED_MOTION_KEY, String(this.reducedMotion));
     } catch {
@@ -1054,7 +1081,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     const canvas = this.game.canvas;
     canvas.classList.toggle("the-last-lesson--high-contrast", this.highContrast);
     canvas.dataset.contrastMode = this.highContrast ? "high" : "standard";
-    this.visibilityControlLabel.setText(this.highContrast ? "VISIBILITY // HIGH" : "VISIBILITY // STANDARD");
+    this.visibilityControlLabel.setText(this.highContrast ? "9 VISIBILITY // HIGH" : "9 VISIBILITY // STANDARD");
   }
 
   private restoreCampaignChronicle(): void {
@@ -1386,12 +1413,12 @@ export class MilestoneOneScene extends Phaser.Scene {
     saveButton.setStrokeStyle(1, UI_COLORS.trim);
     const loadButton = this.add.rectangle(248, 360, 204, 34, UI_COLORS.command, 1).setOrigin(0);
     loadButton.setStrokeStyle(1, UI_COLORS.trim);
-    const saveLabel = this.add.text(30, 371, "SAVE LOCAL", {
+    const saveLabel = this.add.text(30, 371, "1 SAVE LOCAL", {
       fontFamily: "Arial Black, Arial",
       fontSize: "10px",
       color: UI_COLORS.text
     });
-    const loadLabel = this.add.text(260, 371, "LOAD LOCAL", {
+    const loadLabel = this.add.text(260, 371, "2 LOAD LOCAL", {
       fontFamily: "Arial Black, Arial",
       fontSize: "10px",
       color: UI_COLORS.text
@@ -1400,47 +1427,47 @@ export class MilestoneOneScene extends Phaser.Scene {
     exportButton.setStrokeStyle(1, UI_COLORS.trim);
     const importButton = this.add.rectangle(248, 404, 204, 34, UI_COLORS.command, 1).setOrigin(0);
     importButton.setStrokeStyle(1, UI_COLORS.trim);
-    const exportLabel = this.add.text(38, 415, "EXPORT .TLL", {
+    const exportLabel = this.add.text(30, 415, "3 EXPORT .TLL", {
       fontFamily: "Arial Black, Arial",
       fontSize: "10px",
       color: UI_COLORS.text
     });
-    const importLabel = this.add.text(270, 415, "IMPORT .TLL", {
+    const importLabel = this.add.text(260, 415, "4 IMPORT .TLL", {
       fontFamily: "Arial Black, Arial",
       fontSize: "10px",
       color: UI_COLORS.text
     });
     const verifyButton = this.add.rectangle(18, 448, 204, 34, UI_COLORS.command, 1).setOrigin(0);
     verifyButton.setStrokeStyle(1, UI_COLORS.trim);
-    const verifyLabel = this.add.text(60, 459, "VERIFY REPLAY", {
+    const verifyLabel = this.add.text(44, 459, "5 VERIFY REPLAY", {
       fontFamily: "Arial Black, Arial",
       fontSize: "10px",
       color: UI_COLORS.text
     });
     const playtestButton = this.add.rectangle(248, 448, 204, 34, UI_COLORS.commandActive, 1).setOrigin(0);
     playtestButton.setStrokeStyle(1, UI_COLORS.trim);
-    const playtestLabel = this.add.text(274, 459, "EXPORT PLAYTEST", {
+    const playtestLabel = this.add.text(260, 459, "6 EXPORT PLAYTEST", {
       fontFamily: "Arial Black, Arial",
       fontSize: "10px",
       color: UI_COLORS.text
     });
     const replayButton = this.add.rectangle(18, 492, 434, 34, UI_COLORS.commandActive, 1).setOrigin(0);
     replayButton.setStrokeStyle(1, UI_COLORS.trim);
-    this.replayControlLabel = this.add.text(164, 503, "REVIEW REIGN", {
+    this.replayControlLabel = this.add.text(154, 503, "7 REVIEW REIGN", {
       fontFamily: "Arial Black, Arial",
       fontSize: "10px",
       color: UI_COLORS.text
     });
     const motionButton = this.add.rectangle(18, 536, 434, 34, UI_COLORS.command, 1).setOrigin(0);
     motionButton.setStrokeStyle(1, UI_COLORS.trim);
-    this.motionControlLabel = this.add.text(138, 547, "MOTION // FULL", {
+    this.motionControlLabel = this.add.text(128, 547, "8 MOTION // FULL", {
       fontFamily: "Arial Black, Arial",
       fontSize: "10px",
       color: UI_COLORS.text
     });
     const visibilityButton = this.add.rectangle(18, 580, 434, 34, UI_COLORS.command, 1).setOrigin(0);
     visibilityButton.setStrokeStyle(1, UI_COLORS.trim);
-    this.visibilityControlLabel = this.add.text(126, 591, "VISIBILITY // STANDARD", {
+    this.visibilityControlLabel = this.add.text(116, 591, "9 VISIBILITY // STANDARD", {
       fontFamily: "Arial Black, Arial",
       fontSize: "10px",
       color: UI_COLORS.text
@@ -2180,7 +2207,7 @@ export class MilestoneOneScene extends Phaser.Scene {
   private updateBookOfLessons(): void {
     this.bookPanel.setVisible(this.bookPanelExpanded);
     this.bookControlLabel.setText(this.bookPanelExpanded ? "BOOK [-]" : "BOOK [+]");
-    this.replayControlLabel.setText(this.replayReview ? "RETURN TO REIGN" : "REVIEW REIGN");
+    this.replayControlLabel.setText(this.replayReview ? "7 RETURN TO REIGN" : "7 REVIEW REIGN");
     if (!this.bookPanelExpanded) {
       return;
     }
