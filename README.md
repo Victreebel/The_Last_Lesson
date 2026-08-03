@@ -141,3 +141,4 @@ GitHub Actions runs this same test-and-build gate for every pull request and eve
 - [Milestone History](docs/Milestones.md)
 - [Changelog](docs/Changelog.md)
 - [Storefront Release](docs/StorefrontRelease.md)
+- [Privacy and Local Data](docs/Privacy.md)

@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.37 - 2026-08-03
+
+- Added a player-facing Privacy and Local Data Summary for the static campaign, local saves and playtest exports, and optional self-hosted multiplayer. It documents the current no-account, no-telemetry boundary and the exact browser-local records used for continuity and accessibility preferences.
+
 ## 2.6.36 - 2026-08-03
 
 - The Book of Lessons is now fully keyboard-operable after opening it with `L`: its visibly numbered `1` through `9` actions cover local save/load, portable archives, replay verification/review, local playtest export, and presentation preferences. Battlefield control-group assignment remains unchanged outside the Book.
