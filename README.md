@@ -68,7 +68,7 @@ For container deployment, health checks, and the required `wss://` production bo
 - With `BUILD` open, use its visible `1` through `9`, `0`, and `Q`/`W`/`E` shortcuts to choose a structure before placing it with the established terrain click or drag rules.
 - `HOUNDS`: train a fast four-hound scout pack from a Town Square. It costs food and wood, reveals farther than a battalion, and uses no citizens.
 - Click a Crown Castle or choose a seat in `REALM`: change the active governor and settlement command context.
-- `HEIR`: inspect doctrine and reward or punish the current governor's last lesson. Reward reinforces that specific judgment; punish weakens it. With `HEIR` open, use visible `1` to reward or `2` to punish.
+- `HEIR`: inspect doctrine and review the governor's latest or prior lesson. Reward reinforces the selected judgment; punish weakens it. With `HEIR` open, use visible `1` to reward or `2` to punish the reviewed lesson.
 - `ACCORD`: inspect the Crown-only Prisoner Accord. With `ACCORD` open, use visible `1` to propose the available equal-captive exchange.
 - `BOOK`: inspect recent history and create or restore a local deterministic save.
 - `B`, `H`, `R`, and `L`: toggle the Build, Heir, Realm, and Book panels.

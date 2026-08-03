@@ -2,7 +2,7 @@
 
 ## Technical Design Specification
 
-**Version:** 1.20
+**Version:** 1.21
 **Status:** Active Implementation Blueprint
 **Date:** 2026-08-03
 **Working Title:** The Last Lesson  
@@ -87,7 +87,7 @@ The scene exposes the same command state through pointer controls and keyboard c
 
 When their panel is expanded, the Heir console reserves visible `1` and `2` for the existing Reward and Punish command submissions; the Accord console reserves visible `1` for its existing captive-exchange submission. These contextual keys only operate while their matching presentation surface is open, reject modified key combinations, and never bypass simulation command validation. They therefore preserve `Ctrl`/`Cmd` control groups and normal numeric field selection when those panels are closed.
 
-Mandate guidance must use this same visible vocabulary. The captive-policy step identifies `ACCORD [D]`, then `1` to propose its available exchange; the teaching step identifies the player's last field order as the observed lesson, then identifies `HEIR [H]`, `1` to Reward and reinforce that judgment, or `2` to Punish and weaken it. Guidance may highlight or describe an existing input route, but it must never submit it, synthesize a command, or introduce tutorial authority state.
+Mandate guidance must use this same visible vocabulary. The captive-policy step identifies `ACCORD [D]`, then `1` to propose its available exchange; the teaching step identifies the player's last field order as the observed lesson, then identifies `HEIR [H]`, `1` to Reward and reinforce that judgment, or `2` to Punish and weaken it. The Heir console may expose a bounded pointer-selected review target for its newest two doctrines; the visible numeric feedback keys apply only to that selected target. Guidance may highlight or describe an existing input route, but it must never submit it, synthesize a command, or introduce tutorial authority state.
 
 Campaign Theatre summary, terrain, Honor, opening, scenario-tag, status, and Rival Doctrine briefing text must remain readable at compact desktop scale. Presentation may raise type size or wrap static copy within the existing campaign layout, but it must not alter authored campaign focus order, card hit regions, or any scenario/difficulty selection semantics.
 
@@ -1520,7 +1520,7 @@ The following compatible systems are now implemented in the prototype and are th
 - Caravans also carry battalions within explicit capacity. Embarked troops move with the transport and retain combat capability; the player can disembark them, while a destroyed caravan forcibly ejects passengers with a morale and supply shock.
 - The Book of Lessons is the player-facing explainability surface: it exposes current heir convictions and recent world events, and provides local save/load using the versioned save format.
 - The expanded Heir console presents a doctrine as a complete statement: its domain, observed condition, preferred action, intended purpose, and confidence are shown alongside the last autonomous utility decision. This is a read-only projection of authoritative doctrine data and must not mutate simulation state.
-- Heir feedback exposes its deterministic outcomes before submission: Reward adds 16 doctrine confidence and 5 Trust, while Punish removes 18 confidence and 6 Trust, with normal zero-to-one-hundred clamping. `learning/HeirFeedback.ts` is the shared constant source for simulation and presentation so the UI cannot misstate the actual teaching result.
+- Heir feedback exposes its deterministic outcomes before submission: Reward adds 16 doctrine confidence and 5 Trust, while Punish removes 18 confidence and 6 Trust, with normal zero-to-one-hundred clamping. The `HeirFeedbackPayload` may carry an explicit doctrine ID owned by the named Heir; when absent it defaults to the newest lesson. This permits the bounded latest/prior Heir-console review without retargeting `lastDoctrineId` or allowing feedback across leaders. `learning/HeirFeedback.ts` is the shared constant source for simulation and presentation so the UI cannot misstate the actual teaching result.
 - Population is now an active local simulation. Every five-second world tick consumes food from citizens and captives, Villas extend citizen capacity beyond a Castle's starting capacity, sustained food surplus creates citizens through tracked growth progress, and shortages cause starvation, morale damage, health loss, and a documented event.
 - Mobilization and civilian losses reconcile labor assignments against the remaining civilian workforce. Recruitment releases non-food jobs before farm labor, and governors keep their completed farms staffed before raising another battalion; this keeps the economic cost of military service explicit without letting unattended realms abandon food production.
 - Runtime production resolves same-tick multi-settlement ID collisions with deterministic settlement-scoped suffixes. This applies to player-created buildings, battalions, caravans, and Warships while retaining existing identifiers whenever no collision exists, protecting replay and multiplayer references as campaigns scale.

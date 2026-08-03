@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.48 - 2026-08-03
+
+- Added bounded Heir lesson review. The Heir console now lets the Crown select either of an Heir's two most recent doctrines before applying the existing Reward or Punish command; an explicit doctrine target keeps the action deterministic, replay-safe, and explainable.
+
 ## 2.6.47 - 2026-08-03
 
 - Clarified the Heir teaching loop at the exact decision point: the Mandate identifies the player's last field order as the observed lesson, while the Heir console now states that Reward reinforces its judgment and Punish weakens it.

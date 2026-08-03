@@ -945,6 +945,7 @@ export class Simulation {
       const feedback = command.type === "reward-heir" ? HEIR_FEEDBACK.reward : HEIR_FEEDBACK.punish;
       this.applyHeirFeedback(
         command.payload.heirId,
+        command.payload.doctrineId,
         feedback.confidenceDelta,
         feedback.trustDelta,
         tick,
@@ -1213,14 +1214,16 @@ export class Simulation {
 
   private applyHeirFeedback(
     heirId: string,
+    doctrineId: string | undefined,
     confidenceDelta: number,
     trustDelta: number,
     tick: number,
     commandId: string
   ): void {
     const heir = this.state.heirs[heirId];
-    const doctrine = heir?.lastDoctrineId ? this.state.doctrines[heir.lastDoctrineId] : undefined;
-    if (!heir || !doctrine) {
+    const targetDoctrineId = doctrineId ?? heir?.lastDoctrineId;
+    const doctrine = targetDoctrineId ? this.state.doctrines[targetDoctrineId] : undefined;
+    if (!heir || !doctrine || !heir.doctrineIds.includes(doctrine.id)) {
       this.eventWriter.emit(tick, "command-rejected", { commandId });
       return;
     }
@@ -1233,7 +1236,7 @@ export class Simulation {
     const nextHeir: HeirState = {
       ...heir,
       trust: Math.max(0, Math.min(100, heir.trust + trustDelta)),
-      lastDoctrineId: nextDoctrine.id
+      lastDoctrineId: heir.lastDoctrineId
     };
     this.state = {
       ...this.state,

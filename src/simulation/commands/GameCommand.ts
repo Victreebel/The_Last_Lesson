@@ -1,5 +1,5 @@
 import type { BattalionSpecialization, BuildingKind, Position } from "../state/WorldState";
-import type { BattalionId, BuildingId, CaravanId, CommandId, HeirId, PlayerId, SettlementId } from "../state/Ids";
+import type { BattalionId, BuildingId, CaravanId, CommandId, DoctrineId, HeirId, PlayerId, SettlementId } from "../state/Ids";
 
 export type CommandType =
   | "assign-labor"
@@ -125,6 +125,8 @@ export interface ExchangeCaptivesPayload {
 
 export interface HeirFeedbackPayload {
   readonly heirId: HeirId;
+  /** Defaults to the Heir's newest lesson; an explicit ID supports reviewed prior convictions. */
+  readonly doctrineId?: DoctrineId;
 }
 
 export interface CastMiraclePayload {

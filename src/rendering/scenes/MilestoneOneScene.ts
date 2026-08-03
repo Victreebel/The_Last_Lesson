@@ -243,6 +243,11 @@ interface HeirFeedbackControl {
   readonly label: Phaser.GameObjects.Text;
 }
 
+interface HeirReviewControl {
+  readonly button: Phaser.GameObjects.Rectangle;
+  readonly label: Phaser.GameObjects.Text;
+}
+
 interface CommandTile {
   readonly button: Phaser.GameObjects.Rectangle;
   readonly primary: Phaser.GameObjects.Text;
@@ -358,6 +363,8 @@ export class MilestoneOneScene extends Phaser.Scene {
   private heirPanelBody!: Phaser.GameObjects.Text;
   private heirPanelExpanded = false;
   private readonly heirFeedbackControls: HeirFeedbackControl[] = [];
+  private readonly heirReviewControls: HeirReviewControl[] = [];
+  private reviewedHeirDoctrineId?: string;
   private accordPanel!: Phaser.GameObjects.Container;
   private accordPanelBg!: Phaser.GameObjects.Rectangle;
   private accordPanelHeader!: Phaser.GameObjects.Rectangle;
@@ -2978,8 +2985,10 @@ export class MilestoneOneScene extends Phaser.Scene {
       this.heirPanelBody
     ]);
     this.heirPanel.setScrollFactor(0).setDepth(40).setSize(HEIR_PANEL_WIDTH, 48);
-    this.addHeirFeedbackButton(14, 304, "1 REWARD", UI_COLORS.commandActive, "reward-heir");
-    this.addHeirFeedbackButton(146, 304, "2 PUNISH", UI_COLORS.danger, "punish-heir");
+    this.addHeirReviewButton(14, 278, "LATEST", 0);
+    this.addHeirReviewButton(146, 278, "PRIOR", 1);
+    this.addHeirFeedbackButton(14, 318, "1 REWARD", UI_COLORS.commandActive, "reward-heir");
+    this.addHeirFeedbackButton(146, 318, "2 PUNISH", UI_COLORS.danger, "punish-heir");
     this.updateHeirPanel();
   }
 
@@ -3132,14 +3141,40 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.heirFeedbackControls.push({ button, label: text });
   }
 
+  private addHeirReviewButton(x: number, y: number, label: string, index: number): void {
+    const button = this.add.rectangle(x, y, 126, 28, UI_COLORS.command, 1).setOrigin(0);
+    button.setStrokeStyle(1, UI_COLORS.trim);
+    button.setInteractive({ useHandCursor: true });
+    button.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+      pointer.event.stopPropagation();
+      const doctrine = this.getHeirRecentDoctrines(this.getActiveHeir())[index];
+      if (!doctrine) {
+        return;
+      }
+      this.reviewedHeirDoctrineId = doctrine.id;
+      this.updateHeirPanel();
+      this.updateUi([`Reviewing ${doctrine.preferredAction} for heir feedback.`]);
+    });
+    const text = this.add.text(x + 10, y + 8, label, {
+      fontFamily: "Arial Black, Arial",
+      fontSize: "8px",
+      color: UI_COLORS.text
+    });
+    this.heirPanel.add([button, text]);
+    this.heirReviewControls.push({ button, label: text });
+  }
+
   private updateHeirPanel(): void {
     const settlement = this.getActiveSettlement();
     const heir = this.getActiveHeir();
     const activeMandate = getImperialMandateProgress(this.simulation.getState()).activeStep;
     const heirLessonIsMandated = getMandateGuidance(activeMandate.id).surface === "heir";
     const doctrines = this.getHeirDoctrines(heir);
+    const recentDoctrines = this.getHeirRecentDoctrines(heir);
     const lastDoctrine = heir?.lastDoctrineId ? this.simulation.getState().doctrines[heir.lastDoctrineId] : undefined;
-    const height = this.heirPanelExpanded ? 396 : 48;
+    const reviewedDoctrine = recentDoctrines.find((doctrine) => doctrine.id === this.reviewedHeirDoctrineId) ?? lastDoctrine;
+    this.reviewedHeirDoctrineId = reviewedDoctrine?.id;
+    const height = this.heirPanelExpanded ? 436 : 48;
 
     this.heirPanelBg.setSize(HEIR_PANEL_WIDTH, height);
     this.heirPanel.setSize(HEIR_PANEL_WIDTH, height);
@@ -3154,8 +3189,17 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.heirFeedbackControls.forEach((control) => {
       control.button.setVisible(this.heirPanelExpanded);
       control.label.setVisible(this.heirPanelExpanded);
-      control.button.setAlpha(lastDoctrine ? 1 : 0.42);
-      control.label.setAlpha(lastDoctrine ? 1 : 0.42);
+      control.button.setAlpha(reviewedDoctrine ? 1 : 0.42);
+      control.label.setAlpha(reviewedDoctrine ? 1 : 0.42);
+    });
+    this.heirReviewControls.forEach((control, index) => {
+      const doctrine = recentDoctrines[index];
+      const selected = doctrine?.id === reviewedDoctrine?.id;
+      control.button.setVisible(this.heirPanelExpanded && Boolean(doctrine));
+      control.label.setVisible(this.heirPanelExpanded && Boolean(doctrine));
+      control.button.setFillStyle(selected ? UI_COLORS.commandActive : UI_COLORS.command, 1);
+      control.button.setAlpha(doctrine ? 1 : 0.42);
+      control.label.setAlpha(doctrine ? 1 : 0.42);
     });
 
     if (this.heirPanelExpanded) {
@@ -3175,13 +3219,13 @@ export class MilestoneOneScene extends Phaser.Scene {
             ? `CONCERN: ${heir.concern.category.toUpperCase()} // ${heir.concern.message.toUpperCase()}`
             : "CONCERN: NO URGENT GOVERNANCE ALERT.",
           "",
-          "LAST LESSON:",
-          lastDoctrine
-            ? `${lastDoctrine.domain.toUpperCase()} // ${lastDoctrine.preferredAction.toUpperCase()}  ${lastDoctrine.confidence}%`
+          "REVIEWED LESSON:",
+          reviewedDoctrine
+            ? `${reviewedDoctrine.domain.toUpperCase()} // ${reviewedDoctrine.preferredAction.toUpperCase()}  ${reviewedDoctrine.confidence}%`
             : "Awaiting the God-King's example.",
-          lastDoctrine ? `WHEN: ${lastDoctrine.condition.toUpperCase()}` : "WHEN: A command is observed.",
-          lastDoctrine ? `PURPOSE: ${lastDoctrine.goal.toUpperCase()}` : "PURPOSE: SHAPE FUTURE GOVERNANCE.",
-          lastDoctrine
+          reviewedDoctrine ? `WHEN: ${reviewedDoctrine.condition.toUpperCase()}` : "WHEN: A command is observed.",
+          reviewedDoctrine ? `PURPOSE: ${reviewedDoctrine.goal.toUpperCase()}` : "PURPOSE: SHAPE FUTURE GOVERNANCE.",
+          reviewedDoctrine
             ? `FEEDBACK: REWARD REINFORCES (+${HEIR_FEEDBACK.reward.confidenceDelta} CONFIDENCE / +${HEIR_FEEDBACK.reward.trustDelta} TRUST) // PUNISH WEAKENS (${HEIR_FEEDBACK.punish.confidenceDelta} / ${HEIR_FEEDBACK.punish.trustDelta})`
             : "FEEDBACK: OBSERVE A LESSON BEFORE YOU REINFORCE OR DISCIPLINE IT.",
           "",
@@ -3247,18 +3291,25 @@ export class MilestoneOneScene extends Phaser.Scene {
       .sort((left, right) => right.confidence - left.confidence || right.updatedAtTick - left.updatedAtTick);
   }
 
+  private getHeirRecentDoctrines(heir: HeirState | undefined): DoctrineRule[] {
+    return this.getHeirDoctrines(heir).sort(
+      (left, right) => right.updatedAtTick - left.updatedAtTick || left.id.localeCompare(right.id)
+    );
+  }
+
   private sendHeirFeedback(commandType: "reward-heir" | "punish-heir"): void {
     const heir = this.getActiveHeir();
     if (heir?.ownerEmpireId !== "empire-player") {
       this.updateUi(["Only Crown governors can receive a lesson."]);
       return;
     }
-    if (!heir?.lastDoctrineId) {
+    const doctrineId = this.reviewedHeirDoctrineId ?? heir?.lastDoctrineId;
+    if (!doctrineId) {
       this.updateUi(["The heir has no lesson to reward or punish yet."]);
       return;
     }
 
-    this.issueCommand({ type: commandType, payload: { heirId: heir.id } });
+    this.issueCommand({ type: commandType, payload: { heirId: heir.id, doctrineId } });
     this.updateUi([`${commandType === "reward-heir" ? "Reward" : "Punish"} issued to ${heir.name}.`]);
   }
 
