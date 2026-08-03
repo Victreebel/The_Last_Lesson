@@ -234,6 +234,14 @@ interface ReplayReviewState {
   readonly targetTick: number;
 }
 
+type CampaignSetupFocus =
+  | { readonly kind: "scenario"; readonly scenario: ScenarioId; readonly x: number; readonly y: number }
+  | { readonly kind: "difficulty"; readonly difficulty: RivalDifficulty; readonly x: number; readonly y: number }
+  | { readonly kind: "local-save"; readonly x: number; readonly y: number };
+
+const CAMPAIGN_SCENARIOS: readonly ScenarioId[] = ["crownfall", "rivergate", "ashen-oath", "stonewall"];
+const CAMPAIGN_DIFFICULTIES: readonly RivalDifficulty[] = ["disciple", "rival", "architect"];
+
 export class MilestoneOneScene extends Phaser.Scene {
   private campaignDifficulty: RivalDifficulty = "rival";
   private campaignScenario: ScenarioId = "crownfall";
@@ -251,6 +259,7 @@ export class MilestoneOneScene extends Phaser.Scene {
   private commandSequence = 0;
   private paused = false;
   private campaignSetupPending = true;
+  private campaignSetupFocusIndex = 0;
   private gameSpeed: 1 | 2 | 3 = 1;
   private simulationClock?: Phaser.Time.TimerEvent;
   private inspectedSettlementId = "settlement-capital";
@@ -417,7 +426,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     canvas.setAttribute("aria-describedby", "the-last-lesson-accessibility-brief");
     canvas.setAttribute(
       "aria-keyshortcuts",
-      "ArrowUp ArrowDown ArrowLeft ArrowRight B C H R L M A F X Escape Space Control+1 Control+2 Control+3 Control+4 Control+5 Control+6 Control+7 Control+8 Control+9"
+      "ArrowUp ArrowDown ArrowLeft ArrowRight Tab Enter B C H R L M A F X Escape Space Control+1 Control+2 Control+3 Control+4 Control+5 Control+6 Control+7 Control+8 Control+9"
     );
     this.accessibilityAnnouncements = document.getElementById("the-last-lesson-announcements") ?? undefined;
   }
@@ -455,7 +464,11 @@ export class MilestoneOneScene extends Phaser.Scene {
     bind("X", () => this.toggleHighContrast());
     bind("ESC", () => this.cancelActiveCommand());
     keyboard.on("keydown", (event: KeyboardEvent) => {
-      if (event.repeat || !this.canUseGameShortcut()) {
+      if (event.repeat || this.isTextInputFocused()) {
+        return;
+      }
+      if (this.campaignSetupPending) {
+        this.handleCampaignSetupKeyboard(event);
         return;
       }
       const slot = Number.parseInt(event.key, 10);
@@ -474,12 +487,37 @@ export class MilestoneOneScene extends Phaser.Scene {
     if (this.campaignSetupPending) {
       return false;
     }
+    return !this.isTextInputFocused();
+  }
+
+  private isTextInputFocused(): boolean {
     const activeElement = document.activeElement;
-    return !(
+    return (
       activeElement instanceof HTMLInputElement ||
       activeElement instanceof HTMLSelectElement ||
       activeElement instanceof HTMLTextAreaElement
     );
+  }
+
+  private handleCampaignSetupKeyboard(event: KeyboardEvent): void {
+    const key = event.key;
+    if (key === "Tab") {
+      event.preventDefault();
+      this.cycleCampaignSetupFocus(event.shiftKey ? -1 : 1);
+      return;
+    }
+    if (key === "Enter" || key === " ") {
+      event.preventDefault();
+      this.activateCampaignSetupFocus();
+      return;
+    }
+    const direction: { readonly x: -1 | 0 | 1; readonly y: -1 | 0 | 1 } | undefined =
+      key === "ArrowUp" ? { x: 0, y: -1 } : key === "ArrowDown" ? { x: 0, y: 1 } : key === "ArrowLeft" ? { x: -1, y: 0 } : key === "ArrowRight" ? { x: 1, y: 0 } : undefined;
+    if (!direction) {
+      return;
+    }
+    event.preventDefault();
+    this.moveCampaignSetupFocus(direction.x, direction.y);
   }
 
   private enterMoveMode(): void {
@@ -1557,6 +1595,11 @@ export class MilestoneOneScene extends Phaser.Scene {
 
   private createCampaignSetupPanel(): void {
     const hasSavedReign = this.hasLocalSave();
+    const focusEntries = this.getCampaignSetupFocusEntries(hasSavedReign);
+    if (!focusEntries[this.campaignSetupFocusIndex]) {
+      this.campaignSetupFocusIndex = Math.max(0, CAMPAIGN_SCENARIOS.indexOf(this.campaignScenario));
+    }
+    const focusedControl = focusEntries[this.campaignSetupFocusIndex];
     const panelHeight = hasSavedReign
       ? CAMPAIGN_THEATRE_LAYOUT.heightWithLocalSave
       : CAMPAIGN_THEATRE_LAYOUT.height;
@@ -1575,9 +1618,8 @@ export class MilestoneOneScene extends Phaser.Scene {
       color: UI_COLORS.muted
     });
     const controls: Phaser.GameObjects.GameObject[] = [background, title, subtitle];
-    const scenarios: ScenarioId[] = ["crownfall", "rivergate", "ashen-oath", "stonewall"];
     const campaignProgression = getCampaignProgression(this.campaignChronicle);
-    scenarios.forEach((scenario, index) => {
+    CAMPAIGN_SCENARIOS.forEach((scenario, index) => {
       const profile = SCENARIO_PROFILES[scenario];
       const column = index % 2;
       const row = Math.floor(index / 2);
@@ -1588,6 +1630,7 @@ export class MilestoneOneScene extends Phaser.Scene {
         CAMPAIGN_THEATRE_LAYOUT.scenarioFirstRowY +
         row * (CAMPAIGN_THEATRE_LAYOUT.scenarioCardHeight + CAMPAIGN_THEATRE_LAYOUT.scenarioRowGap);
       const selected = scenario === this.campaignScenario;
+      const focused = focusedControl?.kind === "scenario" && focusedControl.scenario === scenario;
       const conquests = this.getCampaignConquests(scenario);
       const honor = this.getCampaignHonor(scenario);
       const [artColumn, artRow] = CAMPAIGN_ART_FRAMES[scenario];
@@ -1615,7 +1658,7 @@ export class MilestoneOneScene extends Phaser.Scene {
         )
         .setOrigin(0);
       button.setScrollFactor(0);
-      button.setStrokeStyle(selected ? 2 : 1, selected ? UI_COLORS.accent : UI_COLORS.trim);
+      button.setStrokeStyle(focused ? 3 : selected ? 2 : 1, focused ? 0xf7efc8 : selected ? UI_COLORS.accent : UI_COLORS.trim);
       const caption = this.add
         .rectangle(
           x,
@@ -1652,15 +1695,15 @@ export class MilestoneOneScene extends Phaser.Scene {
       color: "#e2bd61"
     });
     controls.push(beginPrompt);
-    const difficulties: RivalDifficulty[] = ["disciple", "rival", "architect"];
-    difficulties.forEach((difficulty, index) => {
+    CAMPAIGN_DIFFICULTIES.forEach((difficulty, index) => {
       const profile = RIVAL_DIFFICULTY_PROFILES[difficulty];
+      const focused = focusedControl?.kind === "difficulty" && focusedControl.difficulty === difficulty;
       const x = 20 + index * 146;
       const button = this.add
         .rectangle(x, CAMPAIGN_THEATRE_LAYOUT.difficultyY, 136, CAMPAIGN_THEATRE_LAYOUT.difficultyHeight, UI_COLORS.command, 1)
         .setOrigin(0);
       button.setScrollFactor(0);
-      button.setStrokeStyle(1, UI_COLORS.trim);
+      button.setStrokeStyle(focused ? 3 : 1, focused ? 0xf7efc8 : UI_COLORS.trim);
       const label = this.add.text(x + 12, CAMPAIGN_THEATRE_LAYOUT.difficultyY + 17, `BEGIN // ${profile.label}`, {
         fontFamily: "Arial Black, Arial",
         fontSize: "10px",
@@ -1681,9 +1724,10 @@ export class MilestoneOneScene extends Phaser.Scene {
       controls.push(button, label, detail);
     });
     if (hasSavedReign) {
+      const focused = focusedControl?.kind === "local-save";
       const continueButton = this.add.rectangle(20, CAMPAIGN_THEATRE_LAYOUT.localSaveY, 430, 34, UI_COLORS.commandActive, 1).setOrigin(0);
       continueButton.setScrollFactor(0);
-      continueButton.setStrokeStyle(1, UI_COLORS.trim);
+      continueButton.setStrokeStyle(focused ? 3 : 1, focused ? 0xf7efc8 : UI_COLORS.trim);
       const continueLabel = this.add.text(140, CAMPAIGN_THEATRE_LAYOUT.localSaveY + 10, "CONTINUE LOCAL REIGN", {
         fontFamily: "Arial Black, Arial",
         fontSize: "11px",
@@ -1721,8 +1765,8 @@ export class MilestoneOneScene extends Phaser.Scene {
         localY < CAMPAIGN_THEATRE_LAYOUT.scenarioFirstRowY + CAMPAIGN_THEATRE_LAYOUT.scenarioCardHeight + CAMPAIGN_THEATRE_LAYOUT.scenarioRowGap
           ? 0
           : 1;
-      const scenarios: ScenarioId[] = ["crownfall", "rivergate", "ashen-oath", "stonewall"];
-      this.selectCampaignScenario(scenarios[row * 2 + column]);
+      this.campaignSetupFocusIndex = row * 2 + column;
+      this.selectCampaignScenario(CAMPAIGN_SCENARIOS[this.campaignSetupFocusIndex]);
       return;
     }
 
@@ -1731,9 +1775,9 @@ export class MilestoneOneScene extends Phaser.Scene {
       localY < CAMPAIGN_THEATRE_LAYOUT.difficultyY + CAMPAIGN_THEATRE_LAYOUT.difficultyHeight
     ) {
       const index = Math.floor((localX - 20) / 146);
-      const difficulties: RivalDifficulty[] = ["disciple", "rival", "architect"];
-      if (index >= 0 && index < difficulties.length && localX >= 20 + index * 146 && localX < 156 + index * 146) {
-        this.startCampaign(difficulties[index]);
+      if (index >= 0 && index < CAMPAIGN_DIFFICULTIES.length && localX >= 20 + index * 146 && localX < 156 + index * 146) {
+        this.campaignSetupFocusIndex = CAMPAIGN_SCENARIOS.length + index;
+        this.startCampaign(CAMPAIGN_DIFFICULTIES[index]);
       }
       return;
     }
@@ -1745,20 +1789,120 @@ export class MilestoneOneScene extends Phaser.Scene {
       localX >= 20 &&
       localX < 450
     ) {
+      this.campaignSetupFocusIndex = CAMPAIGN_SCENARIOS.length + CAMPAIGN_DIFFICULTIES.length;
       this.loadLocalGame();
     }
   }
 
   private selectCampaignScenario(scenario: ScenarioId): void {
+    this.campaignSetupFocusIndex = CAMPAIGN_SCENARIOS.indexOf(scenario);
     if (this.campaignScenario === scenario) {
+      this.announceAccessibility(`${this.describeCampaignSetupFocus(this.getCampaignSetupFocusEntries()[this.campaignSetupFocusIndex])} Selected.`);
       return;
     }
     this.campaignScenario = scenario;
+    this.refreshCampaignSetupPanel();
+    this.announceAccessibility(`${SCENARIO_PROFILES[scenario].label} selected. ${SCENARIO_PROFILES[scenario].summary}`);
+  }
+
+  private getCampaignSetupFocusEntries(hasSavedReign = this.hasLocalSave()): readonly CampaignSetupFocus[] {
+    const scenarioEntries = CAMPAIGN_SCENARIOS.map((scenario, index) => ({
+      kind: "scenario" as const,
+      scenario,
+      x:
+        CAMPAIGN_THEATRE_LAYOUT.scenarioFirstColumnX +
+        (index % 2) * (CAMPAIGN_THEATRE_LAYOUT.scenarioCardWidth + CAMPAIGN_THEATRE_LAYOUT.scenarioColumnGap) +
+        CAMPAIGN_THEATRE_LAYOUT.scenarioCardWidth / 2,
+      y:
+        CAMPAIGN_THEATRE_LAYOUT.scenarioFirstRowY +
+        Math.floor(index / 2) * (CAMPAIGN_THEATRE_LAYOUT.scenarioCardHeight + CAMPAIGN_THEATRE_LAYOUT.scenarioRowGap) +
+        CAMPAIGN_THEATRE_LAYOUT.scenarioCardHeight / 2
+    }));
+    const difficultyEntries = CAMPAIGN_DIFFICULTIES.map((difficulty, index) => ({
+      kind: "difficulty" as const,
+      difficulty,
+      x: 20 + index * 146 + 68,
+      y: CAMPAIGN_THEATRE_LAYOUT.difficultyY + CAMPAIGN_THEATRE_LAYOUT.difficultyHeight / 2
+    }));
+    return hasSavedReign
+      ? [...scenarioEntries, ...difficultyEntries, { kind: "local-save", x: 235, y: CAMPAIGN_THEATRE_LAYOUT.localSaveY + 17 }]
+      : [...scenarioEntries, ...difficultyEntries];
+  }
+
+  private describeCampaignSetupFocus(focus: CampaignSetupFocus | undefined): string {
+    if (!focus) {
+      return "Campaign Theatre";
+    }
+    if (focus.kind === "scenario") {
+      const profile = SCENARIO_PROFILES[focus.scenario];
+      return `Campaign Theatre focus: Chapter ${getCampaignChapter(focus.scenario)}, ${profile.label}. ${profile.summary}`;
+    }
+    if (focus.kind === "difficulty") {
+      const profile = RIVAL_DIFFICULTY_PROFILES[focus.difficulty];
+      return `Campaign Theatre focus: Begin ${profile.label}. ${profile.openingGraceTicks} opening grace ticks. Learning plus ${profile.doctrineConfidenceGain}.`;
+    }
+    return "Campaign Theatre focus: Continue local reign.";
+  }
+
+  private refreshCampaignSetupPanel(): void {
     this.campaignSetupInput?.destroy();
     this.campaignSetupInput = undefined;
     this.campaignSetupPanel.destroy(true);
     this.createCampaignSetupPanel();
     this.layoutUi();
+  }
+
+  private cycleCampaignSetupFocus(direction: -1 | 1): void {
+    const entries = this.getCampaignSetupFocusEntries();
+    this.campaignSetupFocusIndex = (this.campaignSetupFocusIndex + direction + entries.length) % entries.length;
+    this.refreshCampaignSetupPanel();
+    this.announceAccessibility(this.describeCampaignSetupFocus(entries[this.campaignSetupFocusIndex]));
+  }
+
+  private moveCampaignSetupFocus(horizontal: -1 | 0 | 1, vertical: -1 | 0 | 1): void {
+    const entries = this.getCampaignSetupFocusEntries();
+    const current = entries[this.campaignSetupFocusIndex];
+    if (!current) {
+      this.campaignSetupFocusIndex = Math.max(0, CAMPAIGN_SCENARIOS.indexOf(this.campaignScenario));
+      this.refreshCampaignSetupPanel();
+      return;
+    }
+    const candidates = entries
+      .map((entry, index) => ({ entry, index, deltaX: entry.x - current.x, deltaY: entry.y - current.y }))
+      .filter(({ deltaX, deltaY }) =>
+        horizontal
+          ? Math.sign(deltaX) === horizontal && Math.abs(deltaY) <= Math.abs(deltaX) * 0.75
+          : Math.sign(deltaY) === vertical && Math.abs(deltaX) <= Math.abs(deltaY) * 0.75
+      )
+      .map(({ entry, index, deltaX, deltaY }) => ({
+        entry,
+        index,
+        score: horizontal ? deltaX * deltaX * 4 + deltaY * deltaY : deltaY * deltaY * 4 + deltaX * deltaX
+      }))
+      .sort((left, right) => left.score - right.score);
+    const next = candidates[0];
+    if (!next) {
+      return;
+    }
+    this.campaignSetupFocusIndex = next.index;
+    this.refreshCampaignSetupPanel();
+    this.announceAccessibility(this.describeCampaignSetupFocus(next.entry));
+  }
+
+  private activateCampaignSetupFocus(): void {
+    const focus = this.getCampaignSetupFocusEntries()[this.campaignSetupFocusIndex];
+    if (!focus) {
+      return;
+    }
+    if (focus.kind === "scenario") {
+      this.selectCampaignScenario(focus.scenario);
+      return;
+    }
+    if (focus.kind === "difficulty") {
+      this.startCampaign(focus.difficulty);
+      return;
+    }
+    this.loadLocalGame();
   }
 
   private startCampaign(difficulty: RivalDifficulty): void {
@@ -1805,6 +1949,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.pauseControlLabel.setText("SELECT");
     this.campaignSetupPending = true;
     this.campaignScenario = getCampaignProgression(this.campaignChronicle).nextTheatre ?? this.campaignScenario;
+    this.campaignSetupFocusIndex = Math.max(0, CAMPAIGN_SCENARIOS.indexOf(this.campaignScenario));
     this.victoryPanel.setVisible(false);
     this.campaignSetupInput?.destroy();
     this.campaignSetupInput = undefined;

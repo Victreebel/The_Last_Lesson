@@ -111,6 +111,26 @@ test("launches the campaign theatre and begins a Crownfall reign", async ({ page
   expect(pageErrors).toEqual([]);
 });
 
+test("navigates Campaign Theatre with the keyboard before beginning a reign", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto("/");
+  const canvas = page.locator("canvas");
+  await canvas.focus();
+
+  await canvas.press("ArrowRight");
+  await expect(page.locator("#the-last-lesson-announcements")).toContainText("Chapter 2, RIVERGATE");
+  await canvas.press("Enter");
+  await expect(page.locator("#the-last-lesson-announcements")).toContainText("RIVERGATE selected");
+
+  await canvas.press("ArrowDown");
+  await expect(page.locator("#the-last-lesson-announcements")).toContainText("Chapter 4, STONEWALL");
+  await canvas.press("Tab");
+  await canvas.press("Tab");
+  await canvas.press("Tab");
+  await canvas.press("Enter");
+  await expect(page.locator("#the-last-lesson-announcements")).toContainText("RIVERGATE reign begins");
+});
+
 test("renders a usable tactical canvas on a phone-sized viewport", async ({ page }) => {
   const pageErrors: Error[] = [];
   page.on("pageerror", (error) => pageErrors.push(error));

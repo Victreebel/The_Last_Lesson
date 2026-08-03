@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.11 - 2026-08-03
+
+- Made Campaign Theatre keyboard-operable. Arrow keys now move a visible focus across theatres and rival doctrines, `Tab` cycles all available choices, and `Enter` or `Space` selects the focused scenario or begins its reign with a screen-reader announcement.
+
 ## 2.6.10 - 2026-08-02
 
 - Rebuilt Campaign Theatre selection as four labeled painterly strategic vignettes for Crownfall, Rivergate, Ashen Oath, and Stonewall. The art preserves the existing Chapter, Chronicle, Honor, difficulty, input, simulation, and save/replay contracts while making each opening legible before a reign begins.
