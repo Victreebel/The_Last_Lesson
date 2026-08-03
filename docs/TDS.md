@@ -2,7 +2,7 @@
 
 ## Technical Design Specification
 
-**Version:** 1.17
+**Version:** 1.18
 **Status:** Active Implementation Blueprint
 **Date:** 2026-08-03
 **Working Title:** The Last Lesson  
@@ -90,6 +90,8 @@ When their panel is expanded, the Heir console reserves visible `1` and `2` for 
 Mandate guidance must use this same visible vocabulary. The captive-policy step identifies `ACCORD [D]`, then `1` to propose its available exchange; the teaching step identifies `HEIR [H]`, then `1` to Reward or `2` to Punish. Guidance may highlight or describe an existing input route, but it must never submit it, synthesize a command, or introduce tutorial authority state.
 
 Campaign Theatre summary, terrain, Honor, opening, scenario-tag, status, and Rival Doctrine briefing text must remain readable at compact desktop scale. Presentation may raise type size or wrap static copy within the existing campaign layout, but it must not alter authored campaign focus order, card hit regions, or any scenario/difficulty selection semantics.
+
+Campaign Theatre art is a cropped presentation atlas. Every rendered crop must be bounded to its own visible scenario card on fresh renderer loads; an atlas coordinate or origin may never cover the campaign briefing, another card, focus outline, or card hit region. Art remains non-authoritative and may not influence campaign selection or scenario state.
 
 Shortcuts are ignored during campaign setup and while a text input, select, or textarea has focus. This protects multiplayer-lobby entry and prevents browser form input from triggering game actions.
 

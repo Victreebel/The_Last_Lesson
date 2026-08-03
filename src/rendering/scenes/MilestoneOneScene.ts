@@ -1909,8 +1909,10 @@ export class MilestoneOneScene extends Phaser.Scene {
         CAMPAIGN_ART_ATLAS_CELL_SIZE,
         CAMPAIGN_ART_ATLAS_CELL_SIZE
       );
-      art.setDisplaySize(CAMPAIGN_THEATRE_LAYOUT.scenarioCardWidth * 2, CAMPAIGN_THEATRE_LAYOUT.scenarioCardHeight * 2);
-      art.setOrigin((artColumn + 0.5) / 2, (artRow + 0.5) / 2);
+      // Cropped atlas frames are rendered at the card bounds. This prevents an
+      // atlas origin from bleeding art into the campaign briefing or neighbor.
+      art.setDisplaySize(CAMPAIGN_THEATRE_LAYOUT.scenarioCardWidth, CAMPAIGN_THEATRE_LAYOUT.scenarioCardHeight);
+      art.setOrigin(0.5);
       const button = this.add
         .rectangle(
           x,

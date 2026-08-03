@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.44 - 2026-08-03
+
+- Fixed Campaign Theatre atlas framing so a cropped scenario image is bounded to its own card on a fresh renderer load. Scenario art can no longer bleed into the header, briefing, or neighboring theatre card.
+
 ## 2.6.43 - 2026-08-03
 
 - Improved Campaign Theatre legibility at compact desktop sizes by raising the terrain, Honor, opening, theatre-tag, campaign-status, and Rival Doctrine briefing text without changing the authored map cards, navigation, or balance.

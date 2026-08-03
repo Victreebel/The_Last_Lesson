@@ -112,6 +112,7 @@ Implemented:
 - Compact tablet and laptop HUD pass: the Accord, Heir, and Build panels now scale as one protected top-right strip, with mutually exclusive expansion so a civic panel cannot cover another tactical control.
 - Keyboard operation now extends across the complete management strip: visible contextual keys choose Build structures, submit Heir reward/punishment, and propose an available Prisoner Accord without displacing field control groups.
 - Campaign Theatre briefing and Rival Doctrine detail text received a compact-viewport legibility pass while retaining the same state-derived terrain, Honor, opening, and difficulty information.
+- Campaign Theatre artwork now uses card-bounded atlas crops, preserving the selected header and neighboring theatre cards on fresh renders.
 - Religious infrastructure: completed road corridors and nearby caravans now propagate opposing faith through the existing pressure, rebellion, and faith systems with deterministic source-level events.
 - Campaign Theatre with four authored deterministic openings: Crownfall (balanced), Rivergate (civic supply and naval opening), Ashen Oath (captives and hostile religious roads), and Stonewall (a fortified border for testing defense, logistics, retreat, and counter-siege play).
 - Scout Hounds: Town Square-trained, non-population reconnaissance packs with high movement speed and extended visibility.
