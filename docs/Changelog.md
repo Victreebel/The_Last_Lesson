@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.21 - 2026-08-03
+
+- Added selected-theatre terrain intelligence to Campaign Theatre and its keyboard/screen-reader focus announcements. Players can now see whether an opening teaches fertile expansion, river supply and warships, marsh recovery, or a ridge-and-gate defense before choosing a Rival Doctrine.
+
 ## 2.6.20 - 2026-08-03
 
 - Tightened the Tactical Uplink into a five-line battlefield brief: order and selection, people, labor, stability, and Faith. This prevents the active Mandate and intelligence feed from colliding with durable Civic Record history, which remains available in the Book of Lessons and end-of-reign report.

@@ -33,24 +33,30 @@ export type ScenarioId = "crownfall" | "rivergate" | "ashen-oath" | "stonewall";
 export interface ScenarioProfile {
   readonly label: string;
   readonly summary: string;
+  /** Short Campaign Theatre intelligence, not a simulation modifier. */
+  readonly terrainIntel: string;
 }
 
 export const SCENARIO_PROFILES: Record<ScenarioId, ScenarioProfile> = {
   crownfall: {
     label: "CROWNFALL",
-    summary: "Balanced opening. Establish the Crown and break both rival thrones."
+    summary: "Balanced opening. Establish the Crown and break both rival thrones.",
+    terrainIntel: "FERTILE HEARTLAND // EXPANSION"
   },
   rivergate: {
     label: "RIVERGATE",
-    summary: "A prepared civic port. Turn supply routes and warships into an advantage."
+    summary: "A prepared civic port. Turn supply routes and warships into an advantage.",
+    terrainIntel: "NAVIGABLE RIVER // SUPPLY & WARSHIPS"
   },
   "ashen-oath": {
     label: "ASHEN OATH",
-    summary: "A plague-struck captive settlement tests mercy, recovery, and religious legitimacy."
+    summary: "A plague-struck captive settlement tests mercy, recovery, and religious legitimacy.",
+    terrainIntel: "BLIGHTED MARSH // PLAGUE & CAPTIVES"
   },
   stonewall: {
     label: "STONEWALL",
-    summary: "A fortified frontier. Hold the gate, protect supply, then break the siege."
+    summary: "A fortified frontier. Hold the gate, protect supply, then break the siege.",
+    terrainIntel: "HILL-FORT RIDGE // GATE DEFENSE"
   }
 };
 

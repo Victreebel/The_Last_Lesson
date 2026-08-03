@@ -1,8 +1,17 @@
 import { describe, expect, it } from "vitest";
 import { Simulation } from "../../src/simulation/Simulation";
-import { createInitialWorld, terrainAtPosition } from "../../src/simulation/state/WorldState";
+import { createInitialWorld, SCENARIO_PROFILES, terrainAtPosition } from "../../src/simulation/state/WorldState";
 
 describe("campaign scenarios", () => {
+  it("publishes each theatre's actual terrain lesson before a reign begins", () => {
+    expect(SCENARIO_PROFILES).toMatchObject({
+      crownfall: { terrainIntel: "FERTILE HEARTLAND // EXPANSION" },
+      rivergate: { terrainIntel: "NAVIGABLE RIVER // SUPPLY & WARSHIPS" },
+      "ashen-oath": { terrainIntel: "BLIGHTED MARSH // PLAGUE & CAPTIVES" },
+      stonewall: { terrainIntel: "HILL-FORT RIDGE // GATE DEFENSE" }
+    });
+  });
+
   it("keeps Crownfall as the balanced default opening", () => {
     const world = createInitialWorld(710);
 

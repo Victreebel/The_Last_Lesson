@@ -1637,12 +1637,25 @@ export class MilestoneOneScene extends Phaser.Scene {
       fontSize: "19px",
       color: "#f2d77f"
     });
+    title.setScrollFactor(0);
     const subtitle = this.add.text(20, 50, SCENARIO_PROFILES[this.campaignScenario].summary.toUpperCase(), {
       fontFamily: "Arial, sans-serif",
       fontSize: "11px",
       color: UI_COLORS.muted
     });
-    const controls: Phaser.GameObjects.GameObject[] = [background, title, subtitle];
+    subtitle.setScrollFactor(0);
+    const terrainIntel = this.add.text(
+      20,
+      66,
+      `TERRAIN // ${SCENARIO_PROFILES[this.campaignScenario].terrainIntel}`,
+      {
+        fontFamily: "Arial Black, Arial",
+        fontSize: "8px",
+        color: "#c3d4c5"
+      }
+    );
+    terrainIntel.setScrollFactor(0);
+    const controls: Phaser.GameObjects.GameObject[] = [background, title, subtitle, terrainIntel];
     const campaignProgression = getCampaignProgression(this.campaignChronicle);
     CAMPAIGN_SCENARIOS.forEach((scenario, index) => {
       const profile = SCENARIO_PROFILES[scenario];
@@ -1827,7 +1840,9 @@ export class MilestoneOneScene extends Phaser.Scene {
     }
     this.campaignScenario = scenario;
     this.refreshCampaignSetupPanel();
-    this.announceAccessibility(`${SCENARIO_PROFILES[scenario].label} selected. ${SCENARIO_PROFILES[scenario].summary}`);
+    this.announceAccessibility(
+      `${SCENARIO_PROFILES[scenario].label} selected. ${SCENARIO_PROFILES[scenario].summary} Terrain: ${SCENARIO_PROFILES[scenario].terrainIntel}.`
+    );
   }
 
   private getCampaignSetupFocusEntries(hasSavedReign = this.hasLocalSave()): readonly CampaignSetupFocus[] {
@@ -1860,7 +1875,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     }
     if (focus.kind === "scenario") {
       const profile = SCENARIO_PROFILES[focus.scenario];
-      return `Campaign Theatre focus: Chapter ${getCampaignChapter(focus.scenario)}, ${profile.label}. ${profile.summary}`;
+      return `Campaign Theatre focus: Chapter ${getCampaignChapter(focus.scenario)}, ${profile.label}. ${profile.summary} Terrain: ${profile.terrainIntel}.`;
     }
     if (focus.kind === "difficulty") {
       const profile = RIVAL_DIFFICULTY_PROFILES[focus.difficulty];
