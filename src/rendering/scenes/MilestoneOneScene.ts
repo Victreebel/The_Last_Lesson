@@ -14,6 +14,7 @@ import { getCombatFeedbackPresentation } from "../combatPresentation";
 import { describeGameEvent, selectTacticalReportEvents } from "../eventNarrative";
 import { getMiracleFeedbackPresentation } from "../miraclePresentation";
 import { getOrderIndicators } from "../orderPresentation";
+import { getLessonPresentationLines, type LessonPresentationStatus } from "../lessonPresentation";
 import { getTerrainPresentation } from "../terrainPresentation";
 import { getTacticalUplinkStatusLines } from "../tacticalUplink";
 import { BOOK_PANEL_HEIGHT, CAMPAIGN_THEATRE_LAYOUT } from "../uiLayout";
@@ -1249,12 +1250,13 @@ export class MilestoneOneScene extends Phaser.Scene {
   }
 
   private createLessonBanner(): void {
-    const background = this.add.rectangle(0, 0, 420, 42, UI_COLORS.panelDeep, 0.96).setOrigin(0);
+    const background = this.add.rectangle(0, 0, 420, 82, UI_COLORS.panelDeep, 0.96).setOrigin(0);
     background.setStrokeStyle(1, UI_COLORS.accent);
     this.lessonBannerLabel = this.add.text(14, 8, "", {
       fontFamily: "Arial Black, Arial",
-      fontSize: "10px",
+      fontSize: "9px",
       color: "#f2d77f",
+      lineSpacing: 1,
       wordWrap: { width: 390 }
     });
     this.lessonBanner = this.add.container(0, 0, [background, this.lessonBannerLabel]);
@@ -1279,16 +1281,21 @@ export class MilestoneOneScene extends Phaser.Scene {
       typeof lessonEvent.payload.doctrineId === "string"
         ? this.simulation.getState().doctrines[lessonEvent.payload.doctrineId]
         : undefined;
-    const action = doctrine?.preferredAction.toUpperCase() ?? "A NEW CONVICTION";
-    const confidence = doctrine?.confidence ?? lessonEvent.payload.confidence ?? 0;
-    const status =
+    const status: LessonPresentationStatus =
       lessonEvent.type === "doctrine-reinforced"
-        ? "REINFORCED"
+        ? "reinforced"
         : lessonEvent.type === "doctrine-disciplined"
-          ? "QUESTIONED"
-          : "OBSERVED";
+          ? "disciplined"
+          : "observed";
     this.lessonBannerLabel.setText(
-      `LESSON ${status} // ${heir?.name.toUpperCase() ?? "HEIR"}\n${action}  ${confidence}%`
+      getLessonPresentationLines({
+        status,
+        heirName: heir?.name,
+        condition: doctrine?.condition,
+        action: doctrine?.preferredAction,
+        goal: doctrine?.goal,
+        confidence: doctrine?.confidence ?? lessonEvent.payload.confidence
+      }).join("\n")
     );
     this.tweens.killTweensOf(this.lessonBanner);
     this.lessonBannerHideTimer?.remove(false);
@@ -2854,7 +2861,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.lessonBanner.setScale(lessonScale);
     this.lessonBanner.setPosition(
       Math.max(16, Math.round((width - 420 * lessonScale) / 2)),
-      Math.max(topHeight + 14, height - 62 * lessonScale)
+      Math.max(topHeight + 14, height - 98 * lessonScale)
     );
     const pauseX = compact ? width - 82 : 436;
     const pauseY = compact ? 36 : 14;

@@ -98,6 +98,7 @@ Implemented:
 - Settlement-contextual command controls: selecting a Crown castle routes labor, construction, recruitment, logistics, assimilation, and local miracles to its governed settlement.
 - Compact Realm roster for switching between Crown domains, centering the camera, and reviewing each settlement's governor and field population.
 - Immediate lesson feedback that translates authoritative doctrine events into an in-world heir/action/confidence banner, making teaching readable at the moment it occurs.
+- The in-world Lesson banner now also names the observed condition and intended strategic goal, then directs the player to the existing Heir feedback control. This creates a complete decision-to-doctrine handoff without adding tutorial state or changing learning rules.
 - Captive policy choice between population-oriented assimilation and stability-oriented release, including deterministic effects on happiness, loyalty, devotion, and internal Faith.
 - Tactical Uplink threat forecast that summarizes the active settlement's most urgent food, rebellion, religious, or observed military risk.
 - Adjustable 1x/2x/3x live presentation speed for accelerating tactical downtime without changing deterministic tick rules.

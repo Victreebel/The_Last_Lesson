@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.23 - 2026-08-03
+
+- Expanded battlefield Lesson briefs from a terse action readout into a complete teaching handoff: the observed condition, developing doctrine, strategic goal, confidence, and the existing Heir feedback path are now visible together. This is a presentation-only explanation of the same deterministic doctrine event.
+
 ## 2.6.22 - 2026-08-03
 
 - Added compact, content-driven terrain tags to every Campaign Theatre card. The campaign now communicates each chapter's decisive terrain identity at a glance, while selection and screen-reader focus retain the complete terrain lesson.
