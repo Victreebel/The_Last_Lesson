@@ -60,6 +60,6 @@ describe("tactical Uplink presentation", () => {
     });
 
     expect(lines).toHaveLength(5);
-    expect(lines[0]).toBe("ORDER: ATTACK // VETERAN SPEARS // M84 S92");
+    expect(lines[0]).toBe("ORDER: ATTACK // VETERAN SPEARS // H100 M84 S92");
   });
 });

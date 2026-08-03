@@ -1,4 +1,5 @@
 import { getBattalionRank, type BattalionState, type SettlementState } from "../simulation/state/WorldState";
+import { getBattalionReadinessPresentation } from "./battalionReadinessPresentation";
 
 export interface TacticalUplinkStatusInput {
   readonly order: string;
@@ -21,7 +22,10 @@ export function getTacticalUplinkStatusLines(input: TacticalUplinkStatusInput): 
   const population = settlement.population;
   const controlGroup = input.activeControlGroup === undefined ? "" : ` // GROUP ${input.activeControlGroup}`;
   const selection = input.selectedBattalion
-    ? `${getBattalionRank(input.selectedBattalion.experience).toUpperCase()} ${input.selectedBattalion.specialization.toUpperCase()} // M${input.selectedBattalion.morale} S${input.selectedBattalion.supply}`
+    ? (() => {
+        const readiness = getBattalionReadinessPresentation(input.selectedBattalion);
+        return `${getBattalionRank(input.selectedBattalion.experience).toUpperCase()} ${input.selectedBattalion.specialization.toUpperCase()} // H${readiness.defense} M${readiness.morale} S${readiness.supply}`;
+      })()
     : input.selectedCaravan
       ? "SUPPLY CARAVAN"
       : input.selectedBattalionCount > 0

@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.29 - 2026-08-03
+
+- Added a shared battalion-readiness presentation contract. Every battlefield battalion now carries a persistent defense bar, while the selected-force Tactical Uplink reports matching `H` (defense), `M` (morale), and `S` (supply) percentages. The change is renderer-only and reads immutable authoritative state.
+
 ## 2.6.28 - 2026-08-03
 
 - Added a facilitator-ready playtest protocol for all Campaign Theatres. It records briefing comprehension, Mandate discovery, Heir-feedback understanding, early strategic tradeoffs, Rival pressure clarity, and mobile/desktop presentation issues so human feedback can drive the next tuning pass.

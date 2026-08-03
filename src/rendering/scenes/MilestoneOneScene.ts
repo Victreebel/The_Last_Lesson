@@ -11,6 +11,7 @@ import type { RemoteConnectionState } from "../../networking/RemoteAuthorityClie
 import type { AuthoritySnapshot } from "../../networking/LocalAuthority";
 import type { ServerMessage } from "../../networking/protocol";
 import { AudioDirector } from "../AudioDirector";
+import { getBattalionReadinessPresentation } from "../battalionReadinessPresentation";
 import { getCombatFeedbackPresentation } from "../combatPresentation";
 import { describeGameEvent, selectTacticalReportEvents } from "../eventNarrative";
 import { getMiracleFeedbackPresentation } from "../miraclePresentation";
@@ -4345,7 +4346,10 @@ export class MilestoneOneScene extends Phaser.Scene {
       });
       label.setOrigin(0.5);
       label.setAlign("center");
-      container = this.add.container(battalion.position.x, battalion.position.y, [marker, art, label]);
+      const readinessTrack = this.add.rectangle(-38, -43, 76, 5, 0x10150f, 0.9).setOrigin(0, 0.5);
+      readinessTrack.setStrokeStyle(1, 0xe6ead7, 0.48);
+      const readinessFill = this.add.rectangle(-37, -43, 74, 3, 0x87c777, 0.96).setOrigin(0, 0.5);
+      container = this.add.container(battalion.position.x, battalion.position.y, [marker, art, label, readinessTrack, readinessFill]);
       container.setSize(96, 104);
       container.setInteractive({ useHandCursor: true });
       container.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
@@ -4389,6 +4393,14 @@ export class MilestoneOneScene extends Phaser.Scene {
     }
     const label = container.getAt(2) as Phaser.GameObjects.Text;
     label.setText(this.getBattalionLabel(battalion));
+    const readiness = getBattalionReadinessPresentation(battalion);
+    const readinessFill = container.getAt(4) as Phaser.GameObjects.Rectangle;
+    const readinessWidth = Math.max(0, Math.round(74 * (readiness.defense / 100)));
+    readinessFill.setDisplaySize(readinessWidth, 3);
+    readinessFill.setFillStyle(
+      readiness.defense <= 30 ? 0xe75f4f : readiness.defense <= 60 ? 0xf0c86a : 0x87c777,
+      readinessWidth > 0 ? 0.96 : 0
+    );
     container.setVisible(
       battalion.ownerEmpireId === "empire-player" ||
         isPositionVisibleToEmpire(this.simulation.getState(), "empire-player", battalion.position)
