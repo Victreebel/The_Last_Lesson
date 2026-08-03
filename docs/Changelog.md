@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.50 - 2026-08-03
+
+- Corrected Crown-governor learning to match the frozen Heir rule: autonomous decisions now create explainable provisional lessons at zero confidence, and only player Reward or Punish changes their confidence. Rival adaptation remains governed by the selected Rival Doctrine profile.
+
 ## 2.6.49 - 2026-08-03
 
 - Restricted the `FULL` control to genuinely wide tactical headers and restored the resource strip’s compact-desktop position below that threshold, preventing fullscreen presentation controls from crowding operational status at 900px layouts.

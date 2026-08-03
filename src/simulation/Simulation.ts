@@ -1891,10 +1891,11 @@ export class Simulation {
         : action === "Inspire battalions"
           ? "Restore military morale"
           : "Secure the settlement";
+    const isCrownGovernor = heir.ownerEmpireId === "empire-player";
     const confidenceGain =
       heir.ownerEmpireId === "empire-rival"
         ? RIVAL_DIFFICULTY_PROFILES[this.state.rivalDifficulty].doctrineConfidenceGain
-        : 1;
+        : 0;
     const doctrine: DoctrineRule = existingDoctrine
       ? {
           ...existingDoctrine,
@@ -1908,7 +1909,9 @@ export class Simulation {
           condition: "Governance pressure requires action",
           preferredAction: action,
           goal,
-          confidence: 20,
+          // Crown governors can propose an explainable lesson, but only player feedback
+          // gives it confidence. Rival adaptation remains governed by its difficulty profile.
+          confidence: isCrownGovernor ? 0 : 20,
           createdAtTick: tick,
           updatedAtTick: tick
         };

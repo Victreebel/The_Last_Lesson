@@ -2,7 +2,7 @@
 
 ## Technical Design Specification
 
-**Version:** 1.21
+**Version:** 1.22
 **Status:** Active Implementation Blueprint
 **Date:** 2026-08-03
 **Working Title:** The Last Lesson  
@@ -746,7 +746,7 @@ Heirs have two states:
 - Learning
 - Governance
 
-The prime heir begins in learning state and cannot disagree with the player. Conquered settlements generate a new heir to govern the settlement. Governors can still learn from reward, punishment, and empire-wide signals, but observation is weaker than apprentice learning.
+The prime heir begins in learning state and cannot disagree with the player. Conquered settlements generate a new heir to govern the settlement. Crown governors may independently choose and explain a response to current pressure, but that response is only a provisional zero-confidence lesson until the player Rewards or Punishes it. Crown governor doctrine confidence may never increase from autonomous repetition or passive observation. Rival governors retain their separately declared difficulty-profile adaptation rate.
 
 ### 13.4 Heir Mortality
 

@@ -129,4 +129,34 @@ describe("heir governance", () => {
     expect(settlement.population.farmers).toBe(6);
     expect(settlement.localFood).toBeGreaterThan(60);
   });
+
+  it("records a Crown governor's decision as a provisional lesson until the player gives feedback", () => {
+    const initial = createInitialWorld(112362);
+    const simulation = new Simulation({
+      ...initial,
+      heirs: {
+        ...initial.heirs,
+        "heir-prime": { ...initial.heirs["heir-prime"], mode: "governance" }
+      },
+      settlements: {
+        ...initial.settlements,
+        "settlement-capital": { ...initial.settlements["settlement-capital"], localFood: 50 }
+      }
+    });
+
+    simulation.tick();
+    const heir = simulation.getState().heirs["heir-prime"];
+    const doctrineId = heir.lastDoctrineId!;
+    expect(simulation.getState().doctrines[doctrineId].confidence).toBe(0);
+
+    simulation.enqueueCommand({
+      id: "reinforce-governor-lesson",
+      issuedBy: "player-1",
+      tick: 2,
+      type: "reward-heir",
+      payload: { heirId: heir.id, doctrineId }
+    });
+    simulation.tick();
+    expect(simulation.getState().doctrines[doctrineId].confidence).toBe(16);
+  });
 });
