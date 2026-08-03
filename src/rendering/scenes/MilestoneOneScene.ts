@@ -13,7 +13,7 @@ import { getCombatFeedbackPresentation } from "../combatPresentation";
 import { describeGameEvent, selectTacticalReportEvents } from "../eventNarrative";
 import { getMiracleFeedbackPresentation } from "../miraclePresentation";
 import { getTerrainPresentation } from "../terrainPresentation";
-import { BOOK_PANEL_HEIGHT } from "../uiLayout";
+import { BOOK_PANEL_HEIGHT, CAMPAIGN_THEATRE_LAYOUT } from "../uiLayout";
 import { Simulation } from "../../simulation/Simulation";
 import type { GameCommand } from "../../simulation/commands/GameCommand";
 import type { GameEvent } from "../../simulation/events/GameEvent";
@@ -158,6 +158,15 @@ const UNIT_ART_FRAMES: Record<BattalionSpecialization, readonly [number, number]
 const UNIT_ATLAS_CELL_SIZE = 512;
 const UNIT_ATLAS_DISPLAY_WIDTH = 276;
 const UNIT_ATLAS_DISPLAY_HEIGHT = 184;
+
+const CAMPAIGN_ART_FRAMES: Record<ScenarioId, readonly [number, number]> = {
+  crownfall: [0, 0],
+  rivergate: [1, 0],
+  "ashen-oath": [0, 1],
+  stonewall: [1, 1]
+};
+
+const CAMPAIGN_ART_ATLAS_CELL_SIZE = 627;
 
 const BUILDING_DISPLAY_LABELS: Record<BuildingKind, string> = {
   castle: "CASTLE",
@@ -352,6 +361,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.load.image("painted-world", "assets/painterly-battlefield-v1.webp");
     this.load.image("building-atlas", "assets/building-atlas-v1.webp");
     this.load.image("unit-atlas", "assets/unit-atlas-v1.webp");
+    this.load.image("campaign-theatres", "assets/campaign-theatres-v1.webp");
   }
 
   create(): void {
@@ -1547,8 +1557,12 @@ export class MilestoneOneScene extends Phaser.Scene {
 
   private createCampaignSetupPanel(): void {
     const hasSavedReign = this.hasLocalSave();
-    const panelHeight = hasSavedReign ? 446 : 402;
-    const background = this.add.rectangle(0, 0, 470, panelHeight, UI_COLORS.panelDeep, 0.98).setOrigin(0);
+    const panelHeight = hasSavedReign
+      ? CAMPAIGN_THEATRE_LAYOUT.heightWithLocalSave
+      : CAMPAIGN_THEATRE_LAYOUT.height;
+    const background = this.add
+      .rectangle(0, 0, CAMPAIGN_THEATRE_LAYOUT.width, panelHeight, UI_COLORS.panelDeep, 0.98)
+      .setOrigin(0);
     background.setStrokeStyle(2, UI_COLORS.accent);
     const title = this.add.text(20, 18, "CAMPAIGN THEATRE", {
       fontFamily: "Arial Black, Arial",
@@ -1565,35 +1579,74 @@ export class MilestoneOneScene extends Phaser.Scene {
     const campaignProgression = getCampaignProgression(this.campaignChronicle);
     scenarios.forEach((scenario, index) => {
       const profile = SCENARIO_PROFILES[scenario];
-      const x = 20 + (index % 2) * 214;
-      const y = 82 + Math.floor(index / 2) * 70;
+      const column = index % 2;
+      const row = Math.floor(index / 2);
+      const x =
+        CAMPAIGN_THEATRE_LAYOUT.scenarioFirstColumnX +
+        column * (CAMPAIGN_THEATRE_LAYOUT.scenarioCardWidth + CAMPAIGN_THEATRE_LAYOUT.scenarioColumnGap);
+      const y =
+        CAMPAIGN_THEATRE_LAYOUT.scenarioFirstRowY +
+        row * (CAMPAIGN_THEATRE_LAYOUT.scenarioCardHeight + CAMPAIGN_THEATRE_LAYOUT.scenarioRowGap);
       const selected = scenario === this.campaignScenario;
       const conquests = this.getCampaignConquests(scenario);
       const honor = this.getCampaignHonor(scenario);
-      const button = this.add.rectangle(x, y, 206, 56, selected ? UI_COLORS.commandActive : UI_COLORS.command, 1).setOrigin(0);
+      const [artColumn, artRow] = CAMPAIGN_ART_FRAMES[scenario];
+      const art = this.add.image(
+        x + CAMPAIGN_THEATRE_LAYOUT.scenarioCardWidth / 2,
+        y + CAMPAIGN_THEATRE_LAYOUT.scenarioCardHeight / 2,
+        "campaign-theatres"
+      );
+      art.setCrop(
+        artColumn * CAMPAIGN_ART_ATLAS_CELL_SIZE,
+        artRow * CAMPAIGN_ART_ATLAS_CELL_SIZE,
+        CAMPAIGN_ART_ATLAS_CELL_SIZE,
+        CAMPAIGN_ART_ATLAS_CELL_SIZE
+      );
+      art.setDisplaySize(CAMPAIGN_THEATRE_LAYOUT.scenarioCardWidth * 2, CAMPAIGN_THEATRE_LAYOUT.scenarioCardHeight * 2);
+      art.setOrigin((artColumn + 0.5) / 2, (artRow + 0.5) / 2);
+      const button = this.add
+        .rectangle(
+          x,
+          y,
+          CAMPAIGN_THEATRE_LAYOUT.scenarioCardWidth,
+          CAMPAIGN_THEATRE_LAYOUT.scenarioCardHeight,
+          selected ? UI_COLORS.commandActive : UI_COLORS.command,
+          selected ? 0.26 : 0.46
+        )
+        .setOrigin(0);
       button.setScrollFactor(0);
       button.setStrokeStyle(selected ? 2 : 1, selected ? UI_COLORS.accent : UI_COLORS.trim);
+      const caption = this.add
+        .rectangle(
+          x,
+          y + CAMPAIGN_THEATRE_LAYOUT.scenarioCardHeight - 30,
+          CAMPAIGN_THEATRE_LAYOUT.scenarioCardWidth,
+          30,
+          UI_COLORS.panelDeep,
+          0.84
+        )
+        .setOrigin(0);
       const chapter = getCampaignChapter(scenario);
       const status = conquests
         ? `CROWNED ${conquests}`
         : campaignProgression.nextTheatre === scenario
           ? "NEXT THEATRE"
           : "UNCONQUERED";
-      const label = this.add.text(x + 10, y + 9, `CHAPTER ${chapter} // ${profile.label}`, {
+      const label = this.add.text(x + 9, y + CAMPAIGN_THEATRE_LAYOUT.scenarioCardHeight - 27, `CHAPTER ${chapter} // ${profile.label}`, {
         fontFamily: "Arial Black, Arial",
         fontSize: "10px",
         color: conquests || campaignProgression.nextTheatre === scenario ? "#f2d77f" : UI_COLORS.text,
         wordWrap: { width: 184 }
       });
-      const detail = this.add.text(x + 10, y + 27, honor ? `HONOR // ${honor.label}` : status, {
+      const detail = this.add.text(x + 9, y + CAMPAIGN_THEATRE_LAYOUT.scenarioCardHeight - 13, honor ? `HONOR // ${honor.label}` : status, {
         fontFamily: "Arial, sans-serif",
         fontSize: "8px",
         color: UI_COLORS.muted,
         wordWrap: { width: 184 }
       });
-      controls.push(button, label, detail);
+      controls.push(art, button, caption, label, detail);
     });
-    const beginPrompt = this.add.text(20, 222, "BEGIN REIGN // SELECT RIVAL DOCTRINE", {
+    const beginPrompt = this.add.text(20, 272, "BEGIN REIGN // SELECT RIVAL DOCTRINE", {
       fontFamily: "Arial Black, Arial",
       fontSize: "9px",
       color: "#e2bd61"
@@ -1603,10 +1656,12 @@ export class MilestoneOneScene extends Phaser.Scene {
     difficulties.forEach((difficulty, index) => {
       const profile = RIVAL_DIFFICULTY_PROFILES[difficulty];
       const x = 20 + index * 146;
-      const button = this.add.rectangle(x, 242, 136, 108, UI_COLORS.command, 1).setOrigin(0);
+      const button = this.add
+        .rectangle(x, CAMPAIGN_THEATRE_LAYOUT.difficultyY, 136, CAMPAIGN_THEATRE_LAYOUT.difficultyHeight, UI_COLORS.command, 1)
+        .setOrigin(0);
       button.setScrollFactor(0);
       button.setStrokeStyle(1, UI_COLORS.trim);
-      const label = this.add.text(x + 12, 259, `BEGIN // ${profile.label}`, {
+      const label = this.add.text(x + 12, CAMPAIGN_THEATRE_LAYOUT.difficultyY + 17, `BEGIN // ${profile.label}`, {
         fontFamily: "Arial Black, Arial",
         fontSize: "10px",
         color: UI_COLORS.text,
@@ -1614,7 +1669,7 @@ export class MilestoneOneScene extends Phaser.Scene {
       });
       const detail = this.add.text(
         x + 12,
-        298,
+        CAMPAIGN_THEATRE_LAYOUT.difficultyY + 56,
         `GRACE ${profile.openingGraceTicks} TICKS\nLEARNING +${profile.doctrineConfidenceGain}`,
         {
           fontFamily: "Arial, sans-serif",
@@ -1626,10 +1681,10 @@ export class MilestoneOneScene extends Phaser.Scene {
       controls.push(button, label, detail);
     });
     if (hasSavedReign) {
-      const continueButton = this.add.rectangle(20, 366, 430, 42, UI_COLORS.commandActive, 1).setOrigin(0);
+      const continueButton = this.add.rectangle(20, CAMPAIGN_THEATRE_LAYOUT.localSaveY, 430, 34, UI_COLORS.commandActive, 1).setOrigin(0);
       continueButton.setScrollFactor(0);
       continueButton.setStrokeStyle(1, UI_COLORS.trim);
-      const continueLabel = this.add.text(140, 380, "CONTINUE LOCAL REIGN", {
+      const continueLabel = this.add.text(140, CAMPAIGN_THEATRE_LAYOUT.localSaveY + 10, "CONTINUE LOCAL REIGN", {
         fontFamily: "Arial Black, Arial",
         fontSize: "11px",
         color: UI_COLORS.text
@@ -1637,10 +1692,14 @@ export class MilestoneOneScene extends Phaser.Scene {
       controls.push(continueButton, continueLabel);
     }
     this.campaignSetupPanel = this.add.container(0, 0, controls);
-    this.campaignSetupPanel.setSize(470, panelHeight);
+    this.campaignSetupPanel.setSize(CAMPAIGN_THEATRE_LAYOUT.width, panelHeight);
     this.campaignSetupPanel.setScrollFactor(0).setDepth(100).setVisible(true);
     this.campaignSetupInput?.destroy();
-    this.campaignSetupInput = this.add.zone(0, 0, 470, panelHeight).setOrigin(0).setScrollFactor(0).setDepth(101);
+    this.campaignSetupInput = this.add
+      .zone(0, 0, CAMPAIGN_THEATRE_LAYOUT.width, panelHeight)
+      .setOrigin(0)
+      .setScrollFactor(0)
+      .setDepth(101);
     this.campaignSetupInput.setInteractive({ useHandCursor: true });
     this.campaignSetupInput.on(
       "pointerdown",
@@ -1652,15 +1711,25 @@ export class MilestoneOneScene extends Phaser.Scene {
     pointer.event.stopPropagation();
     this.suppressNextPointerUp = true;
 
-    if (localY >= 82 && localY < 208) {
-      const column = localX < 224 ? 0 : 1;
-      const row = localY < 152 ? 0 : 1;
+    const scenarioBottom =
+      CAMPAIGN_THEATRE_LAYOUT.scenarioFirstRowY +
+      2 * CAMPAIGN_THEATRE_LAYOUT.scenarioCardHeight +
+      CAMPAIGN_THEATRE_LAYOUT.scenarioRowGap;
+    if (localY >= CAMPAIGN_THEATRE_LAYOUT.scenarioFirstRowY && localY < scenarioBottom) {
+      const column = localX < CAMPAIGN_THEATRE_LAYOUT.width / 2 ? 0 : 1;
+      const row =
+        localY < CAMPAIGN_THEATRE_LAYOUT.scenarioFirstRowY + CAMPAIGN_THEATRE_LAYOUT.scenarioCardHeight + CAMPAIGN_THEATRE_LAYOUT.scenarioRowGap
+          ? 0
+          : 1;
       const scenarios: ScenarioId[] = ["crownfall", "rivergate", "ashen-oath", "stonewall"];
       this.selectCampaignScenario(scenarios[row * 2 + column]);
       return;
     }
 
-    if (localY >= 242 && localY < 350) {
+    if (
+      localY >= CAMPAIGN_THEATRE_LAYOUT.difficultyY &&
+      localY < CAMPAIGN_THEATRE_LAYOUT.difficultyY + CAMPAIGN_THEATRE_LAYOUT.difficultyHeight
+    ) {
       const index = Math.floor((localX - 20) / 146);
       const difficulties: RivalDifficulty[] = ["disciple", "rival", "architect"];
       if (index >= 0 && index < difficulties.length && localX >= 20 + index * 146 && localX < 156 + index * 146) {
@@ -1669,7 +1738,13 @@ export class MilestoneOneScene extends Phaser.Scene {
       return;
     }
 
-    if (this.hasLocalSave() && localY >= 366 && localY < 408 && localX >= 20 && localX < 450) {
+    if (
+      this.hasLocalSave() &&
+      localY >= CAMPAIGN_THEATRE_LAYOUT.localSaveY &&
+      localY < CAMPAIGN_THEATRE_LAYOUT.localSaveY + 34 &&
+      localX >= 20 &&
+      localX < 450
+    ) {
       this.loadLocalGame();
     }
   }
@@ -2588,7 +2663,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     const bookScale = narrow ? Math.min(1, (width - 32) / 470) : 1;
     const realmScale = narrow ? Math.min(1, (width - 32) / 384) : 1;
     const victoryScale = narrow ? Math.min(1, (width - 32) / 420) : 1;
-    const campaignScale = narrow ? Math.min(1, (width - 32) / 470) : 1;
+    const campaignScale = narrow ? Math.min(1, (width - 32) / CAMPAIGN_THEATRE_LAYOUT.width) : 1;
     this.bookPanel.setScale(bookScale);
     this.realmPanel.setScale(realmScale);
     this.victoryPanel.setScale(victoryScale);
@@ -2605,7 +2680,7 @@ export class MilestoneOneScene extends Phaser.Scene {
       Math.max(16, Math.round((width - 420 * victoryScale) / 2)),
       Math.max(topHeight + 18, Math.round((height - 304 * victoryScale) / 2))
     );
-    const campaignPanelX = Math.max(16, Math.round((width - 470 * campaignScale) / 2));
+    const campaignPanelX = Math.max(16, Math.round((width - CAMPAIGN_THEATRE_LAYOUT.width * campaignScale) / 2));
     const campaignPanelY = Math.max(topHeight + 18, Math.round((height - this.campaignSetupPanel.height * campaignScale) / 2));
     this.campaignSetupPanel.setPosition(campaignPanelX, campaignPanelY);
     this.campaignSetupInput?.setScale(campaignScale).setPosition(campaignPanelX, campaignPanelY);

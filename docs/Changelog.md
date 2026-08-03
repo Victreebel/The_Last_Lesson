@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.10 - 2026-08-02
+
+- Rebuilt Campaign Theatre selection as four labeled painterly strategic vignettes for Crownfall, Rivergate, Ashen Oath, and Stonewall. The art preserves the existing Chapter, Chronicle, Honor, difficulty, input, simulation, and save/replay contracts while making each opening legible before a reign begins.
+
 ## 2.6.7 - 2026-08-02
 
 - Hardened the storefront delivery path. The HTML5 upload archive now validates its portable entry point, PWA files, optimized tactical assets, runtime chunks, and every local reference; GitHub Verify builds, validates, and retains the exact `the-last-lesson-storefront` package.

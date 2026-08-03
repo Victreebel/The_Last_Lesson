@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import sharp from "sharp";
-import { BOOK_PANEL_HEIGHT } from "../../src/rendering/uiLayout";
+import { BOOK_PANEL_HEIGHT, CAMPAIGN_THEATRE_LAYOUT } from "../../src/rendering/uiLayout";
 
 async function expectRenderedCanvas(page: Page): Promise<void> {
   const screenshot = await page.locator("canvas").screenshot();
@@ -24,10 +24,13 @@ async function beginCrownfallRivalReign(page: Page): Promise<void> {
   }
   const resolution = await canvas.evaluate((element: HTMLCanvasElement) => ({ width: element.width, height: element.height }));
   const topHeight = resolution.width < 640 ? 122 : resolution.width < 900 ? 94 : 58;
-  const campaignScale = resolution.width < 640 ? Math.min(1, (resolution.width - 32) / 470) : 1;
-  const panelX = Math.max(16, Math.round((resolution.width - 470 * campaignScale) / 2));
-  const panelY = Math.max(topHeight + 18, Math.round((resolution.height - 402 * campaignScale) / 2));
-  const rivalDoctrinePoint = { x: panelX + 234 * campaignScale, y: panelY + 296 * campaignScale };
+  const campaignScale = resolution.width < 640 ? Math.min(1, (resolution.width - 32) / CAMPAIGN_THEATRE_LAYOUT.width) : 1;
+  const panelX = Math.max(16, Math.round((resolution.width - CAMPAIGN_THEATRE_LAYOUT.width * campaignScale) / 2));
+  const panelY = Math.max(topHeight + 18, Math.round((resolution.height - CAMPAIGN_THEATRE_LAYOUT.height * campaignScale) / 2));
+  const rivalDoctrinePoint = {
+    x: panelX + 234 * campaignScale,
+    y: panelY + (CAMPAIGN_THEATRE_LAYOUT.difficultyY + 2) * campaignScale
+  };
   await page.mouse.click(
     bounds.x + (rivalDoctrinePoint.x / resolution.width) * bounds.width,
     bounds.y + (rivalDoctrinePoint.y / resolution.height) * bounds.height
@@ -43,11 +46,23 @@ async function beginAshenOathRivalReign(page: Page): Promise<void> {
   }
   const resolution = await canvas.evaluate((element: HTMLCanvasElement) => ({ width: element.width, height: element.height }));
   const topHeight = resolution.width < 640 ? 122 : resolution.width < 900 ? 94 : 58;
-  const campaignScale = resolution.width < 640 ? Math.min(1, (resolution.width - 32) / 470) : 1;
-  const panelX = Math.max(16, Math.round((resolution.width - 470 * campaignScale) / 2));
-  const panelY = Math.max(topHeight + 18, Math.round((resolution.height - 402 * campaignScale) / 2));
-  const ashenOathPoint = { x: panelX + 120 * campaignScale, y: panelY + 170 * campaignScale };
-  const rivalDoctrinePoint = { x: panelX + 234 * campaignScale, y: panelY + 296 * campaignScale };
+  const campaignScale = resolution.width < 640 ? Math.min(1, (resolution.width - 32) / CAMPAIGN_THEATRE_LAYOUT.width) : 1;
+  const panelX = Math.max(16, Math.round((resolution.width - CAMPAIGN_THEATRE_LAYOUT.width * campaignScale) / 2));
+  const panelY = Math.max(topHeight + 18, Math.round((resolution.height - CAMPAIGN_THEATRE_LAYOUT.height * campaignScale) / 2));
+  const ashenOathPoint = {
+    x: panelX + 120 * campaignScale,
+    y:
+      panelY +
+      (CAMPAIGN_THEATRE_LAYOUT.scenarioFirstRowY +
+        CAMPAIGN_THEATRE_LAYOUT.scenarioCardHeight +
+        CAMPAIGN_THEATRE_LAYOUT.scenarioRowGap +
+        CAMPAIGN_THEATRE_LAYOUT.scenarioCardHeight / 2) *
+        campaignScale
+  };
+  const rivalDoctrinePoint = {
+    x: panelX + 234 * campaignScale,
+    y: panelY + (CAMPAIGN_THEATRE_LAYOUT.difficultyY + 2) * campaignScale
+  };
 
   await page.mouse.click(
     bounds.x + (ashenOathPoint.x / resolution.width) * bounds.width,
@@ -92,6 +107,7 @@ test("launches the campaign theatre and begins a Crownfall reign", async ({ page
   await expect(page.locator("#the-last-lesson-announcements")).toContainText("Open BUILD [B], choose FARM");
   await expect.poll(() => assetUrls.some((url) => url.endsWith("painterly-battlefield-v1.webp"))).toBe(true);
   await expect.poll(() => assetUrls.some((url) => url.endsWith("building-atlas-v1.webp"))).toBe(true);
+  await expect.poll(() => assetUrls.some((url) => url.endsWith("campaign-theatres-v1.webp"))).toBe(true);
   expect(pageErrors).toEqual([]);
 });
 

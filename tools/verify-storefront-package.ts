@@ -35,6 +35,9 @@ if (!list.some((entry) => /^assets\/phaser-[\w-]+\.js$/.test(entry))) {
 if (!list.some((entry) => /^assets\/painterly-battlefield-v1\.webp$/.test(entry))) {
   fail("missing painterly battlefield asset");
 }
+if (!list.some((entry) => /^assets\/campaign-theatres-v1\.webp$/.test(entry))) {
+  fail("missing painterly campaign theatre asset");
+}
 
 const readArchiveEntry = (entry: string): string => execFileSync("unzip", ["-p", archive, entry], { encoding: "utf8" });
 const index = readArchiveEntry("index.html");

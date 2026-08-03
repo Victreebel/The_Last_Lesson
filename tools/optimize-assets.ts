@@ -14,7 +14,8 @@ interface WebpAsset {
 const webpAssets: readonly WebpAsset[] = [
   { source: "painterly-battlefield-v1.png", output: "painterly-battlefield-v1.webp", quality: 82 },
   { source: "building-atlas-v1.png", output: "building-atlas-v1.webp", quality: 86 },
-  { source: "unit-atlas-v1.png", output: "unit-atlas-v1.webp", quality: 86 }
+  { source: "unit-atlas-v1.png", output: "unit-atlas-v1.webp", quality: 86 },
+  { source: "campaign-theatres-v1.png", output: "campaign-theatres-v1.webp", quality: 84 }
 ];
 
 await mkdir(publicDirectory, { recursive: true });
