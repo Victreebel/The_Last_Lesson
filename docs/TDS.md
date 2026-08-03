@@ -1462,6 +1462,8 @@ The frozen gameplay architecture is implemented as a robust vertical slice. Rema
 
 Each addition must preserve deterministic command replay and the simulation/presentation separation documented above.
 
+`docs/PlaytestProtocol.md` defines the current human-session method for this delivery work. It captures campaign briefing comprehension, Mandate discovery, Heir-feedback comprehension, early economy-versus-military tradeoffs, and the legibility of each Theatre's first Rival pressure. It is a production research artifact, not runtime content or authority state.
+
 ---
 
 ## 30. Current Readiness Statement

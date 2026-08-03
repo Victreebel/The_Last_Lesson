@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.28 - 2026-08-03
+
+- Added a facilitator-ready playtest protocol for all Campaign Theatres. It records briefing comprehension, Mandate discovery, Heir-feedback understanding, early strategic tradeoffs, Rival pressure clarity, and mobile/desktop presentation issues so human feedback can drive the next tuning pass.
+
 ## 2.6.27 - 2026-08-03
 
 - Made the core teaching choice fully transparent: Reward and Punish now show their exact confidence and Trust change in the Heir console. Simulation and presentation share one feedback contract, so the displayed consequence always matches the authoritative lesson result.

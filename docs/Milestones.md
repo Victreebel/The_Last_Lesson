@@ -143,6 +143,7 @@ Implemented:
 - Campaign Theatre now pairs each scenario's terrain identity and Honor with a concise opening directive, giving the player a concrete first civic or tactical response before choosing the Rival Doctrine.
 - Rival Doctrine cards now state their expected pressure and adaptation character beside their transparent grace and learning values, turning difficulty choice into an informed strategic decision without adding combat or resource bonuses.
 - Campaign Theatre maps now differ in authoritative terrain as well as their opening resources and rules: Rivergate expands a navigable southern waterway without closing the rival land route, Ashen Oath owns a blighted marsh belt, and Stonewall begins on a hill-fort ridge. Scenario, health, and balance suites protect those tactical identities.
+- A facilitator-ready four-Theatre playtest protocol now pairs human observation with the deterministic balance suite, defining the first-session, teaching-loop, difficulty-legibility, and viewport questions that must be answered before wider release.
 
 ## Milestone 4: Persistence Foundation
 
