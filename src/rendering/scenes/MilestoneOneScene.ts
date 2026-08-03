@@ -12,6 +12,7 @@ import { AudioDirector } from "../AudioDirector";
 import { getCombatFeedbackPresentation } from "../combatPresentation";
 import { describeGameEvent, selectTacticalReportEvents } from "../eventNarrative";
 import { getMiracleFeedbackPresentation } from "../miraclePresentation";
+import { getOrderIndicators } from "../orderPresentation";
 import { getTerrainPresentation } from "../terrainPresentation";
 import { BOOK_PANEL_HEIGHT, CAMPAIGN_THEATRE_LAYOUT } from "../uiLayout";
 import { Simulation } from "../../simulation/Simulation";
@@ -338,6 +339,7 @@ export class MilestoneOneScene extends Phaser.Scene {
   private readonly buildingTiles = new Map<BuildingKind, BuildingTile>();
   private worldLayer!: Phaser.GameObjects.Container;
   private terrainLayer?: Phaser.GameObjects.Container;
+  private orderLayer?: Phaser.GameObjects.Graphics;
   private readonly buildingSprites = new Map<string, Phaser.GameObjects.Rectangle>();
   private readonly buildingArtSprites = new Map<string, Phaser.GameObjects.Image>();
   private readonly buildingLabelSprites = new Map<string, Phaser.GameObjects.Text>();
@@ -3975,6 +3977,7 @@ export class MilestoneOneScene extends Phaser.Scene {
   private renderWorld(): void {
     const state = this.simulation.getState();
     this.pruneControlGroups(state);
+    this.renderOrderIndicators(state);
 
     for (const building of Object.values(state.buildings)) {
       this.renderBuilding(building);
@@ -4019,6 +4022,53 @@ export class MilestoneOneScene extends Phaser.Scene {
 
     if (this.selectedBattalionId && !state.battalions[this.selectedBattalionId]) {
       this.selectedBattalionId = this.selectedBattalionIds.values().next().value ?? null;
+    }
+  }
+
+  private renderOrderIndicators(state: WorldState): void {
+    if (!this.orderLayer) {
+      this.orderLayer = this.add.graphics();
+      this.worldLayer.add(this.orderLayer);
+    }
+    this.orderLayer.clear();
+
+    for (const indicator of getOrderIndicators(state, this.selectedBattalionIds, this.selectedCaravanId)) {
+      const color =
+        indicator.kind === "attack"
+          ? 0xe75f4f
+          : indicator.kind === "advance"
+            ? 0xf2d77f
+            : indicator.kind === "naval"
+              ? 0x9cc8d5
+              : 0x84cbe1;
+      const angle = Phaser.Math.Angle.Between(
+        indicator.origin.x,
+        indicator.origin.y,
+        indicator.destination.x,
+        indicator.destination.y
+      );
+      const length = Phaser.Math.Distance.BetweenPoints(indicator.origin, indicator.destination);
+      if (length < 18) {
+        continue;
+      }
+
+      this.orderLayer.lineStyle(2, color, 0.86);
+      this.orderLayer.lineBetween(indicator.origin.x, indicator.origin.y, indicator.destination.x, indicator.destination.y);
+      const wingLength = 13;
+      const wingSpread = Math.PI / 7;
+      this.orderLayer.fillStyle(color, 0.94);
+      this.orderLayer.fillTriangle(
+        indicator.destination.x,
+        indicator.destination.y,
+        indicator.destination.x - Math.cos(angle - wingSpread) * wingLength,
+        indicator.destination.y - Math.sin(angle - wingSpread) * wingLength,
+        indicator.destination.x - Math.cos(angle + wingSpread) * wingLength,
+        indicator.destination.y - Math.sin(angle + wingSpread) * wingLength
+      );
+      if (indicator.kind === "attack") {
+        this.orderLayer.lineStyle(2, color, 0.9);
+        this.orderLayer.strokeCircle(indicator.destination.x, indicator.destination.y, 22);
+      }
     }
   }
 

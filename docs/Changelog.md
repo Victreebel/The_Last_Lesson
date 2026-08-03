@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.14 - 2026-08-03
+
+- Added a battlefield order overlay for selected Crown forces. Move, advance, naval, and attack orders now render their active route and destination marker directly on the tactical map while respecting fog of war.
+
 ## 2.6.13 - 2026-08-03
 
 - Expanded every terrain-zone label with its exact movement, defense, placement, or naval consequence. Map reading now communicates the tactical trade directly, and rendering coverage checks those captions against the authoritative terrain modifiers.
