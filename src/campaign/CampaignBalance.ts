@@ -13,9 +13,20 @@ export const CAMPAIGN_BALANCE_SCENARIOS: readonly ScenarioId[] = [
 
 export const CAMPAIGN_BALANCE_TICKS = 180;
 
+/** A bounded release-gate sample, intentionally small enough for every push. */
+export const CAMPAIGN_BALANCE_SOAK_SEEDS = [9601, 9623, 9659, 9697] as const;
+
+/** Every transparent Rival Doctrine profile must preserve a viable standard opening. */
+export const CAMPAIGN_BALANCE_SOAK_DIFFICULTIES: readonly RivalDifficulty[] = [
+  "disciple",
+  "rival",
+  "architect"
+];
+
 export interface CampaignBalanceReport {
   readonly scenarioId: ScenarioId;
   readonly seed: number;
+  readonly rivalDifficulty: RivalDifficulty;
   readonly ticks: number;
   readonly winnerEmpireId?: string;
   readonly playerCastleDefense: number;
@@ -146,7 +157,8 @@ export function runCampaignBalancePlaytest(
 ): CampaignBalanceReport {
   const seed = options.seed ?? 9600;
   const ticks = options.ticks ?? CAMPAIGN_BALANCE_TICKS;
-  const simulation = new Simulation(createInitialWorld(seed, options.difficulty ?? "rival", scenarioId));
+  const rivalDifficulty = options.difficulty ?? "rival";
+  const simulation = new Simulation(createInitialWorld(seed, rivalDifficulty, scenarioId));
   for (const command of openingCommands(scenarioId)) {
     simulation.enqueueCommand(command);
   }
@@ -192,6 +204,7 @@ export function runCampaignBalancePlaytest(
   return {
     scenarioId,
     seed,
+    rivalDifficulty,
     ticks,
     winnerEmpireId: state.victory.winnerEmpireId,
     playerCastleDefense: playerCastle?.defense ?? 0,
@@ -221,4 +234,22 @@ export function runCampaignBalanceSuite(
   options: { readonly seed?: number; readonly ticks?: number; readonly difficulty?: RivalDifficulty } = {}
 ): readonly CampaignBalanceReport[] {
   return CAMPAIGN_BALANCE_SCENARIOS.map((scenarioId) => runCampaignBalancePlaytest(scenarioId, options));
+}
+
+/**
+ * Exercises the standard Crown opening across bounded doctrine and seed matrices.
+ * This is a release-quality balance probe, not a substitute for human playtests.
+ */
+export function runCampaignBalanceSoak(
+  options: {
+    readonly seeds?: readonly number[];
+    readonly ticks?: number;
+    readonly difficulties?: readonly RivalDifficulty[];
+  } = {}
+): readonly CampaignBalanceReport[] {
+  const seeds = options.seeds ?? CAMPAIGN_BALANCE_SOAK_SEEDS;
+  const difficulties = options.difficulties ?? CAMPAIGN_BALANCE_SOAK_DIFFICULTIES;
+  return difficulties.flatMap((difficulty) =>
+    seeds.flatMap((seed) => runCampaignBalanceSuite({ seed, ticks: options.ticks, difficulty }))
+  );
 }

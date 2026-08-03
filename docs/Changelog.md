@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.15 - 2026-08-03
+
+- Added a bounded Campaign Theatre balance soak. Every release now checks the representative Crown opening across four deterministic world seeds, all four theatres, and each transparent Rival Doctrine profile, with a `pnpm balance:soak` tuning report for local review.
+
 ## 2.6.14 - 2026-08-03
 
 - Added a battlefield order overlay for selected Crown forces. Move, advance, naval, and attack orders now render their active route and destination marker directly on the tactical map while respecting fog of war.

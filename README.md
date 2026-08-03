@@ -121,6 +121,8 @@ pnpm test
 
 The test suite covers deterministic simulation, saves, captures, doctrine learning, faith/religion, population, terrain, combat specialization, logistics, naval transport, garrisons, captive policy, visibility, campaign scale, and real WebSocket authority transport.
 
+Run `pnpm balance:soak` to print the bounded Campaign Theatre health matrix used by the automated release suite: four deterministic seeds across Disciple, Rival, and Architect doctrine profiles. It supplements, but does not replace, human balance playtests.
+
 GitHub Actions runs this same test-and-build gate for every pull request and every push to `main`.
 
 ## Stack

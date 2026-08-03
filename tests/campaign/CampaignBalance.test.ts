@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   CAMPAIGN_BALANCE_SCENARIOS,
+  CAMPAIGN_BALANCE_SOAK_DIFFICULTIES,
+  CAMPAIGN_BALANCE_SOAK_SEEDS,
   runCampaignBalancePlaytest,
+  runCampaignBalanceSoak,
   runCampaignBalanceSuite
 } from "../../src/campaign/CampaignBalance";
 
@@ -38,5 +41,20 @@ describe("campaign balance playtests", () => {
     expect(runCampaignBalancePlaytest("crownfall", { seed: 9603 })).toEqual(
       runCampaignBalancePlaytest("crownfall", { seed: 9603 })
     );
+  });
+
+  it("keeps the representative opening healthy across the bounded release doctrine-and-seed matrix", () => {
+    const reports = runCampaignBalanceSoak();
+
+    expect(reports).toHaveLength(
+      CAMPAIGN_BALANCE_SOAK_DIFFICULTIES.length *
+        CAMPAIGN_BALANCE_SOAK_SEEDS.length *
+        CAMPAIGN_BALANCE_SCENARIOS.length
+    );
+    expect(new Set(reports.map((report) => report.rivalDifficulty))).toEqual(
+      new Set(CAMPAIGN_BALANCE_SOAK_DIFFICULTIES)
+    );
+    expect(new Set(reports.map((report) => report.seed))).toEqual(new Set(CAMPAIGN_BALANCE_SOAK_SEEDS));
+    expect(reports.every((report) => report.healthy && report.rejectedCommands === 0)).toBe(true);
   });
 });
