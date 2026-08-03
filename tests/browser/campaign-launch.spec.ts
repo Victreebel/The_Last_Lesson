@@ -257,6 +257,17 @@ test("exports a local playtest record from the Book of Lessons", async ({ page }
   await expect(page.locator("#the-last-lesson-announcements")).toContainText("Local playtest record exported");
 });
 
+test("selects a visible building shortcut from the expanded Build palette", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto("/");
+  await beginCrownfallRivalReign(page);
+
+  await page.locator("canvas").press("b");
+  await expect(page.locator("#the-last-lesson-announcements")).toContainText("Build panel expanded");
+  await page.locator("canvas").press("1");
+  await expect(page.locator("#the-last-lesson-announcements")).toContainText("Construction ready: Villa");
+});
+
 test("requires deliberate confirmation before clearing Book-local data", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto("/");

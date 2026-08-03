@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.40 - 2026-08-03
+
+- The expanded Build palette now exposes visible, contextual keyboard choices for all thirteen structures: `1` through `9`, `0`, then `Q`/`W`/`E`. The keys apply only while Build is open, preserve field control groups, and lead into the existing terrain placement and drag rules.
+
 ## 2.6.39 - 2026-08-03
 
 - Clearing local data now also suppresses automatic save, Chronicle, and Honor persistence for the current reign. Local continuity resumes only after the player deliberately saves, restores, or starts a new reign, so the reset cannot silently recreate browser records moments later.

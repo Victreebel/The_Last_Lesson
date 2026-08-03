@@ -65,6 +65,7 @@ For container deployment, health checks, and the required `wss://` production bo
 - Click or drag: select Crown forces.
 - Right-click or use the command dock: issue movement, attack, retreat, embarkation, and supply orders.
 - `BUILD`: choose a structure, then click terrain; drag to lay roads and walls.
+- With `BUILD` open, use its visible `1` through `9`, `0`, and `Q`/`W`/`E` shortcuts to choose a structure before placing it with the established terrain click or drag rules.
 - `HOUNDS`: train a fast four-hound scout pack from a Town Square. It costs food and wood, reveals farther than a battalion, and uses no citizens.
 - Click a Crown Castle or choose a seat in `REALM`: change the active governor and settlement command context.
 - `HEIR`: inspect doctrine and reward or punish the current governor's last lesson.

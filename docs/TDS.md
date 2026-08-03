@@ -2,7 +2,7 @@
 
 ## Technical Design Specification
 
-**Version:** 1.13
+**Version:** 1.14
 **Status:** Active Implementation Blueprint
 **Date:** 2026-08-03
 **Working Title:** The Last Lesson  
@@ -1475,6 +1475,8 @@ The Book of Lessons may export a local `the-last-lesson-playtest-record` JSON ar
 `docs/Privacy.md` is the player-facing disclosure for this implementation boundary. It must remain synchronized with browser-local storage, local file export, optional host transport, and any future account, analytics, cloud, payment, matchmaking, or persistence work.
 
 The Book of Lessons exposes a two-step local-data reset. Its first action must only request confirmation; its confirmed action may remove browser keys beginning with `the-last-lesson.` but must never mutate the active `WorldState`, delete downloaded files, or alter multiplayer authority. A confirmed reset suppresses automatic saves and automatic Chronicle/Honor persistence for the active reign until an explicit save, restore, or fresh reign resumes local continuity. Browser coverage verifies both the confirmation boundary and that the active tactical reign remains visible after the reset.
+
+When the Build palette is expanded, it exposes a visible keyboard selection route for all available building options. `1` through `9`, `0`, then `Q`/`W`/`E` map to palette order and may call the same renderer-side preflight and simulation-authoritative placement path as a pointer selection. Those shortcuts must remain contextual to the expanded Build palette so normal field control-group input is unaffected.
 
 ---
 

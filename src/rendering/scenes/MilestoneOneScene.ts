@@ -89,6 +89,8 @@ const BUILDING_OPTIONS: ReadonlyArray<{
   { kind: "outpost", label: "Outpost", detail: "Extends vision, local defense, and frontier religious pressure." }
 ];
 
+const BUILDING_SHORTCUT_KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "Q", "W", "E"] as const;
+
 const BUILDING_COLORS: Record<BuildingKind, number> = {
   castle: 0x8f8366,
   "military-quarters": 0x9d4640,
@@ -512,6 +514,9 @@ export class MilestoneOneScene extends Phaser.Scene {
       if (this.handleBookShortcut(event)) {
         return;
       }
+      if (this.handleBuildShortcut(event)) {
+        return;
+      }
       const slot = Number.parseInt(event.key, 10);
       if (!Number.isInteger(slot) || slot < 1 || slot > 9) {
         return;
@@ -562,6 +567,22 @@ export class MilestoneOneScene extends Phaser.Scene {
     }
     event.preventDefault();
     action();
+    return true;
+  }
+
+  /** Build shortcuts exist only while the visible palette is open. */
+  private handleBuildShortcut(event: KeyboardEvent): boolean {
+    if (!this.buildingsPanelExpanded || event.ctrlKey || event.metaKey || event.altKey) {
+      return false;
+    }
+    const key = event.key.toUpperCase();
+    const index = BUILDING_SHORTCUT_KEYS.indexOf(key as (typeof BUILDING_SHORTCUT_KEYS)[number]);
+    const option = index >= 0 ? BUILDING_OPTIONS[index] : undefined;
+    if (!option) {
+      return false;
+    }
+    event.preventDefault();
+    this.selectBuilding(option.kind);
     return true;
   }
 
@@ -633,6 +654,11 @@ export class MilestoneOneScene extends Phaser.Scene {
       this.updateHeirPanel();
     }
     this.updateBuildingsPanel();
+    this.updateUi([
+      this.buildingsPanelExpanded
+        ? "Build panel expanded. Use keys 1 through 9, 0, Q, W, or E to select a structure."
+        : "Build panel collapsed."
+    ]);
   }
 
   private toggleHeirPanel(): void {
@@ -3322,7 +3348,8 @@ export class MilestoneOneScene extends Phaser.Scene {
       tile.label.setAlpha(affordability.canAfford ? 1 : 0.48);
       tile.count.setAlpha(affordability.canAfford ? 1 : 0.48);
       const cost = getBuildingCost(kind);
-      tile.count.setText(`OWNED ${counts[kind] ?? 0}\nCOST ${cost.wood}W ${cost.iron}I`);
+      const shortcut = BUILDING_SHORTCUT_KEYS[BUILDING_OPTIONS.findIndex((option) => option.kind === kind)];
+      tile.count.setText(`${shortcut} OWNED ${counts[kind] ?? 0}\nCOST ${cost.wood}W ${cost.iron}I`);
     }
 
     if (this.buildingsPanelExpanded) {
@@ -3332,7 +3359,7 @@ export class MilestoneOneScene extends Phaser.Scene {
           ? affordability?.canAfford
             ? `READY: ${this.getBuildingLabel(this.selectedBuildingKind).toUpperCase()} // Select terrain to deploy.`
             : `INSUFFICIENT: ${this.formatBuildingShortfall(affordability!)}.`
-          : "Select a structure, then select terrain to deploy."
+          : "KEYS 1-9, 0, Q/W/E // Select a structure, then select terrain to deploy."
       );
     }
 
