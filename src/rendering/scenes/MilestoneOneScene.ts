@@ -3182,7 +3182,7 @@ export class MilestoneOneScene extends Phaser.Scene {
           lastDoctrine ? `WHEN: ${lastDoctrine.condition.toUpperCase()}` : "WHEN: A command is observed.",
           lastDoctrine ? `PURPOSE: ${lastDoctrine.goal.toUpperCase()}` : "PURPOSE: SHAPE FUTURE GOVERNANCE.",
           lastDoctrine
-            ? `FEEDBACK: REWARD +${HEIR_FEEDBACK.reward.confidenceDelta} CONFIDENCE / +${HEIR_FEEDBACK.reward.trustDelta} TRUST // PUNISH ${HEIR_FEEDBACK.punish.confidenceDelta} / ${HEIR_FEEDBACK.punish.trustDelta}`
+            ? `FEEDBACK: REWARD REINFORCES (+${HEIR_FEEDBACK.reward.confidenceDelta} CONFIDENCE / +${HEIR_FEEDBACK.reward.trustDelta} TRUST) // PUNISH WEAKENS (${HEIR_FEEDBACK.punish.confidenceDelta} / ${HEIR_FEEDBACK.punish.trustDelta})`
             : "FEEDBACK: OBSERVE A LESSON BEFORE YOU REINFORCE OR DISCIPLINE IT.",
           "",
           "GOVERNANCE:",

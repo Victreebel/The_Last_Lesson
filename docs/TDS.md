@@ -2,7 +2,7 @@
 
 ## Technical Design Specification
 
-**Version:** 1.19
+**Version:** 1.20
 **Status:** Active Implementation Blueprint
 **Date:** 2026-08-03
 **Working Title:** The Last Lesson  
@@ -87,7 +87,7 @@ The scene exposes the same command state through pointer controls and keyboard c
 
 When their panel is expanded, the Heir console reserves visible `1` and `2` for the existing Reward and Punish command submissions; the Accord console reserves visible `1` for its existing captive-exchange submission. These contextual keys only operate while their matching presentation surface is open, reject modified key combinations, and never bypass simulation command validation. They therefore preserve `Ctrl`/`Cmd` control groups and normal numeric field selection when those panels are closed.
 
-Mandate guidance must use this same visible vocabulary. The captive-policy step identifies `ACCORD [D]`, then `1` to propose its available exchange; the teaching step identifies `HEIR [H]`, then `1` to Reward or `2` to Punish. Guidance may highlight or describe an existing input route, but it must never submit it, synthesize a command, or introduce tutorial authority state.
+Mandate guidance must use this same visible vocabulary. The captive-policy step identifies `ACCORD [D]`, then `1` to propose its available exchange; the teaching step identifies the player's last field order as the observed lesson, then identifies `HEIR [H]`, `1` to Reward and reinforce that judgment, or `2` to Punish and weaken it. Guidance may highlight or describe an existing input route, but it must never submit it, synthesize a command, or introduce tutorial authority state.
 
 Campaign Theatre summary, terrain, Honor, opening, scenario-tag, status, and Rival Doctrine briefing text must remain readable at compact desktop scale. Presentation may raise type size or wrap static copy within the existing campaign layout, but it must not alter authored campaign focus order, card hit regions, or any scenario/difficulty selection semantics.
 

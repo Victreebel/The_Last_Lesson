@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.47 - 2026-08-03
+
+- Clarified the Heir teaching loop at the exact decision point: the Mandate identifies the player's last field order as the observed lesson, while the Heir console now states that Reward reinforces its judgment and Punish weakens it.
+
 ## 2.6.46 - 2026-08-03
 
 - Fixed fixed-HUD pointer alignment under the tactical camera. Wide-header and screen-space management controls now receive interaction at their rendered locations rather than at camera-shifted world coordinates.

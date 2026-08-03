@@ -25,7 +25,7 @@ describe("imperial mandate", () => {
       complete: true
     });
     expect(getImperialMandateProgress(initial).steps.find((step) => step.id === "teach-heir")?.instruction).toContain(
-      "[1] REWARD or [2] PUNISH"
+      "[1] REWARD to reinforce it or [2] PUNISH to weaken it"
     );
   });
 

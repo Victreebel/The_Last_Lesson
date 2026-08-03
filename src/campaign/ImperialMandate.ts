@@ -139,7 +139,7 @@ export function getImperialMandateProgress(state: WorldState): ImperialMandatePr
   steps.push({
     id: "teach-heir",
     label: "TEACH THE HEIR: REWARD OR PUNISH THE LAST LESSON.",
-    instruction: "Open HEIR [H], then [1] REWARD or [2] PUNISH the last lesson.",
+    instruction: "Your last field order became a lesson. Open HEIR [H], then [1] REWARD to reinforce it or [2] PUNISH to weaken it.",
     complete: hasGuidedHeir(state)
   });
   steps.push({
