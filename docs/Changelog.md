@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.39 - 2026-08-03
+
+- Clearing local data now also suppresses automatic save, Chronicle, and Honor persistence for the current reign. Local continuity resumes only after the player deliberately saves, restores, or starts a new reign, so the reset cannot silently recreate browser records moments later.
+
 ## 2.6.38 - 2026-08-03
 
 - Added a deliberate two-step `CLEAR LOCAL DATA` action to the Book of Lessons. It removes only this game’s browser-local records, preserves the current in-memory reign and downloaded archives, and is available by the visible contextual `0` shortcut. Browser coverage protects the confirmation boundary.

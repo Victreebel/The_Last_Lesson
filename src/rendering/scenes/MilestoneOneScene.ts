@@ -319,6 +319,7 @@ export class MilestoneOneScene extends Phaser.Scene {
   private reducedMotion = false;
   private highContrast = false;
   private clearLocalDataConfirmationPending = false;
+  private localPersistenceSuppressed = false;
   private replayReview?: ReplayReviewState;
   private realmControl!: Phaser.GameObjects.Container;
   private realmControlLabel!: Phaser.GameObjects.Text;
@@ -1140,10 +1141,12 @@ export class MilestoneOneScene extends Phaser.Scene {
       return this.getCampaignHonor(state.scenarioId);
     }
     this.campaignHonors = { ...this.campaignHonors, [state.scenarioId]: true };
-    try {
-      window.localStorage.setItem(LOCAL_CAMPAIGN_HONORS_KEY, JSON.stringify(this.campaignHonors));
-    } catch {
-      // Campaign honors are optional local presentation progress.
+    if (!this.localPersistenceSuppressed) {
+      try {
+        window.localStorage.setItem(LOCAL_CAMPAIGN_HONORS_KEY, JSON.stringify(this.campaignHonors));
+      } catch {
+        // Campaign honors are optional local presentation progress.
+      }
     }
     return honor;
   }
@@ -1157,10 +1160,12 @@ export class MilestoneOneScene extends Phaser.Scene {
       ...this.campaignChronicle,
       [scenario]: this.getCampaignConquests(scenario) + 1
     };
-    try {
-      window.localStorage.setItem(LOCAL_CAMPAIGN_CHRONICLE_KEY, JSON.stringify(this.campaignChronicle));
-    } catch {
-      // Chronicle progress is optional local presentation state.
+    if (!this.localPersistenceSuppressed) {
+      try {
+        window.localStorage.setItem(LOCAL_CAMPAIGN_CHRONICLE_KEY, JSON.stringify(this.campaignChronicle));
+      } catch {
+        // Chronicle progress is optional local presentation state.
+      }
     }
   }
 
@@ -2103,6 +2108,7 @@ export class MilestoneOneScene extends Phaser.Scene {
   private restartCampaign(message = "A new reign begins."): void {
     this.disconnectFromMultiplayer();
     this.campaignInitialWorld = createInitialWorld(777, this.campaignDifficulty, this.campaignScenario);
+    this.localPersistenceSuppressed = false;
     this.simulation = new Simulation(structuredClone(this.campaignInitialWorld));
     this.commandSequence = 0;
     this.recordedCampaignVictoryScenario = undefined;
@@ -2261,6 +2267,7 @@ export class MilestoneOneScene extends Phaser.Scene {
 
   private saveLocalGame(): void {
     try {
+      this.localPersistenceSuppressed = false;
       window.localStorage.setItem(LOCAL_SAVE_KEY, serializeSaveGame(createSaveGame(this.simulation)));
       window.localStorage.setItem(LOCAL_REPLAY_ORIGIN_KEY, JSON.stringify(this.campaignInitialWorld));
       this.updateUi(["Local save recorded in the Book of Lessons."]);
@@ -2362,6 +2369,7 @@ export class MilestoneOneScene extends Phaser.Scene {
 
   private restoreSavedReign(save: SaveGame, campaignInitialWorld: WorldState): void {
     this.disconnectFromMultiplayer();
+    this.localPersistenceSuppressed = false;
     this.simulation = restoreSaveGame(save);
     this.campaignInitialWorld = structuredClone(campaignInitialWorld);
     this.campaignDifficulty = this.simulation.getState().rivalDifficulty;
@@ -2391,7 +2399,7 @@ export class MilestoneOneScene extends Phaser.Scene {
   }
 
   private recordAutoSave(tick: number): void {
-    if (tick % AUTO_SAVE_INTERVAL_TICKS !== 0) {
+    if (this.localPersistenceSuppressed || tick % AUTO_SAVE_INTERVAL_TICKS !== 0) {
       return;
     }
     try {
@@ -2434,6 +2442,7 @@ export class MilestoneOneScene extends Phaser.Scene {
       }
       this.campaignChronicle = {};
       this.campaignHonors = {};
+      this.localPersistenceSuppressed = true;
       this.clearLocalDataConfirmationPending = false;
       this.updateBookOfLessons();
       this.updateUi(["Local records cleared. This active reign and downloaded files remain available."]);

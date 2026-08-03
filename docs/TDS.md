@@ -2,7 +2,7 @@
 
 ## Technical Design Specification
 
-**Version:** 1.12
+**Version:** 1.13
 **Status:** Active Implementation Blueprint
 **Date:** 2026-08-03
 **Working Title:** The Last Lesson  
@@ -1474,7 +1474,7 @@ The Book of Lessons may export a local `the-last-lesson-playtest-record` JSON ar
 
 `docs/Privacy.md` is the player-facing disclosure for this implementation boundary. It must remain synchronized with browser-local storage, local file export, optional host transport, and any future account, analytics, cloud, payment, matchmaking, or persistence work.
 
-The Book of Lessons exposes a two-step local-data reset. Its first action must only request confirmation; its confirmed action may remove browser keys beginning with `the-last-lesson.` but must never mutate the active `WorldState`, delete downloaded files, or alter multiplayer authority. Browser coverage verifies both the confirmation boundary and that the active tactical reign remains visible after the reset.
+The Book of Lessons exposes a two-step local-data reset. Its first action must only request confirmation; its confirmed action may remove browser keys beginning with `the-last-lesson.` but must never mutate the active `WorldState`, delete downloaded files, or alter multiplayer authority. A confirmed reset suppresses automatic saves and automatic Chronicle/Honor persistence for the active reign until an explicit save, restore, or fresh reign resumes local continuity. Browser coverage verifies both the confirmation boundary and that the active tactical reign remains visible after the reset.
 
 ---
 

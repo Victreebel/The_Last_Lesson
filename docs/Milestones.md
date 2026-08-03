@@ -150,6 +150,7 @@ Implemented:
 - The Book of Lessons now gives keyboard players a complete, visibly labeled `1` through `9` path to local saves, portable archives, replay review, local playtest evidence, and presentation preferences without interfering with normal battlefield control groups.
 - A player-facing privacy and local-data summary now documents the static campaign’s no-account/no-telemetry boundary, browser-local continuity data, local playtest evidence, and the optional self-hosted multiplayer transport.
 - The Book of Lessons now exposes a deliberate two-step, browser-tested local-data reset. It clears only `the-last-lesson.*` browser records, preserving the active in-memory reign and player-controlled downloaded archives.
+- After a confirmed reset, automatic save, Chronicle, and Honor persistence remain suppressed for the active reign until an explicit save, restore, or new reign. This prevents cleared browser records from silently reappearing.
 
 ## Milestone 4: Persistence Foundation
 

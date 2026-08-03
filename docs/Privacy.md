@@ -31,7 +31,9 @@ browser profile unless the player explicitly downloads, shares, or exports it.
 Clearing this site’s browser storage removes those local records. The Book of
 Lessons also provides a deliberately two-step `CLEAR LOCAL DATA` action for
 the game’s own `the-last-lesson.*` records; it keeps the current in-memory
-reign and downloaded files intact. Exported `.tll` archives and
+reign and downloaded files intact, then suppresses automatic local persistence
+for that reign until the player deliberately saves, restores, or starts a new
+reign. Exported `.tll` archives and
 `.playtest.json` files are ordinary files chosen and kept by the player;
 neither browser storage clearing nor the Book action removes downloaded files.
 
