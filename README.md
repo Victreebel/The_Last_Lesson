@@ -100,6 +100,8 @@ GitHub Pages serves the complete single-player experience. Multiplayer still req
 
 The static campaign is installable on supported browsers. A successful load precaches its exact production shell, engine, tactical art, icons, and manifest, so the single-player campaign can reopen offline; a browser must reconnect before joining a multiplayer host.
 
+Every scenario opens with an Imperial Mandate. Its active directive highlights the existing Build, Command, or Heir control that can advance the objective; this is guidance only, so every order and policy choice remains the player's.
+
 Release art is generated reproducibly with `pnpm optimize:assets`. It keeps the original painterly PNGs in `art/source/` and writes the smaller runtime WebP battlefield, building, unit, and Campaign Theatre atlases plus the social preview into `public/assets/` before every production build.
 
 ## Storefront Package

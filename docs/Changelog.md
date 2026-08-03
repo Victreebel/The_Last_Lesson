@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.18 - 2026-08-03
+
+- Connected each state-derived Imperial Mandate to its actual existing Build, Command, or Heir control. The tactical dock now names the active action surface and highlights its actionable control without auto-opening panels, issuing orders, or placing tutorial flags in simulation state. Captive-policy mandates deliberately highlight both assimilation and release so the player keeps the intended strategic choice.
+
 ## 2.6.17 - 2026-08-03
 
 - Added terrain-and-role hover guidance to every Build palette tile. Farmers, housing, logistics, industry, civic works, and fortifications now explain their valid terrain and purpose before placement; the shared tactical tooltip grows to fit that guidance instead of clipping it.

@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import { getEarnedScenarioHonor, SCENARIO_HONORS, type CampaignHonor } from "../../campaign/CampaignHonors";
 import { getCampaignChapter, getCampaignProgression } from "../../campaign/CampaignProgression";
 import { getImperialMandateProgress } from "../../campaign/ImperialMandate";
+import { getMandateGuidance, type MandateCommandControl } from "../../campaign/MandateGuidance";
 import { storeMultiplayerReconnectToken, type MultiplayerConnectRequest } from "../../app/MultiplayerLobby";
 import type { CommandIntent } from "../../networking/LocalAuthority";
 import { RemoteAuthorityClient } from "../../networking/RemoteAuthorityClient";
@@ -233,6 +234,13 @@ interface HeirFeedbackControl {
   readonly label: Phaser.GameObjects.Text;
 }
 
+interface CommandTile {
+  readonly button: Phaser.GameObjects.Rectangle;
+  readonly primary: Phaser.GameObjects.Text;
+  readonly secondary: Phaser.GameObjects.Text;
+  readonly fill: number;
+}
+
 interface ReplayReviewState {
   readonly liveSave: SaveGame;
   readonly commandSequence: number;
@@ -323,6 +331,7 @@ export class MilestoneOneScene extends Phaser.Scene {
   private minimapTitle!: Phaser.GameObjects.Text;
   private minimapBounds = { x: 0, y: 0 };
   private commandDock!: Phaser.GameObjects.Container;
+  private commandMandateText!: Phaser.GameObjects.Text;
   private commandTooltip!: Phaser.GameObjects.Container;
   private commandTooltipBackground!: Phaser.GameObjects.Rectangle;
   private commandTooltipLabel!: Phaser.GameObjects.Text;
@@ -342,6 +351,7 @@ export class MilestoneOneScene extends Phaser.Scene {
   private selectedBuildingKind: BuildingKind | null = null;
   private accessibilityAnnouncements?: HTMLElement;
   private readonly buildingTiles = new Map<BuildingKind, BuildingTile>();
+  private readonly commandTiles = new Map<MandateCommandControl, CommandTile>();
   private worldLayer!: Phaser.GameObjects.Container;
   private terrainLayer?: Phaser.GameObjects.Container;
   private orderLayer?: Phaser.GameObjects.Graphics;
@@ -2315,32 +2325,37 @@ export class MilestoneOneScene extends Phaser.Scene {
       fontSize: "11px",
       color: "#f2d77f"
     });
+    this.commandMandateText = this.add.text(152, 10, "", {
+      fontFamily: "Arial Black, Arial",
+      fontSize: "9px",
+      color: "#e2bd61"
+    });
     const divider = this.add.rectangle(14, 29, 382, 1, UI_COLORS.trim, 1).setOrigin(0);
-    this.commandDock = this.add.container(0, 0, [background, title, divider]);
+    this.commandDock = this.add.container(0, 0, [background, title, this.commandMandateText, divider]);
     this.commandDock.setScrollFactor(0).setDepth(40);
 
-    this.addCommandButton(14, 42, "SUPPLY", "WAGON", () => this.createCaravan());
-    this.addCommandButton(110, 42, "MOVE", "UNIT", () => this.enterMoveMode());
-    this.addCommandButton(206, 42, "ATTACK", "TARGET", () => this.enterAttackMode(), UI_COLORS.danger);
+    this.addCommandButton(14, 42, "SUPPLY", "WAGON", () => this.createCaravan(), UI_COLORS.command, "supply");
+    this.addCommandButton(110, 42, "MOVE", "UNIT", () => this.enterMoveMode(), UI_COLORS.command, "move");
+    this.addCommandButton(206, 42, "ATTACK", "TARGET", () => this.enterAttackMode(), UI_COLORS.danger, "attack");
     this.addCommandButton(302, 42, "RETREAT", "TO CROWN", () => this.retreatSelectedBattalions(), UI_COLORS.danger);
     this.addLaborButton(14, "FOOD", () => this.setLaborFocus("farmers"));
     this.addLaborButton(90, "WOOD", () => this.setLaborFocus("lumberjacks"));
     this.addLaborButton(166, "IRON", () => this.setLaborFocus("miners"));
     this.addLaborButton(242, "BUILD", () => this.setLaborFocus("builders"));
     this.addLaborButton(318, "LUX", () => this.setLaborFocus("luxuryWorkers"));
-    this.addCommandButton(14, 150, "MILITIA", "FOOD 8", () => this.createBattalion("militia"));
+    this.addCommandButton(14, 150, "MILITIA", "FOOD 8", () => this.createBattalion("militia"), UI_COLORS.command, "militia");
     this.addCommandButton(110, 150, "SPEARS", "IRON 8", () => this.createBattalion("spears"));
     this.addCommandButton(206, 150, "ARCHERS", "WOOD 8", () => this.createBattalion("archers"));
     this.addCommandButton(302, 150, "RAIDERS", "8W 8I", () => this.createBattalion("raiders"));
     this.addWideCommandButton(14, 204, "BLESS HARVEST", "12 FAITH", () => this.castBlessHarvest());
     this.addWideCommandButton(210, 204, "INSPIRE ARMY", "16 FAITH", () => this.castInspireBattalions());
-    this.addCommandButton(14, 258, "ASSIMILATE", "4 CAPTIVES", () => this.assimilateCaptives());
-    this.addCommandButton(110, 258, "RELEASE", "4 CAPTIVES", () => this.releaseCaptives());
+    this.addCommandButton(14, 258, "ASSIMILATE", "4 CAPTIVES", () => this.assimilateCaptives(), UI_COLORS.command, "assimilate");
+    this.addCommandButton(110, 258, "RELEASE", "4 CAPTIVES", () => this.releaseCaptives(), UI_COLORS.command, "release");
     this.addWideCommandButton(210, 258, "DISEMBARK", "SELECTED CARAVAN", () => this.disembarkCaravan());
-    this.addWideCommandButton(14, 312, "GARRISON", "NEAREST DEFENSE WORKS", () => this.garrisonSelectedBattalions());
+    this.addWideCommandButton(14, 312, "GARRISON", "NEAREST DEFENSE WORKS", () => this.garrisonSelectedBattalions(), "garrison");
     this.addWideCommandButton(210, 312, "WARSHIP", "18W 4I / TOWN SQUARE", () => this.createShip());
     this.addCommandButton(14, 366, "HOUNDS", "8F 4W", () => this.createBattalion("hounds"));
-    this.addCommandButton(110, 366, "MEND", "14 FAITH", () => this.castMendSettlement());
+    this.addCommandButton(110, 366, "MEND", "14 FAITH", () => this.castMendSettlement(), UI_COLORS.command, "mend");
     this.addWideCommandButton(206, 366, "DIVINE JUDGMENT", "18 FAITH / RELIGIOUS WARD", () => this.castDivineJudgment());
   }
 
@@ -2448,7 +2463,8 @@ export class MilestoneOneScene extends Phaser.Scene {
     label: string,
     detail: string,
     onClick: () => void,
-    fill = UI_COLORS.command
+    fill = UI_COLORS.command,
+    mandateControl?: MandateCommandControl
   ): void {
     const button = this.add.rectangle(x, y, 82, 46, fill, 1).setOrigin(0);
     button.setStrokeStyle(1, UI_COLORS.trim);
@@ -2472,6 +2488,9 @@ export class MilestoneOneScene extends Phaser.Scene {
       color: "#b6c5bb"
     });
     this.commandDock.add([button, primary, secondary]);
+    if (mandateControl) {
+      this.commandTiles.set(mandateControl, { button, primary, secondary, fill });
+    }
   }
 
   private addLaborButton(x: number, detail: string, onClick: () => void): void {
@@ -2504,7 +2523,8 @@ export class MilestoneOneScene extends Phaser.Scene {
     y: number,
     label: string,
     detail: string,
-    onClick: () => void
+    onClick: () => void,
+    mandateControl?: MandateCommandControl
   ): void {
     const button = this.add.rectangle(x, y, 182, 46, UI_COLORS.commandActive, 1).setOrigin(0);
     button.setStrokeStyle(1, UI_COLORS.trim);
@@ -2528,6 +2548,9 @@ export class MilestoneOneScene extends Phaser.Scene {
       color: "#b6c5bb"
     });
     this.commandDock.add([button, primary, secondary]);
+    if (mandateControl) {
+      this.commandTiles.set(mandateControl, { button, primary, secondary, fill: UI_COLORS.commandActive });
+    }
   }
 
   private createHeirPanel(): void {
@@ -2595,7 +2618,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     const settlement = this.getActiveSettlement();
     const heir = this.getActiveHeir();
     const activeMandate = getImperialMandateProgress(this.simulation.getState()).activeStep;
-    const heirLessonIsMandated = activeMandate.id === "teach-heir";
+    const heirLessonIsMandated = getMandateGuidance(activeMandate.id).surface === "heir";
     const doctrines = this.getHeirDoctrines(heir);
     const lastDoctrine = heir?.lastDoctrineId ? this.simulation.getState().doctrines[heir.lastDoctrineId] : undefined;
     const height = this.heirPanelExpanded ? 396 : 48;
@@ -2876,10 +2899,11 @@ export class MilestoneOneScene extends Phaser.Scene {
     }
   }
 
- private updateBuildingsPanel(): void {
-   const settlement = this.getActiveControlledSettlement();
-    const farmIsMandated = getImperialMandateProgress(this.simulation.getState()).activeStep.id === "establish-farm";
-   const counts = this.getBuildingCounts();
+  private updateBuildingsPanel(): void {
+    const settlement = this.getActiveControlledSettlement();
+    const mandateGuidance = getMandateGuidance(getImperialMandateProgress(this.simulation.getState()).activeStep.id);
+    const farmIsMandated = mandateGuidance.surface === "build";
+    const counts = this.getBuildingCounts();
     const buildRows = Math.ceil(BUILDING_OPTIONS.length / 3);
     const height = this.buildingsPanelExpanded ? 76 + buildRows * 76 + 8 : 48;
 
@@ -2894,13 +2918,14 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.buildingsPanelBody.setVisible(this.buildingsPanelExpanded);
     for (const [kind, tile] of this.buildingTiles) {
       const isSelected = kind === this.selectedBuildingKind;
+      const isMandated = mandateGuidance.buildingTargets.includes(kind);
       const affordability = this.getBuildingAffordability(kind);
       tile.button.setVisible(this.buildingsPanelExpanded);
       tile.icon.setVisible(this.buildingsPanelExpanded);
       tile.label.setVisible(this.buildingsPanelExpanded);
       tile.count.setVisible(this.buildingsPanelExpanded);
-      tile.button.setFillStyle(isSelected ? UI_COLORS.commandActive : UI_COLORS.command, 1);
-      tile.button.setStrokeStyle(isSelected ? 2 : 1, isSelected ? UI_COLORS.accent : UI_COLORS.trim);
+      tile.button.setFillStyle(isSelected || isMandated ? UI_COLORS.commandActive : UI_COLORS.command, 1);
+      tile.button.setStrokeStyle(isSelected || isMandated ? 2 : 1, isSelected || isMandated ? UI_COLORS.accent : UI_COLORS.trim);
       tile.button.setAlpha(affordability.canAfford ? 1 : 0.48);
       tile.icon.setAlpha(affordability.canAfford ? 1 : 0.48);
       tile.label.setAlpha(affordability.canAfford ? 1 : 0.48);
@@ -4439,6 +4464,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     );
     this.updateHeirPanel();
     this.updateLessonBanner();
+    this.updateMandateGuidance();
     this.updateRealmPanel();
     this.updateBuildingsPanel();
     this.updateBookOfLessons();
@@ -4497,9 +4523,21 @@ export class MilestoneOneScene extends Phaser.Scene {
     return this.mode.toUpperCase();
   }
 
- private getImperialMandate(): string {
+  private getImperialMandate(): string {
     const activeStep = getImperialMandateProgress(this.simulation.getState()).activeStep;
     return `${activeStep.label} ${activeStep.instruction}`;
+  }
+
+  private updateMandateGuidance(): void {
+    const guidance = getMandateGuidance(getImperialMandateProgress(this.simulation.getState()).activeStep.id);
+    this.commandMandateText.setText(guidance.label);
+    for (const [control, tile] of this.commandTiles) {
+      const highlighted = guidance.commandTargets.includes(control);
+      tile.button.setFillStyle(highlighted ? UI_COLORS.commandActive : tile.fill, 1);
+      tile.button.setStrokeStyle(highlighted ? 2 : 1, highlighted ? UI_COLORS.accent : UI_COLORS.trim);
+      tile.primary.setColor(highlighted ? "#fff4c5" : UI_COLORS.text);
+      tile.secondary.setColor(highlighted ? "#f2d77f" : "#b6c5bb");
+    }
   }
 
   private getTacticalUplinkMandate(settlement: SettlementState, events: readonly string[]): string {
