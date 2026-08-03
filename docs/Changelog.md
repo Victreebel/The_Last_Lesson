@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.43 - 2026-08-03
+
+- Improved Campaign Theatre legibility at compact desktop sizes by raising the terrain, Honor, opening, theatre-tag, campaign-status, and Rival Doctrine briefing text without changing the authored map cards, navigation, or balance.
+
 ## 2.6.42 - 2026-08-03
 
 - Imperial Mandates now name the exact visible keyboard actions for the player-only Prisoner Accord and Heir feedback: `ACCORD [D]`, then `1` to exchange, and `HEIR [H]`, then `1` to Reward or `2` to Punish. The guidance remains a presentation-only projection of the existing command routes.

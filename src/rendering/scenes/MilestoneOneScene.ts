@@ -1848,7 +1848,7 @@ export class MilestoneOneScene extends Phaser.Scene {
       `TERRAIN // ${SCENARIO_PROFILES[this.campaignScenario].terrainIntel}`,
       {
         fontFamily: "Arial Black, Arial",
-        fontSize: "8px",
+        fontSize: "9px",
         color: "#c3d4c5"
       }
     );
@@ -1863,7 +1863,7 @@ export class MilestoneOneScene extends Phaser.Scene {
         : `HONOR // ${honorProfile.label}: ${honorProfile.condition}`,
       {
         fontFamily: "Arial, sans-serif",
-        fontSize: "7px",
+        fontSize: "8px",
         color: selectedHonor ? "#f2d77f" : "#afc0b1",
         wordWrap: { width: 430 }
       }
@@ -1875,7 +1875,7 @@ export class MilestoneOneScene extends Phaser.Scene {
       `OPENING // ${SCENARIO_PROFILES[this.campaignScenario].openingDirective.toUpperCase()}`,
       {
         fontFamily: "Arial, sans-serif",
-        fontSize: "7px",
+        fontSize: "8px",
         color: "#b8c4b7",
         wordWrap: { width: 430 }
       }
@@ -1928,7 +1928,7 @@ export class MilestoneOneScene extends Phaser.Scene {
         .setOrigin(0);
       const terrainTag = this.add.text(x + 11, y + 10, profile.terrainTag, {
         fontFamily: "Arial Black, Arial",
-        fontSize: "7px",
+        fontSize: "8px",
         color: "#d7e5d9",
         wordWrap: { width: CAMPAIGN_THEATRE_LAYOUT.scenarioCardWidth - 22 }
       });
@@ -1956,7 +1956,7 @@ export class MilestoneOneScene extends Phaser.Scene {
       });
       const detail = this.add.text(x + 9, y + CAMPAIGN_THEATRE_LAYOUT.scenarioCardHeight - 13, honor ? `HONOR // ${honor.label}` : status, {
         fontFamily: "Arial, sans-serif",
-        fontSize: "8px",
+        fontSize: "9px",
         color: UI_COLORS.muted,
         wordWrap: { width: 184 }
       });
@@ -1989,7 +1989,7 @@ export class MilestoneOneScene extends Phaser.Scene {
         `${profile.briefing.toUpperCase()}\nGRACE ${profile.openingGraceTicks} TICKS // LEARNING +${profile.doctrineConfidenceGain}`,
         {
           fontFamily: "Arial, sans-serif",
-          fontSize: "7px",
+          fontSize: "8px",
           color: UI_COLORS.muted,
           lineSpacing: 4,
           wordWrap: { width: 112 }
