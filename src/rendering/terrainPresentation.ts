@@ -19,56 +19,56 @@ export const TERRAIN_PRESENTATIONS: Record<TerrainKind, TerrainPresentation> = {
     color: 0x4b623a,
     patternColor: 0x9ab66b,
     symbol: "G",
-    detail: "OPEN BUILD GROUND",
+    detail: "OPEN BUILD // 100% MOVE",
     pattern: "grass"
   },
   fertile: {
     color: 0x758e3c,
     patternColor: 0xd5d67f,
     symbol: "F",
-    detail: "FARMS / FOOD",
+    detail: "FARMS / FOOD // 100% MOVE",
     pattern: "furrows"
   },
   forest: {
     color: 0x28513a,
     patternColor: 0x7ba26b,
     symbol: "W",
-    detail: "LUMBER MILLS / WOOD",
+    detail: "MILLS / WOOD // 72% MOVE // +12% DEF",
     pattern: "canopy"
   },
   "iron-vein": {
     color: 0x5c6670,
     patternColor: 0xbfc8ce,
     symbol: "I",
-    detail: "MINES / IRON",
+    detail: "MINES / IRON // 100% MOVE",
     pattern: "veins"
   },
   "luxury-grove": {
     color: 0x987e45,
     patternColor: 0xf0c979,
     symbol: "L",
-    detail: "PLANTATIONS / LUXURY",
+    detail: "PLANTATIONS / LUXURY // 100% MOVE",
     pattern: "blooms"
   },
   hills: {
     color: 0x746b4f,
     patternColor: 0xd3c68a,
     symbol: "H",
-    detail: "SLOW / DEFENSE +",
+    detail: "68% MOVE // +22% DEF",
     pattern: "contours"
   },
   water: {
     color: 0x2f667c,
     patternColor: 0x9cc8d5,
     symbol: "~",
-    detail: "BLOCKS LAND UNITS",
+    detail: "LAND BLOCKED // SHIPS ONLY",
     pattern: "ripples"
   },
   marsh: {
     color: 0x4a624f,
     patternColor: 0xafbd82,
     symbol: "M",
-    detail: "SLOW / UNBUILDABLE",
+    detail: "UNBUILDABLE // 45% MOVE // -10% DEF",
     pattern: "reeds"
   }
 };

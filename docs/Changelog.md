@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.13 - 2026-08-03
+
+- Expanded every terrain-zone label with its exact movement, defense, placement, or naval consequence. Map reading now communicates the tactical trade directly, and rendering coverage checks those captions against the authoritative terrain modifiers.
+
 ## 2.6.12 - 2026-08-03
 
 - Made every authored Campaign Theatre a distinct authoritative battlefield. Rivergate now has a larger navigable waterway while retaining a playable land siege route, Ashen Oath has a blighted marsh approach, and Stonewall opens on a defensive ridge. Terrain refreshes when a campaign starts, a save restores, or authority snapshots replace the active world.
