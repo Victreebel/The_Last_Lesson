@@ -113,6 +113,7 @@ Implemented:
 - Keyboard operation now extends across the complete management strip: visible contextual keys choose Build structures, submit Heir reward/punishment, and propose an available Prisoner Accord without displacing field control groups.
 - Campaign Theatre briefing and Rival Doctrine detail text received a compact-viewport legibility pass while retaining the same state-derived terrain, Honor, opening, and difficulty information.
 - Campaign Theatre artwork now uses card-bounded atlas crops, preserving the selected header and neighboring theatre cards on fresh renders.
+- Wide tactical displays now offer an explicit browser fullscreen control that remains presentation-only and is hidden on compact layouts where header space is more valuable.
 - Religious infrastructure: completed road corridors and nearby caravans now propagate opposing faith through the existing pressure, rebellion, and faith systems with deterministic source-level events.
 - Campaign Theatre with four authored deterministic openings: Crownfall (balanced), Rivergate (civic supply and naval opening), Ashen Oath (captives and hostile religious roads), and Stonewall (a fortified border for testing defense, logistics, retreat, and counter-siege play).
 - Scout Hounds: Town Square-trained, non-population reconnaissance packs with high movement speed and extended visibility.

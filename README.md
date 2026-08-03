@@ -72,6 +72,7 @@ For container deployment, health checks, and the required `wss://` production bo
 - `ACCORD`: inspect the Crown-only Prisoner Accord. With `ACCORD` open, use visible `1` to propose the available equal-captive exchange.
 - `BOOK`: inspect recent history and create or restore a local deterministic save.
 - `B`, `H`, `R`, and `L`: toggle the Build, Heir, Realm, and Book panels.
+- `FULL`: use the wide-screen top-bar control to enter or leave browser fullscreen. It changes presentation only.
 - In Campaign Theatre, use arrow keys to move the visible focus between theatres and rival doctrines, `Tab` to cycle every available choice, and `Enter` or `Space` to select or begin the focused reign.
 - `M` and `A`: enter move and attack targeting modes.
 - `F`: enter advance mode. Selected battalions march to the designated position, engage visible enemies encountered en route, then resume their advance.

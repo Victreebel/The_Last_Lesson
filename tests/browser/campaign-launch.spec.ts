@@ -268,6 +268,27 @@ test("selects a visible building shortcut from the expanded Build palette", asyn
   await expect(page.locator("#the-last-lesson-announcements")).toContainText("Construction ready: Villa");
 });
 
+test("requests browser fullscreen from the wide tactical header", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.addInitScript(() => {
+    Reflect.set(window, "__tllFullscreenRequests", 0);
+    Object.defineProperty(HTMLElement.prototype, "requestFullscreen", {
+      configurable: true,
+      value: () => {
+        const requestCount = Number(Reflect.get(window, "__tllFullscreenRequests") ?? 0);
+        Reflect.set(window, "__tllFullscreenRequests", requestCount + 1);
+        return Promise.resolve();
+      }
+    });
+  });
+  await page.goto("/");
+  await beginCrownfallRivalReign(page);
+
+  await clickCanvasPoint(page, { x: 786, y: 29 });
+  await expect.poll(() => page.evaluate(() => Number(Reflect.get(window, "__tllFullscreenRequests") ?? 0))).toBe(1);
+  await expect(page.locator("#the-last-lesson-announcements")).toContainText("Fullscreen");
+});
+
 test("uses contextual keyboard actions from the Heir and Accord panels", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto("/");

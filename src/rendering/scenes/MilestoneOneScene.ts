@@ -307,6 +307,9 @@ export class MilestoneOneScene extends Phaser.Scene {
   private networkControlLabel!: Phaser.GameObjects.Text;
   private audioControl!: Phaser.GameObjects.Container;
   private audioControlLabel!: Phaser.GameObjects.Text;
+  private fullscreenControl!: Phaser.GameObjects.Container;
+  private fullscreenControlLabel!: Phaser.GameObjects.Text;
+  private fullscreenActive = false;
   private audioEnabled = true;
   private bookControl!: Phaser.GameObjects.Container;
   private bookControlLabel!: Phaser.GameObjects.Text;
@@ -400,6 +403,14 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.pauseControlLabel.setText("RESUME");
     this.updateUi(["Reign paused while the field map was out of view."]);
   };
+  private readonly handleFullscreenChange = (): void => {
+    this.fullscreenActive = document.fullscreenElement === this.getFullscreenTarget();
+    this.fullscreenControlLabel?.setText(this.fullscreenActive ? "EXIT FULL" : "FULL");
+    this.layoutUi();
+    const announcement = this.fullscreenActive ? "Fullscreen enabled." : "Fullscreen exited.";
+    this.updateUi([announcement]);
+    this.announceAccessibility(announcement);
+  };
 
   constructor() {
     super("MilestoneOneScene");
@@ -437,10 +448,12 @@ export class MilestoneOneScene extends Phaser.Scene {
         this.handleCameraWheel(pointer, deltaY)
     );
     document.addEventListener("visibilitychange", this.handleVisibilityChange);
+    document.addEventListener("fullscreenchange", this.handleFullscreenChange);
     this.game.events.on("join-multiplayer", this.connectToMultiplayer, this);
     this.events.once("shutdown", () => {
       this.game.events.off("join-multiplayer", this.connectToMultiplayer, this);
       document.removeEventListener("visibilitychange", this.handleVisibilityChange);
+      document.removeEventListener("fullscreenchange", this.handleFullscreenChange);
       this.disconnectFromMultiplayer();
       this.accessibilityAnnouncements?.replaceChildren();
       this.accessibilityAnnouncements = undefined;
@@ -1064,7 +1077,24 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.audioControl = this.add.container(0, 0, [audioButton, this.audioControlLabel]);
     this.audioControl.setScrollFactor(0).setDepth(41);
 
-    this.resourceText = this.add.text(758, 18, "", {
+    const fullscreenButton = this.add.rectangle(756, 14, 62, 30, UI_COLORS.command, 1).setOrigin(0);
+    fullscreenButton.setScrollFactor(0);
+    fullscreenButton.setStrokeStyle(1, UI_COLORS.trim);
+    fullscreenButton.setInteractive({ useHandCursor: true });
+    fullscreenButton.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+      pointer.event.stopPropagation();
+      void this.toggleFullscreen();
+    });
+    this.fullscreenControlLabel = this.add.text(767, 23, "FULL", {
+      fontFamily: "Arial Black, Arial",
+      fontSize: "9px",
+      color: UI_COLORS.text
+    });
+    this.fullscreenControlLabel.setScrollFactor(0);
+    this.fullscreenControl = this.add.container(0, 0, [fullscreenButton, this.fullscreenControlLabel]);
+    this.fullscreenControl.setScrollFactor(0).setDepth(41);
+
+    this.resourceText = this.add.text(830, 18, "", {
       fontFamily: "Arial, sans-serif",
       fontSize: "13px",
       color: UI_COLORS.text
@@ -1120,6 +1150,33 @@ export class MilestoneOneScene extends Phaser.Scene {
       this.audio.play("command");
     }
     this.updateUi([this.audioEnabled ? "Tactical sound enabled." : "Tactical sound disabled."]);
+  }
+
+  private getFullscreenTarget(): HTMLElement {
+    return this.game.canvas.parentElement ?? this.game.canvas;
+  }
+
+  private async toggleFullscreen(): Promise<void> {
+    const target = this.getFullscreenTarget();
+    if (!document.fullscreenEnabled) {
+      const message = "Fullscreen is unavailable in this browser.";
+      this.updateUi([message]);
+      this.announceAccessibility(message);
+      return;
+    }
+    try {
+      if (document.fullscreenElement) {
+        this.announceAccessibility("Exiting fullscreen.");
+        await document.exitFullscreen();
+      } else {
+        this.announceAccessibility("Fullscreen requested.");
+        await target.requestFullscreen();
+      }
+    } catch {
+      const message = "Fullscreen could not be activated in this browser.";
+      this.updateUi([message]);
+      this.announceAccessibility(message);
+    }
   }
 
   private restoreMotionPreference(): void {
@@ -3279,7 +3336,9 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.networkControl.setPosition(narrow ? -85 : compact ? -164 : 0, narrow ? 48 : 0);
     this.audioControl.setScale(narrow ? 0.7 : 1);
     this.audioControl.setPosition(narrow ? -168 : compact ? -246 : 0, narrow ? 48 : 0);
-    this.resourceText.setPosition(compact ? 18 : 758, narrow ? 88 : compact ? 47 : 19);
+    this.fullscreenControl.setVisible(!compact);
+    this.fullscreenControl.setPosition(0, 0);
+    this.resourceText.setPosition(compact ? 18 : 830, narrow ? 88 : compact ? 47 : 19);
     const headerControlScale = narrow ? 0.7 : 1;
     const headerControlOffsetX = narrow ? -115 : 0;
     const headerControlOffsetY = narrow ? 48 : 0;
@@ -3356,6 +3415,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.speedControl.setVisible(tacticalVisible);
     this.networkControl.setVisible(tacticalVisible);
     this.audioControl.setVisible(tacticalVisible);
+    this.fullscreenControl.setVisible(tacticalVisible && this.scale.width >= 900);
     this.bookControl.setVisible(tacticalVisible);
     this.realmControl.setVisible(tacticalVisible);
     this.resourceText.setVisible(tacticalVisible);

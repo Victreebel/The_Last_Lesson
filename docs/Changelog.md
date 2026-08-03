@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.45 - 2026-08-03
+
+- Added a wide-screen `FULL` top-bar control. It requests and exits browser fullscreen without altering the simulation, save/replay state, or multiplayer authority, and reports unavailable or rejected browser requests clearly.
+
 ## 2.6.44 - 2026-08-03
 
 - Fixed Campaign Theatre atlas framing so a cropped scenario image is bounded to its own card on a fresh renderer load. Scenario art can no longer bleed into the header, briefing, or neighboring theatre card.
