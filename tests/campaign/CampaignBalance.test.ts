@@ -57,4 +57,24 @@ describe("campaign balance playtests", () => {
     expect(new Set(reports.map((report) => report.seed))).toEqual(new Set(CAMPAIGN_BALANCE_SOAK_SEEDS));
     expect(reports.every((report) => report.healthy && report.rejectedCommands === 0)).toBe(true);
   });
+
+  it("preserves the transparent Rival Doctrine pressure order in every theatre", () => {
+    const reports = runCampaignBalanceSoak();
+
+    for (const scenarioId of CAMPAIGN_BALANCE_SCENARIOS) {
+      for (const seed of CAMPAIGN_BALANCE_SOAK_SEEDS) {
+        const firstAttack = (difficulty: (typeof CAMPAIGN_BALANCE_SOAK_DIFFICULTIES)[number]) => {
+          const tick = reports.find(
+            (report) =>
+              report.scenarioId === scenarioId && report.seed === seed && report.rivalDifficulty === difficulty
+          )?.firstRivalAttackTick;
+          expect(tick).toBeDefined();
+          return tick!;
+        };
+
+        expect(firstAttack("disciple")).toBeGreaterThan(firstAttack("rival"));
+        expect(firstAttack("rival")).toBeGreaterThan(firstAttack("architect"));
+      }
+    }
+  });
 });
