@@ -14,6 +14,9 @@ it never replaces them or changes the frozen simulation rules.
 - Use a fresh local profile for first-session testing.
 - Observe without coaching until the player explicitly asks for help.
 - Capture the first 25 minutes, then a short post-session interview.
+- At the end of a session, use `BOOK > EXPORT PLAYTEST` and attach the local
+  `.playtest.json` record to the observation sheet. It records no identity,
+  browser, profile, or network data.
 
 ## Core Questions
 
@@ -66,6 +69,7 @@ Accessibility or readability issue:
 Most satisfying decision:
 Most confusing decision:
 Would play another Theatre? Why or why not?
+Playtest record filename:
 ```
 
 ## Triage Rules
