@@ -110,6 +110,7 @@ Implemented:
 - Versioned portable `.tll` archives from the Book of Lessons, preserving both the active deterministic save and its replay origin across browsers or devices.
 - Responsive phone-sized layout pass: reflowed header, scaled campaign panels, accessible command dock, and intentional minimap/intel suppression where those surfaces cannot coexist without overlap.
 - Compact tablet and laptop HUD pass: the Accord, Heir, and Build panels now scale as one protected top-right strip, with mutually exclusive expansion so a civic panel cannot cover another tactical control.
+- Keyboard operation now extends across the complete management strip: visible contextual keys choose Build structures, submit Heir reward/punishment, and propose an available Prisoner Accord without displacing field control groups.
 - Religious infrastructure: completed road corridors and nearby caravans now propagate opposing faith through the existing pressure, rebellion, and faith systems with deterministic source-level events.
 - Campaign Theatre with four authored deterministic openings: Crownfall (balanced), Rivergate (civic supply and naval opening), Ashen Oath (captives and hostile religious roads), and Stonewall (a fortified border for testing defense, logistics, retreat, and counter-siege play).
 - Scout Hounds: Town Square-trained, non-population reconnaissance packs with high movement speed and extended visibility.

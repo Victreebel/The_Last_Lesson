@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.41 - 2026-08-03
+
+- The Heir and Prisoner Accord consoles now complete the management-strip keyboard pattern: with `HEIR` open, visible `1` rewards and `2` punishes the latest lesson; with `ACCORD` open, visible `1` proposes the available exchange. Both routes use the existing authoritative command paths and leave battlefield control groups unchanged when panels are closed.
+
 ## 2.6.40 - 2026-08-03
 
 - The expanded Build palette now exposes visible, contextual keyboard choices for all thirteen structures: `1` through `9`, `0`, then `Q`/`W`/`E`. The keys apply only while Build is open, preserve field control groups, and lead into the existing terrain placement and drag rules.

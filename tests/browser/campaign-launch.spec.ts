@@ -111,7 +111,7 @@ test("launches the campaign theatre and begins a Crownfall reign", async ({ page
   await expect(page.locator("canvas")).toHaveAttribute("aria-label", "The Last Lesson tactical map and command interface");
   expect(await page.locator("canvas").getAttribute("aria-keyshortcuts")).toContain("D");
   await page.locator("canvas").press("D");
-  await expect(page.locator("#the-last-lesson-announcements")).toContainText("Open BUILD [B], choose FARM");
+  await expect(page.locator("#the-last-lesson-announcements")).toContainText("Accord panel expanded");
   await expect.poll(() => assetUrls.some((url) => url.endsWith("painterly-battlefield-v1.webp"))).toBe(true);
   await expect.poll(() => assetUrls.some((url) => url.endsWith("building-atlas-v1.webp"))).toBe(true);
   await expect.poll(() => assetUrls.some((url) => url.endsWith("campaign-theatres-v1.webp"))).toBe(true);
@@ -266,6 +266,27 @@ test("selects a visible building shortcut from the expanded Build palette", asyn
   await expect(page.locator("#the-last-lesson-announcements")).toContainText("Build panel expanded");
   await page.locator("canvas").press("1");
   await expect(page.locator("#the-last-lesson-announcements")).toContainText("Construction ready: Villa");
+});
+
+test("uses contextual keyboard actions from the Heir and Accord panels", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto("/");
+  await beginCrownfallRivalReign(page);
+
+  const canvas = page.locator("canvas");
+  await canvas.focus();
+  await canvas.press("h");
+  await expect(page.locator("#the-last-lesson-announcements")).toContainText("Heir panel expanded");
+  await canvas.press("1");
+  await expect(page.locator("#the-last-lesson-announcements")).toContainText("no lesson to reward");
+
+  await page.goto("/");
+  await beginAshenOathRivalReign(page);
+  await canvas.focus();
+  await canvas.press("d");
+  await expect(page.locator("#the-last-lesson-announcements")).toContainText("Accord panel expanded");
+  await canvas.press("1");
+  await expect(page.locator("#the-last-lesson-announcements")).toContainText("Prisoner accord proposed: 4 returned");
 });
 
 test("requires deliberate confirmation before clearing Book-local data", async ({ page }) => {

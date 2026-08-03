@@ -465,7 +465,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     canvas.setAttribute("aria-describedby", "the-last-lesson-accessibility-brief");
     canvas.setAttribute(
       "aria-keyshortcuts",
-      "ArrowUp ArrowDown ArrowLeft ArrowRight Tab Enter B C D H R L M A F X Escape Space 0 1 2 3 4 5 6 7 8 9 Control+1 Control+2 Control+3 Control+4 Control+5 Control+6 Control+7 Control+8 Control+9"
+      "ArrowUp ArrowDown ArrowLeft ArrowRight Tab Enter B C D H R L M A F X Escape Space 0 1 2 3 4 5 6 7 8 9 Q W E Control+1 Control+2 Control+3 Control+4 Control+5 Control+6 Control+7 Control+8 Control+9"
     );
     this.accessibilityAnnouncements = document.getElementById("the-last-lesson-announcements") ?? undefined;
   }
@@ -493,8 +493,6 @@ export class MilestoneOneScene extends Phaser.Scene {
 
     bind("SPACE", () => this.togglePause());
     bind("B", () => this.toggleBuildingsPanel());
-    bind("D", () => this.toggleAccordPanel());
-    bind("H", () => this.toggleHeirPanel());
     bind("R", () => this.toggleRealmPanel());
     bind("L", () => this.toggleBookOfLessons());
     bind("C", () => this.castMendSettlement());
@@ -511,10 +509,19 @@ export class MilestoneOneScene extends Phaser.Scene {
         this.handleCampaignSetupKeyboard(event);
         return;
       }
+      if (this.handleManagementPanelToggleShortcut(event)) {
+        return;
+      }
       if (this.handleBookShortcut(event)) {
         return;
       }
       if (this.handleBuildShortcut(event)) {
+        return;
+      }
+      if (this.handleHeirPanelShortcut(event)) {
+        return;
+      }
+      if (this.handleAccordPanelShortcut(event)) {
         return;
       }
       const slot = Number.parseInt(event.key, 10);
@@ -543,6 +550,28 @@ export class MilestoneOneScene extends Phaser.Scene {
       activeElement instanceof HTMLSelectElement ||
       activeElement instanceof HTMLTextAreaElement
     );
+  }
+
+  /**
+   * Accord and Heir use the scene-wide key stream so their contextual actions work
+   * consistently in browser, desktop, and automated playtest input.
+   */
+  private handleManagementPanelToggleShortcut(event: KeyboardEvent): boolean {
+    if (event.ctrlKey || event.metaKey || event.altKey) {
+      return false;
+    }
+    const key = event.key.toUpperCase();
+    if (key === "D") {
+      event.preventDefault();
+      this.toggleAccordPanel();
+      return true;
+    }
+    if (key === "H") {
+      event.preventDefault();
+      this.toggleHeirPanel();
+      return true;
+    }
+    return false;
   }
 
   /** Book shortcuts are contextual, leaving battalion control groups unchanged during field command. */
@@ -583,6 +612,30 @@ export class MilestoneOneScene extends Phaser.Scene {
     }
     event.preventDefault();
     this.selectBuilding(option.kind);
+    return true;
+  }
+
+  /** Heir feedback remains contextual so battlefield control groups retain their field meaning. */
+  private handleHeirPanelShortcut(event: KeyboardEvent): boolean {
+    if (!this.heirPanelExpanded || event.ctrlKey || event.metaKey || event.altKey) {
+      return false;
+    }
+    const commandType = event.key === "1" ? "reward-heir" : event.key === "2" ? "punish-heir" : undefined;
+    if (!commandType) {
+      return false;
+    }
+    event.preventDefault();
+    this.sendHeirFeedback(commandType);
+    return true;
+  }
+
+  /** The prisoner accord has one available action, exposed as a visible contextual key. */
+  private handleAccordPanelShortcut(event: KeyboardEvent): boolean {
+    if (!this.accordPanelExpanded || event.ctrlKey || event.metaKey || event.altKey || event.key !== "1") {
+      return false;
+    }
+    event.preventDefault();
+    this.exchangeCaptives();
     return true;
   }
 
@@ -670,6 +723,11 @@ export class MilestoneOneScene extends Phaser.Scene {
       this.updateBuildingsPanel();
     }
     this.updateHeirPanel();
+    const announcement = this.heirPanelExpanded
+      ? "Heir panel expanded. Use 1 to reward or 2 to punish the latest lesson."
+      : "Heir panel collapsed.";
+    this.updateUi([announcement]);
+    this.announceAccessibility(announcement);
   }
 
   private toggleAccordPanel(): void {
@@ -681,6 +739,11 @@ export class MilestoneOneScene extends Phaser.Scene {
       this.updateBuildingsPanel();
     }
     this.updateAccordPanel();
+    const announcement = this.accordPanelExpanded
+      ? "Accord panel expanded. Use 1 to exchange available captives."
+      : "Accord panel collapsed.";
+    this.updateUi([announcement]);
+    this.announceAccessibility(announcement);
   }
 
   private toggleRealmPanel(): void {
@@ -2827,8 +2890,8 @@ export class MilestoneOneScene extends Phaser.Scene {
       this.heirPanelBody
     ]);
     this.heirPanel.setScrollFactor(0).setDepth(40).setSize(HEIR_PANEL_WIDTH, 48);
-    this.addHeirFeedbackButton(14, 304, "REWARD", UI_COLORS.commandActive, "reward-heir");
-    this.addHeirFeedbackButton(146, 304, "PUNISH", UI_COLORS.danger, "punish-heir");
+    this.addHeirFeedbackButton(14, 304, "1 REWARD", UI_COLORS.commandActive, "reward-heir");
+    this.addHeirFeedbackButton(146, 304, "2 PUNISH", UI_COLORS.danger, "punish-heir");
     this.updateHeirPanel();
   }
 
@@ -2942,12 +3005,12 @@ export class MilestoneOneScene extends Phaser.Scene {
               `${this.getSettlementDisplayName(settlement.id)} HOLDS: ${settlement.population.captives} RIVAL`,
               `${this.getSettlementDisplayName(rivalSettlement.id)} HOLDS: ${rivalSettlement.population.captives} CROWN`,
               available > 0
-                ? "RETURN EQUAL PRISONERS. HEIRS DO NOT LEARN."
+                ? "KEY 1: RETURN EQUAL PRISONERS. HEIRS DO NOT LEARN."
                 : "Both realms must hold prisoners and have civil housing."
             ].join("\n")
           : "No rival settlement can negotiate an accord."
       );
-      this.accordExchangeLabel.setText(available > 0 ? `EXCHANGE ${available} CAPTIVE${available === 1 ? "" : "S"}` : "ACCORD UNAVAILABLE");
+      this.accordExchangeLabel.setText(available > 0 ? `1 EXCHANGE ${available} CAPTIVE${available === 1 ? "" : "S"}` : "ACCORD UNAVAILABLE");
       this.accordExchangeButton.setFillStyle(available > 0 ? UI_COLORS.commandActive : UI_COLORS.command, 1);
       this.accordExchangeButton.setAlpha(available > 0 ? 1 : 0.45);
       this.accordExchangeLabel.setAlpha(available > 0 ? 1 : 0.55);

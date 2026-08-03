@@ -2,7 +2,7 @@
 
 ## Technical Design Specification
 
-**Version:** 1.14
+**Version:** 1.15
 **Status:** Active Implementation Blueprint
 **Date:** 2026-08-03
 **Working Title:** The Last Lesson  
@@ -84,6 +84,8 @@ The scene exposes the same command state through pointer controls and keyboard c
 | `Ctrl`/`Cmd` + `1` through `9` | Bind the selected Crown battalions to a presentation-only control group; press the number to select its surviving members, or press it twice to center the camera on them. |
 | `Space` | Toggle the local presentation clock when the player is the authority. |
 | `Esc` | Cancel placement first; otherwise close panels; otherwise clear selection. |
+
+When their panel is expanded, the Heir console reserves visible `1` and `2` for the existing Reward and Punish command submissions; the Accord console reserves visible `1` for its existing captive-exchange submission. These contextual keys only operate while their matching presentation surface is open, reject modified key combinations, and never bypass simulation command validation. They therefore preserve `Ctrl`/`Cmd` control groups and normal numeric field selection when those panels are closed.
 
 Shortcuts are ignored during campaign setup and while a text input, select, or textarea has focus. This protects multiplayer-lobby entry and prevents browser form input from triggering game actions.
 
