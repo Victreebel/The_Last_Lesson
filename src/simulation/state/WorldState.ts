@@ -37,6 +37,8 @@ export interface ScenarioProfile {
   readonly terrainTag: string;
   /** Short Campaign Theatre intelligence, not a simulation modifier. */
   readonly terrainIntel: string;
+  /** First actionable priority shown before the player begins this Theatre. */
+  readonly openingDirective: string;
 }
 
 export const SCENARIO_PROFILES: Record<ScenarioId, ScenarioProfile> = {
@@ -44,25 +46,29 @@ export const SCENARIO_PROFILES: Record<ScenarioId, ScenarioProfile> = {
     label: "CROWNFALL",
     summary: "Balanced opening. Establish the Crown and break both rival thrones.",
     terrainTag: "FERTILE HEARTLAND",
-    terrainIntel: "FERTILE HEARTLAND // EXPANSION"
+    terrainIntel: "FERTILE HEARTLAND // EXPANSION",
+    openingDirective: "Establish food, then train the first Crown battalion."
   },
   rivergate: {
     label: "RIVERGATE",
     summary: "A prepared civic port. Turn supply routes and warships into an advantage.",
     terrainTag: "NAVIGABLE RIVER",
-    terrainIntel: "NAVIGABLE RIVER // SUPPLY & WARSHIPS"
+    terrainIntel: "NAVIGABLE RIVER // SUPPLY & WARSHIPS",
+    openingDirective: "Commission a supply wagon and secure the river route."
   },
   "ashen-oath": {
     label: "ASHEN OATH",
     summary: "A plague-struck captive settlement tests mercy, recovery, and religious legitimacy.",
     terrainTag: "BLIGHTED MARSH",
-    terrainIntel: "BLIGHTED MARSH // PLAGUE & CAPTIVES"
+    terrainIntel: "BLIGHTED MARSH // PLAGUE & CAPTIVES",
+    openingDirective: "Mend Crownkeep, then resolve the captive unrest."
   },
   stonewall: {
     label: "STONEWALL",
     summary: "A fortified frontier. Hold the gate, protect supply, then break the siege.",
     terrainTag: "HILL-FORT RIDGE",
-    terrainIntel: "HILL-FORT RIDGE // GATE DEFENSE"
+    terrainIntel: "HILL-FORT RIDGE // GATE DEFENSE",
+    openingDirective: "Raise a battalion and garrison the opening gate."
   }
 };
 

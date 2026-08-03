@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.25 - 2026-08-03
+
+- Campaign Theatre now gives every chapter a concise Opening directive alongside its terrain intelligence and Honor. The same first response is included in keyboard and screen-reader focus, so the player can understand each opening's practical priority before committing a reign.
+
 ## 2.6.24 - 2026-08-03
 
 - Campaign Theatre now previews the selected chapter's optional Honor objective beside its terrain lesson, with the same mastery goal available through keyboard and screen-reader focus. Sealed Honors stay visible as local campaign progress; they never affect match balance.

@@ -1679,7 +1679,19 @@ export class MilestoneOneScene extends Phaser.Scene {
       }
     );
     honorIntel.setScrollFactor(0);
-    const controls: Phaser.GameObjects.GameObject[] = [background, title, subtitle, terrainIntel, honorIntel];
+    const directiveIntel = this.add.text(
+      20,
+      CAMPAIGN_THEATRE_LAYOUT.directiveY,
+      `OPENING // ${SCENARIO_PROFILES[this.campaignScenario].openingDirective.toUpperCase()}`,
+      {
+        fontFamily: "Arial, sans-serif",
+        fontSize: "7px",
+        color: "#b8c4b7",
+        wordWrap: { width: 430 }
+      }
+    );
+    directiveIntel.setScrollFactor(0);
+    const controls: Phaser.GameObjects.GameObject[] = [background, title, subtitle, terrainIntel, honorIntel, directiveIntel];
     const campaignProgression = getCampaignProgression(this.campaignChronicle);
     CAMPAIGN_SCENARIOS.forEach((scenario, index) => {
       const profile = SCENARIO_PROFILES[scenario];
@@ -1874,7 +1886,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.campaignScenario = scenario;
     this.refreshCampaignSetupPanel();
     this.announceAccessibility(
-      `${SCENARIO_PROFILES[scenario].label} selected. ${SCENARIO_PROFILES[scenario].summary} Terrain: ${SCENARIO_PROFILES[scenario].terrainIntel}. Honor: ${SCENARIO_HONORS[scenario].label}. ${SCENARIO_HONORS[scenario].condition}`
+      `${SCENARIO_PROFILES[scenario].label} selected. ${SCENARIO_PROFILES[scenario].summary} Terrain: ${SCENARIO_PROFILES[scenario].terrainIntel}. Opening: ${SCENARIO_PROFILES[scenario].openingDirective} Honor: ${SCENARIO_HONORS[scenario].label}. ${SCENARIO_HONORS[scenario].condition}`
     );
   }
 
@@ -1909,7 +1921,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     if (focus.kind === "scenario") {
       const profile = SCENARIO_PROFILES[focus.scenario];
       const honor = SCENARIO_HONORS[focus.scenario];
-      return `Campaign Theatre focus: Chapter ${getCampaignChapter(focus.scenario)}, ${profile.label}. ${profile.summary} Terrain: ${profile.terrainIntel}. Honor: ${honor.label}. ${honor.condition}`;
+      return `Campaign Theatre focus: Chapter ${getCampaignChapter(focus.scenario)}, ${profile.label}. ${profile.summary} Terrain: ${profile.terrainIntel}. Opening: ${profile.openingDirective} Honor: ${honor.label}. ${honor.condition}`;
     }
     if (focus.kind === "difficulty") {
       const profile = RIVAL_DIFFICULTY_PROFILES[focus.difficulty];
