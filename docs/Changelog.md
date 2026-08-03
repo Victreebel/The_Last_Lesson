@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.17 - 2026-08-03
+
+- Added terrain-and-role hover guidance to every Build palette tile. Farmers, housing, logistics, industry, civic works, and fortifications now explain their valid terrain and purpose before placement; the shared tactical tooltip grows to fit that guidance instead of clipping it.
+
 ## 2.6.16 - 2026-08-03
 
 - Expanded the Campaign Theatre balance soak from one idealized plan to two representative Crown openings. Civic establishes the economy before its militia; Hold Fast commits a larger militia immediately while assigning only the civilian labor that remains. The 96-case release matrix now protects both openings across every theatre, seed, and Rival Doctrine profile.

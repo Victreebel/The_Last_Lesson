@@ -62,20 +62,24 @@ import {
 
 type ToolMode = "select" | "building" | "move" | "attack" | "attack-move";
 
-const BUILDING_OPTIONS: ReadonlyArray<{ readonly kind: BuildingKind; readonly label: string }> = [
-  { kind: "villa", label: "Villa" },
-  { kind: "hovel", label: "Hovel" },
-  { kind: "town-square", label: "Town Square" },
-  { kind: "farm", label: "Farm" },
-  { kind: "road", label: "Road" },
-  { kind: "military-quarters", label: "Military Quarters" },
-  { kind: "mine", label: "Mine" },
-  { kind: "lumber-mill", label: "Lumber Mill" },
-  { kind: "plantation", label: "Plantation" },
-  { kind: "moat", label: "Moat" },
-  { kind: "wall", label: "Wall" },
-  { kind: "gate", label: "Gate" },
-  { kind: "outpost", label: "Outpost" }
+const BUILDING_OPTIONS: ReadonlyArray<{
+  readonly kind: BuildingKind;
+  readonly label: string;
+  readonly detail: string;
+}> = [
+  { kind: "villa", label: "Villa", detail: "Citizen housing. Protects the Crown's civilian capacity." },
+  { kind: "hovel", label: "Hovel", detail: "Captive housing. Capacity, supervision, and a rebellion target." },
+  { kind: "town-square", label: "Town Square", detail: "Civic command. Enables caravans, Warships, Hounds, and captive integration." },
+  { kind: "farm", label: "Farm", detail: "Requires fertile ground. Produces local food and population growth." },
+  { kind: "road", label: "Road", detail: "Builds on open land. Accelerates movement, supply, and religious influence." },
+  { kind: "military-quarters", label: "Military Quarters", detail: "Enables specialist battalions beyond the militia levy." },
+  { kind: "mine", label: "Mine", detail: "Requires an iron vein. Produces iron for fortifications and specialists." },
+  { kind: "lumber-mill", label: "Lumber Mill", detail: "Requires forest. Produces wood for construction and logistics." },
+  { kind: "plantation", label: "Plantation", detail: "Requires a luxury grove. Produces Luxury for happiness and devotion." },
+  { kind: "moat", label: "Moat", detail: "Defensive perimeter. Slows hostile ground forces and land caravans." },
+  { kind: "wall", label: "Wall", detail: "Fortification. Garrison forces fire from its defense until breached." },
+  { kind: "gate", label: "Gate", detail: "Garrisonable wall opening. A faster route through a defended line." },
+  { kind: "outpost", label: "Outpost", detail: "Extends vision, local defense, and frontier religious pressure." }
 ];
 
 const BUILDING_COLORS: Record<BuildingKind, number> = {
@@ -320,6 +324,7 @@ export class MilestoneOneScene extends Phaser.Scene {
   private minimapBounds = { x: 0, y: 0 };
   private commandDock!: Phaser.GameObjects.Container;
   private commandTooltip!: Phaser.GameObjects.Container;
+  private commandTooltipBackground!: Phaser.GameObjects.Rectangle;
   private commandTooltipLabel!: Phaser.GameObjects.Text;
   private heirPanel!: Phaser.GameObjects.Container;
   private heirPanelBg!: Phaser.GameObjects.Rectangle;
@@ -2340,22 +2345,24 @@ export class MilestoneOneScene extends Phaser.Scene {
   }
 
   private createCommandTooltip(): void {
-    const background = this.add.rectangle(0, 0, 248, 42, UI_COLORS.panelDeep, 0.97).setOrigin(0);
-    background.setStrokeStyle(1, UI_COLORS.accent);
+    this.commandTooltipBackground = this.add.rectangle(0, 0, 248, 42, UI_COLORS.panelDeep, 0.97).setOrigin(0);
+    this.commandTooltipBackground.setStrokeStyle(1, UI_COLORS.accent);
     this.commandTooltipLabel = this.add.text(10, 8, "", {
       fontFamily: "Arial, sans-serif",
       fontSize: "10px",
       color: UI_COLORS.text,
       wordWrap: { width: 228 }
     });
-    this.commandTooltip = this.add.container(0, 0, [background, this.commandTooltipLabel]);
+    this.commandTooltip = this.add.container(0, 0, [this.commandTooltipBackground, this.commandTooltipLabel]);
     this.commandTooltip.setScrollFactor(0).setDepth(80).setVisible(false);
   }
 
   private showCommandTooltip(pointer: Phaser.Input.Pointer, message: string): void {
-    const x = Phaser.Math.Clamp(pointer.x + 12, 8, Math.max(8, this.scale.width - 256));
-    const y = Phaser.Math.Clamp(pointer.y - 50, 64, Math.max(64, this.scale.height - 50));
     this.commandTooltipLabel.setText(message);
+    const tooltipHeight = Math.max(42, this.commandTooltipLabel.height + 16);
+    this.commandTooltipBackground.setSize(248, tooltipHeight);
+    const x = Phaser.Math.Clamp(pointer.x + 12, 8, Math.max(8, this.scale.width - 256));
+    const y = Phaser.Math.Clamp(pointer.y - tooltipHeight - 8, 64, Math.max(64, this.scale.height - tooltipHeight - 8));
     this.commandTooltip.setPosition(x, y).setVisible(true);
   }
 
@@ -2760,6 +2767,10 @@ export class MilestoneOneScene extends Phaser.Scene {
         this.suppressNextPointerUp = true;
         this.selectBuilding(option.kind);
       });
+      button.on("pointerover", (pointer: Phaser.Input.Pointer) => {
+        this.showCommandTooltip(pointer, `${option.label.toUpperCase()}: ${option.detail}`);
+      });
+      button.on("pointerout", () => this.hideCommandTooltip());
       const icon = this.add.rectangle(x + 10, y + 10, 18, 18, BUILDING_COLORS[option.kind], 1).setOrigin(0);
       icon.setStrokeStyle(1, 0x0b1011);
       const label = this.add.text(x + 34, y + 8, option.label, {

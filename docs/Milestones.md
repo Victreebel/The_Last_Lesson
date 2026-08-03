@@ -27,6 +27,7 @@ Implemented:
 - Deterministic terrain signatures for grassland, fields, forests, iron veins, luxury groves, hills, water, and marshes, preserving clear labels while making terrain readable through pattern as well as color.
 - Camera panning with arrow keys.
 - UI controls for farm placement, battalion creation, movement, attacking, and manual ticks.
+- Build-palette hover guidance for every structure's terrain requirement and tactical or civic role.
 - Simulation-backed food, wood, iron, and faith readouts.
 - Player-facing labor priorities for food, wood, iron, and construction.
 - Deterministic farm placement.
