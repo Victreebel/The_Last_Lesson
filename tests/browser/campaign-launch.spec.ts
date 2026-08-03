@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { readFile } from "node:fs/promises";
 import sharp from "sharp";
 import { BOOK_PANEL_HEIGHT, CAMPAIGN_THEATRE_LAYOUT } from "../../src/rendering/uiLayout";
 
@@ -223,6 +224,49 @@ test("exports a portable reign archive from the Book of Lessons", async ({ page 
   });
 
   await expect((await download).suggestedFilename()).toMatch(/^the-last-lesson-crownfall-tick-\d+\.tll$/);
+});
+
+test("exports a local playtest record from the Book of Lessons", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto("/");
+  await beginCrownfallRivalReign(page);
+  await clickCanvasPoint(page, { x: 249, y: 29 });
+  await expect(page.locator("#the-last-lesson-announcements")).toContainText("Book of Lessons opened");
+
+  const resolution = await page.locator("canvas").evaluate((element: HTMLCanvasElement) => ({
+    width: element.width,
+    height: element.height
+  }));
+  const topHeight = resolution.width < 640 ? 122 : resolution.width < 900 ? 94 : 58;
+  const bookScale = resolution.width < 640 ? Math.min(1, (resolution.width - 32) / 470) : 1;
+  const bookPanelX = Math.max(16, Math.round((resolution.width - 470 * bookScale) / 2));
+  const bookPanelY = Math.max(topHeight + 18, Math.round((resolution.height - BOOK_PANEL_HEIGHT * bookScale) / 2));
+
+  const download = page.waitForEvent("download");
+  await clickCanvasPoint(page, {
+    x: bookPanelX + 350 * bookScale,
+    y: bookPanelY + 465 * bookScale
+  });
+  const recordDownload = await download;
+  expect(recordDownload.suggestedFilename()).toMatch(/^the-last-lesson-crownfall-tick-\d+\.playtest\.json$/);
+  const recordPath = await recordDownload.path();
+  if (!recordPath) {
+    throw new Error("Playtest record download did not expose a local path.");
+  }
+  const record = JSON.parse(await readFile(recordPath, "utf8")) as {
+    format: string;
+    scenarioId: string;
+    rivalDifficulty: string;
+    eventCounts: Record<string, number>;
+  };
+
+  expect(record).toMatchObject({
+    format: "the-last-lesson-playtest-record",
+    scenarioId: "crownfall",
+    rivalDifficulty: "rival"
+  });
+  expect(typeof record.eventCounts).toBe("object");
+  await expect(page.locator("#the-last-lesson-announcements")).toContainText("Local playtest record exported");
 });
 
 test("restores an exported portable reign archive through the Book of Lessons", async ({ page }) => {

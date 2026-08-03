@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.35 - 2026-08-03
+
+- The Book of Lessons now exports a compact local `.playtest.json` evidence record for facilitated sessions. It contains only the active theatre, Rival Doctrine, tick, victory, civic record, and event-type counts; no player, browser, profile, save, or network data leaves the game. Browser coverage verifies the actual download and schema alongside the deterministic unit contract.
+
 ## 2.6.34 - 2026-08-03
 
 - Fixed the compact-width tactical HUD: Accord, Heir, and Build panels now share a protected top-right strip and scale together instead of overlapping. Expanding one management panel now closes the other two, preserving clear control ownership on tablets and narrow laptops.
