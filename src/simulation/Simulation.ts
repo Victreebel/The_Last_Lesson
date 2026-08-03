@@ -1,4 +1,5 @@
 import { defaultSimulationConfig, type SimulationConfig } from "./SimulationConfig";
+import { HEIR_FEEDBACK } from "../learning/HeirFeedback";
 import type { GameCommand, MiracleKind } from "./commands/GameCommand";
 import { EventWriter } from "./events/EventWriter";
 import type { GameEvent } from "./events/GameEvent";
@@ -874,10 +875,11 @@ export class Simulation {
     }
 
     if (command.type === "reward-heir" || command.type === "punish-heir") {
+      const feedback = command.type === "reward-heir" ? HEIR_FEEDBACK.reward : HEIR_FEEDBACK.punish;
       this.applyHeirFeedback(
         command.payload.heirId,
-        command.type === "reward-heir" ? 16 : -18,
-        command.type === "reward-heir" ? 5 : -6,
+        feedback.confidenceDelta,
+        feedback.trustDelta,
         tick,
         command.id
       );

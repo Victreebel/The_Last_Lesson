@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.27 - 2026-08-03
+
+- Made the core teaching choice fully transparent: Reward and Punish now show their exact confidence and Trust change in the Heir console. Simulation and presentation share one feedback contract, so the displayed consequence always matches the authoritative lesson result.
+
 ## 2.6.26 - 2026-08-03
 
 - Rival Doctrine selection now explains the rival's expected pressure and learning temperament in both the Campaign Theatre cards and keyboard/screen-reader focus. The established grace and learning values remain visible and unchanged; this is clearer difficulty presentation, not a balance change.

@@ -3,6 +3,7 @@ import { getEarnedScenarioHonor, SCENARIO_HONORS, type CampaignHonor } from "../
 import { getCampaignChapter, getCampaignProgression } from "../../campaign/CampaignProgression";
 import { getImperialMandateProgress } from "../../campaign/ImperialMandate";
 import { getMandateGuidance, type MandateCommandControl } from "../../campaign/MandateGuidance";
+import { HEIR_FEEDBACK } from "../../learning/HeirFeedback";
 import { storeMultiplayerReconnectToken, type MultiplayerConnectRequest } from "../../app/MultiplayerLobby";
 import type { CommandIntent } from "../../networking/LocalAuthority";
 import { RemoteAuthorityClient } from "../../networking/RemoteAuthorityClient";
@@ -2669,10 +2670,12 @@ export class MilestoneOneScene extends Phaser.Scene {
       this.suppressNextPointerUp = true;
       this.sendHeirFeedback(commandType);
     });
-    const text = this.add.text(x + 12, y + 10, label, {
+    const feedback = commandType === "reward-heir" ? HEIR_FEEDBACK.reward : HEIR_FEEDBACK.punish;
+    const text = this.add.text(x + 12, y + 6, `${label} ${feedback.confidenceDelta > 0 ? "+" : ""}${feedback.confidenceDelta}\nTRUST ${feedback.trustDelta > 0 ? "+" : ""}${feedback.trustDelta}`, {
       fontFamily: "Arial Black, Arial",
-      fontSize: "10px",
-      color: UI_COLORS.text
+      fontSize: "8px",
+      color: UI_COLORS.text,
+      lineSpacing: 2
     });
     this.heirPanel.add([button, text]);
     this.heirFeedbackControls.push({ button, label: text });
@@ -2727,6 +2730,9 @@ export class MilestoneOneScene extends Phaser.Scene {
             : "Awaiting the God-King's example.",
           lastDoctrine ? `WHEN: ${lastDoctrine.condition.toUpperCase()}` : "WHEN: A command is observed.",
           lastDoctrine ? `PURPOSE: ${lastDoctrine.goal.toUpperCase()}` : "PURPOSE: SHAPE FUTURE GOVERNANCE.",
+          lastDoctrine
+            ? `FEEDBACK: REWARD +${HEIR_FEEDBACK.reward.confidenceDelta} CONFIDENCE / +${HEIR_FEEDBACK.reward.trustDelta} TRUST // PUNISH ${HEIR_FEEDBACK.punish.confidenceDelta} / ${HEIR_FEEDBACK.punish.trustDelta}`
+            : "FEEDBACK: OBSERVE A LESSON BEFORE YOU REINFORCE OR DISCIPLINE IT.",
           "",
           "GOVERNANCE:",
           heir?.lastDecision
