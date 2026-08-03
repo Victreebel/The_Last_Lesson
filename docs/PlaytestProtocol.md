@@ -26,8 +26,9 @@ it never replaces them or changes the frozen simulation rules.
    early field battalion?
 5. Does the player recognize the Rival's first pressure as fair, legible, and
    attributable to the chosen doctrine rather than an unexplained bonus?
-6. When a Prisoner Accord is available, does the player understand that it
-   returns equal people to both realms and does not teach the Heir?
+6. When a Prisoner Accord is available, does the player find the highlighted
+   Accord and understand that it returns equal people to both realms and does
+   not teach the Heir?
 
 ## Theatre Coverage
 

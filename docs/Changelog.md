@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.33 - 2026-08-03
+
+- Ashen Oath now calls out the compact `ACCORD [D]` header as the active captive-policy surface, while the Command Dock continues to highlight both assimilation and release. The three civic responses are discoverable together without changing simulation rules, heir learning, or balance.
+
 ## 2.6.32 - 2026-08-03
 
 - Civic Records now expose `EXCHANGED` alongside captives taken, integrated, and released. Prisoner Accord returns remain part of the existing release-based rebellion calculation but are no longer hidden inside the general release count.

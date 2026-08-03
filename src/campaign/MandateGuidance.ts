@@ -15,7 +15,7 @@ export type MandateCommandControl =
   | "garrison"
   | "mend";
 
-export type MandateGuidanceSurface = "build" | "command" | "heir";
+export type MandateGuidanceSurface = "accord" | "build" | "command" | "heir";
 
 export interface MandateGuidance {
   readonly surface: MandateGuidanceSurface;
@@ -32,8 +32,8 @@ const GUIDANCE: Record<MandateStepId, MandateGuidance> = {
     commandTargets: ["mend"]
   },
   "resolve-captives": {
-    surface: "command",
-    label: "COMMAND // CAPTIVE POLICY",
+    surface: "accord",
+    label: "ACCORD [D] // CAPTIVE POLICY",
     buildingTargets: [],
     commandTargets: ["assimilate", "release"]
   },

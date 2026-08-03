@@ -20,12 +20,14 @@ describe("mandate guidance", () => {
       const guidance = getMandateGuidance(stepId);
       expect(guidance.label).toContain("//");
       expect(
-        guidance.surface === "heir" || guidance.buildingTargets.length > 0 || guidance.commandTargets.length > 0
+        guidance.surface === "heir" || guidance.surface === "accord" || guidance.buildingTargets.length > 0 || guidance.commandTargets.length > 0
       ).toBe(true);
     }
   });
 
   it("keeps legitimate captive policy alternatives equally visible", () => {
-    expect(getMandateGuidance("resolve-captives").commandTargets).toEqual(["assimilate", "release"]);
+    const guidance = getMandateGuidance("resolve-captives");
+    expect(guidance.surface).toBe("accord");
+    expect(guidance.commandTargets).toEqual(["assimilate", "release"]);
   });
 });

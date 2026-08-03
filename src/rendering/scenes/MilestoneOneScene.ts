@@ -2764,10 +2764,18 @@ export class MilestoneOneScene extends Phaser.Scene {
 
   private updateAccordPanel(): void {
     const accord = this.getPrisonerAccord();
+    const activeMandate = getImperialMandateProgress(this.simulation.getState()).activeStep;
+    const accordIsMandated = getMandateGuidance(activeMandate.id).surface === "accord";
     const height = this.accordPanelExpanded ? 190 : 48;
     this.accordPanelBg.setSize(ACCORD_PANEL_WIDTH, height);
     this.accordPanel.setSize(ACCORD_PANEL_WIDTH, height);
-    this.accordPanelTitle.setText(this.accordPanelExpanded ? "ACCORD // PRISONERS [-]" : "ACCORD // PRISONERS [+]");
+    this.accordPanelHeader.setFillStyle(accordIsMandated ? UI_COLORS.commandActive : UI_COLORS.panelDeep, 0.98);
+    this.accordPanelTitle.setText(
+      this.accordPanelExpanded
+        ? "ACCORD // PRISONERS [-]"
+        : `ACCORD // PRISONERS [${accordIsMandated ? "!" : "+"}]`
+    );
+    this.accordPanelTitle.setColor(accordIsMandated ? UI_COLORS.text : "#f2d77f");
     this.accordPanelBody.setVisible(this.accordPanelExpanded);
     this.accordExchangeButton.setVisible(this.accordPanelExpanded);
     this.accordExchangeLabel.setVisible(this.accordPanelExpanded);
