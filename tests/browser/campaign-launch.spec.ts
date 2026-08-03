@@ -124,9 +124,11 @@ test("navigates Campaign Theatre with the keyboard before beginning a reign", as
   await canvas.press("ArrowRight");
   await expect(page.locator("#the-last-lesson-announcements")).toContainText("Chapter 2, RIVERGATE");
   await expect(page.locator("#the-last-lesson-announcements")).toContainText("Terrain: NAVIGABLE RIVER // SUPPLY & WARSHIPS");
+  await expect(page.locator("#the-last-lesson-announcements")).toContainText("Honor: TIDECALLER. Win with a Crown Warship afloat");
   await canvas.press("Enter");
   await expect(page.locator("#the-last-lesson-announcements")).toContainText("RIVERGATE selected");
   await expect(page.locator("#the-last-lesson-announcements")).toContainText("Terrain: NAVIGABLE RIVER // SUPPLY & WARSHIPS");
+  await expect(page.locator("#the-last-lesson-announcements")).toContainText("Honor: TIDECALLER. Win with a Crown Warship afloat");
 
   await canvas.press("ArrowDown");
   await expect(page.locator("#the-last-lesson-announcements")).toContainText("Chapter 4, STONEWALL");

@@ -138,6 +138,7 @@ Implemented:
 - The static single-player build now has a GitHub Pages release pipeline. It independently runs the release gate, builds with the repository subpath, and deploys the verified artifact when Pages is enabled for the repository.
 - The static release now generates runtime WebP battlefield and tactical-atlas art from repository-held PNG sources before every build, reducing the initial art payload from approximately 5.2 MB to 0.75 MB without changing the painterly tactical presentation.
 - Campaign Theatre victories can now seal optional local Honors tied to each theatre's core tactical lesson, adding replay goals without affecting deterministic campaign rules or multiplayer authority.
+- Campaign Theatre now previews each selected theatre's optional Honor condition before a reign, letting players deliberately pursue scenario-specific mastery goals rather than discovering them only in the debrief.
 - Campaign Theatre maps now differ in authoritative terrain as well as their opening resources and rules: Rivergate expands a navigable southern waterway without closing the rival land route, Ashen Oath owns a blighted marsh belt, and Stonewall begins on a hill-fort ridge. Scenario, health, and balance suites protect those tactical identities.
 
 ## Milestone 4: Persistence Foundation

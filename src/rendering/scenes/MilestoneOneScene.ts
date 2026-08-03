@@ -1663,7 +1663,23 @@ export class MilestoneOneScene extends Phaser.Scene {
       }
     );
     terrainIntel.setScrollFactor(0);
-    const controls: Phaser.GameObjects.GameObject[] = [background, title, subtitle, terrainIntel];
+    const selectedHonor = this.getCampaignHonor(this.campaignScenario);
+    const honorProfile = SCENARIO_HONORS[this.campaignScenario];
+    const honorIntel = this.add.text(
+      20,
+      CAMPAIGN_THEATRE_LAYOUT.honorY,
+      selectedHonor
+        ? `HONOR // ${selectedHonor.label} SEALED`
+        : `HONOR // ${honorProfile.label}: ${honorProfile.condition}`,
+      {
+        fontFamily: "Arial, sans-serif",
+        fontSize: "7px",
+        color: selectedHonor ? "#f2d77f" : "#afc0b1",
+        wordWrap: { width: 430 }
+      }
+    );
+    honorIntel.setScrollFactor(0);
+    const controls: Phaser.GameObjects.GameObject[] = [background, title, subtitle, terrainIntel, honorIntel];
     const campaignProgression = getCampaignProgression(this.campaignChronicle);
     CAMPAIGN_SCENARIOS.forEach((scenario, index) => {
       const profile = SCENARIO_PROFILES[scenario];
@@ -1744,7 +1760,7 @@ export class MilestoneOneScene extends Phaser.Scene {
       });
       controls.push(art, button, terrainBadge, terrainTag, caption, label, detail);
     });
-    const beginPrompt = this.add.text(20, 272, "BEGIN REIGN // SELECT RIVAL DOCTRINE", {
+    const beginPrompt = this.add.text(20, CAMPAIGN_THEATRE_LAYOUT.beginPromptY, "BEGIN REIGN // SELECT RIVAL DOCTRINE", {
       fontFamily: "Arial Black, Arial",
       fontSize: "9px",
       color: "#e2bd61"
@@ -1858,7 +1874,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.campaignScenario = scenario;
     this.refreshCampaignSetupPanel();
     this.announceAccessibility(
-      `${SCENARIO_PROFILES[scenario].label} selected. ${SCENARIO_PROFILES[scenario].summary} Terrain: ${SCENARIO_PROFILES[scenario].terrainIntel}.`
+      `${SCENARIO_PROFILES[scenario].label} selected. ${SCENARIO_PROFILES[scenario].summary} Terrain: ${SCENARIO_PROFILES[scenario].terrainIntel}. Honor: ${SCENARIO_HONORS[scenario].label}. ${SCENARIO_HONORS[scenario].condition}`
     );
   }
 
@@ -1892,7 +1908,8 @@ export class MilestoneOneScene extends Phaser.Scene {
     }
     if (focus.kind === "scenario") {
       const profile = SCENARIO_PROFILES[focus.scenario];
-      return `Campaign Theatre focus: Chapter ${getCampaignChapter(focus.scenario)}, ${profile.label}. ${profile.summary} Terrain: ${profile.terrainIntel}.`;
+      const honor = SCENARIO_HONORS[focus.scenario];
+      return `Campaign Theatre focus: Chapter ${getCampaignChapter(focus.scenario)}, ${profile.label}. ${profile.summary} Terrain: ${profile.terrainIntel}. Honor: ${honor.label}. ${honor.condition}`;
     }
     if (focus.kind === "difficulty") {
       const profile = RIVAL_DIFFICULTY_PROFILES[focus.difficulty];

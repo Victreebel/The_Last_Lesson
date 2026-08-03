@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.24 - 2026-08-03
+
+- Campaign Theatre now previews the selected chapter's optional Honor objective beside its terrain lesson, with the same mastery goal available through keyboard and screen-reader focus. Sealed Honors stay visible as local campaign progress; they never affect match balance.
+
 ## 2.6.23 - 2026-08-03
 
 - Expanded battlefield Lesson briefs from a terse action readout into a complete teaching handoff: the observed condition, developing doctrine, strategic goal, confidence, and the existing Heir feedback path are now visible together. This is a presentation-only explanation of the same deterministic doctrine event.
