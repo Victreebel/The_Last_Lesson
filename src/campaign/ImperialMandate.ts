@@ -81,7 +81,7 @@ export function getImperialMandateProgress(state: WorldState): ImperialMandatePr
     steps.push({
       id: "resolve-captives",
       label: "SECURE THE CAPTIVES: ASSIMILATE OR RELEASE THEM.",
-      instruction: "COMMAND DOCK > ASSIMILATE or RELEASE // lower rebellion.",
+      instruction: "COMMAND DOCK > ASSIMILATE or RELEASE // or open ACCORD [D] to return equal prisoners.",
       complete: !hasCaptives
     });
   }

@@ -7,7 +7,7 @@ describe("campaign scenarios", () => {
     expect(SCENARIO_PROFILES).toMatchObject({
       crownfall: { terrainTag: "FERTILE HEARTLAND", terrainIntel: "FERTILE HEARTLAND // EXPANSION" },
       rivergate: { terrainTag: "NAVIGABLE RIVER", terrainIntel: "NAVIGABLE RIVER // SUPPLY & WARSHIPS" },
-      "ashen-oath": { terrainTag: "BLIGHTED MARSH", terrainIntel: "BLIGHTED MARSH // PLAGUE & CAPTIVES" },
+      "ashen-oath": { terrainTag: "BLIGHTED MARSH", terrainIntel: "BLIGHTED MARSH // PLAGUE & ACCORD" },
       stonewall: { terrainTag: "HILL-FORT RIDGE", terrainIntel: "HILL-FORT RIDGE // GATE DEFENSE" }
     });
   });
@@ -31,7 +31,7 @@ describe("campaign scenarios", () => {
     expect(world.terrainZones.some((zone) => zone.id === "rivergate-waterway")).toBe(true);
   });
 
-  it("starts Ashen Oath with a recoverable plague, captives, and a rival religious road corridor", () => {
+  it("starts Ashen Oath with a recoverable plague, reciprocal captives, and a rival religious road corridor", () => {
     const simulation = new Simulation(createInitialWorld(712, "rival", "ashen-oath"));
     const result = simulation.tick();
     const capital = simulation.getState().settlements["settlement-capital"];
@@ -40,13 +40,33 @@ describe("campaign scenarios", () => {
     );
 
     expect(capital.population.captives).toBe(12);
+    expect(simulation.getState().settlements["settlement-rival"].population.captives).toBe(4);
     expect(capital.population.health).toBeLessThan(44);
     expect(capital.plagueTicks).toBe(2);
     expect(capital.buildingIds).toContain("building-ashen-hovel");
+    expect(capital.buildingIds).toContain("building-ashen-villa");
+    expect(simulation.getState().settlements["settlement-rival"].buildingIds).toContain("building-ashen-rival-hovel");
     expect(capital.externalReligiousPressure).toBeGreaterThan(0);
     expect(pressureEvent?.payload.roadPressure).toBeGreaterThan(0);
     expect(terrainAtPosition(simulation.getState(), { x: 500, y: 520 })).toBe("marsh");
     expect(simulation.getState().terrainZones.some((zone) => zone.id === "ashen-marsh")).toBe(true);
+  });
+
+  it("makes a bounded prisoner accord available during Ashen Oath's civic crisis", () => {
+    const simulation = new Simulation(createInitialWorld(716, "rival", "ashen-oath"));
+    simulation.enqueueCommand({
+      id: "ashen-prisoner-accord",
+      issuedBy: "player-1",
+      tick: 1,
+      type: "exchange-captives",
+      payload: { settlementId: "settlement-capital", rivalSettlementId: "settlement-rival", count: 4 }
+    });
+
+    const result = simulation.tick();
+
+    expect(simulation.getState().settlements["settlement-capital"].population.captives).toBe(8);
+    expect(simulation.getState().settlements["settlement-rival"].population.captives).toBe(0);
+    expect(result.events.some((event) => event.type === "captives-exchanged")).toBe(true);
   });
 
   it("lets Ashen Oath's opening Faith cure the civic crisis immediately", () => {

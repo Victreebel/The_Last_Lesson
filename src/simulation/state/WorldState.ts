@@ -58,10 +58,10 @@ export const SCENARIO_PROFILES: Record<ScenarioId, ScenarioProfile> = {
   },
   "ashen-oath": {
     label: "ASHEN OATH",
-    summary: "A plague-struck captive settlement tests mercy, recovery, and religious legitimacy.",
+    summary: "A plague-struck captive settlement tests mercy, recovery, prisoner accords, and religious legitimacy.",
     terrainTag: "BLIGHTED MARSH",
-    terrainIntel: "BLIGHTED MARSH // PLAGUE & CAPTIVES",
-    openingDirective: "Mend Crownkeep, then resolve the captive unrest."
+    terrainIntel: "BLIGHTED MARSH // PLAGUE & ACCORD",
+    openingDirective: "Mend Crownkeep, then choose the captive policy or Prisoner Accord."
   },
   stonewall: {
     label: "STONEWALL",
@@ -771,6 +771,9 @@ function applyScenario(world: WorldState, scenarioId: ScenarioId): WorldState {
   }
 
   const hovelId = "building-ashen-hovel";
+  const villaId = "building-ashen-villa";
+  const rivalHovelId = "building-ashen-rival-hovel";
+  const rivalVillaId = "building-ashen-rival-villa";
   const rivalRoadIds = ["building-ashen-road-1", "building-ashen-road-2", "building-ashen-road-3"];
   return {
     ...world,
@@ -799,7 +802,7 @@ function applyScenario(world: WorldState, scenarioId: ScenarioId): WorldState {
       ...world.settlements,
       "settlement-capital": {
         ...capital,
-        buildingIds: [...capital.buildingIds, hovelId],
+        buildingIds: [...capital.buildingIds, hovelId, villaId],
         internalFaith: 34,
         plagueTicks: 3,
         population: {
@@ -813,7 +816,16 @@ function applyScenario(world: WorldState, scenarioId: ScenarioId): WorldState {
       },
       "settlement-rival": {
         ...world.settlements["settlement-rival"],
-        buildingIds: [...world.settlements["settlement-rival"].buildingIds, ...rivalRoadIds]
+        buildingIds: [
+          ...world.settlements["settlement-rival"].buildingIds,
+          ...rivalRoadIds,
+          rivalHovelId,
+          rivalVillaId
+        ],
+        population: {
+          ...world.settlements["settlement-rival"].population,
+          captives: 4
+        }
       }
     },
     buildings: {
@@ -825,6 +837,36 @@ function applyScenario(world: WorldState, scenarioId: ScenarioId): WorldState {
         kind: "hovel",
         position: { x: 350, y: 330 },
         defense: 80,
+        complete: true,
+        remainingBuildTicks: 0
+      },
+      [villaId]: {
+        id: villaId,
+        ownerEmpireId: "empire-player",
+        settlementId: "settlement-capital",
+        kind: "villa",
+        position: { x: 320, y: 240 },
+        defense: 90,
+        complete: true,
+        remainingBuildTicks: 0
+      },
+      [rivalHovelId]: {
+        id: rivalHovelId,
+        ownerEmpireId: "empire-rival",
+        settlementId: "settlement-rival",
+        kind: "hovel",
+        position: { x: 1210, y: 450 },
+        defense: 70,
+        complete: true,
+        remainingBuildTicks: 0
+      },
+      [rivalVillaId]: {
+        id: rivalVillaId,
+        ownerEmpireId: "empire-rival",
+        settlementId: "settlement-rival",
+        kind: "villa",
+        position: { x: 1210, y: 315 },
+        defense: 90,
         complete: true,
         remainingBuildTicks: 0
       },

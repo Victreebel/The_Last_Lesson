@@ -2,7 +2,7 @@
 
 ## Technical Design Specification
 
-**Version:** 1.3
+**Version:** 1.4
 **Status:** Active Implementation Blueprint
 **Date:** 2026-08-03
 **Working Title:** The Last Lesson  

@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.31 - 2026-08-03
+
+- Ashen Oath now opens with reciprocal, securely housed prisoners and completed civil housing on both thrones. The player can inspect the Prisoner Accord immediately, return four people without erasing the opening's larger captive-unrest problem, and still choose assimilation or release for the remaining population.
+
 ## 2.6.30 - 2026-08-03
 
 - Added the Crown-only Prisoner Accord. When both realms hold captives and can house returning citizens, the Accord panel deterministically exchanges up to four people, records the release in each Civic Record, and produces a replay-safe tactical event. Heirs neither negotiate nor learn from the agreement.
