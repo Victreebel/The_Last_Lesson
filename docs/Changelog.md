@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.20 - 2026-08-03
+
+- Tightened the Tactical Uplink into a five-line battlefield brief: order and selection, people, labor, stability, and Faith. This prevents the active Mandate and intelligence feed from colliding with durable Civic Record history, which remains available in the Book of Lessons and end-of-reign report.
+
 ## 2.6.19 - 2026-08-03
 
 - Reframed Campaign Theatre as a focused pre-reign view. The campaign picker now sits over a subdued painterly map while inactive tactical HUD, world labels, and command panels stay out of the decision; launching a reign restores the complete command shell. The canvas now exposes the matching campaign/tactical presentation phase and accessible name for browser-level regression coverage.

@@ -15,6 +15,7 @@ import { describeGameEvent, selectTacticalReportEvents } from "../eventNarrative
 import { getMiracleFeedbackPresentation } from "../miraclePresentation";
 import { getOrderIndicators } from "../orderPresentation";
 import { getTerrainPresentation } from "../terrainPresentation";
+import { getTacticalUplinkStatusLines } from "../tacticalUplink";
 import { BOOK_PANEL_HEIGHT, CAMPAIGN_THEATRE_LAYOUT } from "../uiLayout";
 import { Simulation } from "../../simulation/Simulation";
 import type { GameCommand } from "../../simulation/commands/GameCommand";
@@ -2301,11 +2302,11 @@ export class MilestoneOneScene extends Phaser.Scene {
     const divider = this.add.rectangle(14, 30, 304, 1, UI_COLORS.trim, 1).setOrigin(0);
     this.statusText = this.add.text(14, 42, "", {
       fontFamily: "Arial, sans-serif",
-      fontSize: "11px",
+      fontSize: "10px",
       color: UI_COLORS.text,
-      lineSpacing: 4
+      lineSpacing: 3
     });
-    this.eventText = this.add.text(14, 142, "", {
+    this.eventText = this.add.text(14, 124, "", {
       fontFamily: "Arial, sans-serif",
       fontSize: "10px",
       color: UI_COLORS.muted,
@@ -4470,31 +4471,23 @@ export class MilestoneOneScene extends Phaser.Scene {
       this.selectedBattalionIds.size === 1
         ? state.battalions[this.selectedBattalionIds.values().next().value as string]
         : undefined;
-    const selectedTraits = selectedBattalion ? getBattalionTraits(selectedBattalion.battlefieldTraining) : [];
     const activeControlGroup = this.getActiveControlGroup();
-    const controlGroupSummary = activeControlGroup ? `  //  GROUP ${activeControlGroup}` : "";
-    const selectionSummary = selectedBattalion
-      ? `UNIT: ${getBattalionRank(selectedBattalion.experience)} ${selectedBattalion.specialization.toUpperCase()}  //  MORALE ${selectedBattalion.morale}  //  SUPPLY ${selectedBattalion.supply}  //  XP ${selectedBattalion.experience ?? 0}  //  ${selectedTraits.join(" / ") || "NO TRAIT"}${controlGroupSummary}`
-      : this.selectedCaravanId
-        ? "SELECTION: SUPPLY CARAVAN"
-        : this.selectedBattalionIds.size
-          ? `SELECTION: ${this.selectedBattalionIds.size} BATTALIONS${controlGroupSummary}`
-          : "SELECTION: NO UNIT SELECTED";
     this.resourceText.setText(
       this.scale.width < 640
         ? `SEAT ${this.getSettlementDisplayName(settlement.id)}  //  TICK ${state.tick}\nFOOD ${settlement.localFood}  WOOD ${empire.resources.wood}  IRON ${empire.resources.iron}  LUX ${empire.resources.luxury}  FAITH ${empire.resources.faith}`
         : `SEAT ${this.getSettlementDisplayName(settlement.id)}    FOOD ${settlement.localFood}    WOOD ${empire.resources.wood}    IRON ${empire.resources.iron}    LUX ${empire.resources.luxury}    FAITH ${empire.resources.faith}    TICK ${state.tick}`
     );
     this.statusText.setText(
-      [
-        `ORDER: ${this.getModeLabel()}`,
-        selectionSummary,
-        `POPULATION: ${settlement.population.citizens}/${this.getCitizenCapacity(settlement.id)}  //  MILITARY: ${settlement.population.militarizedCitizens}  //  GROWTH: ${settlement.population.growthProgress}/80`,
-        `LABOR: FARM ${settlement.population.farmers}  BUILD ${settlement.population.builders}  LUMBER ${settlement.population.lumberjacks}  MINE ${settlement.population.miners}  LUX ${settlement.population.luxuryWorkers}`,
-        `CAPTIVES: ${settlement.population.captives}/${this.getCaptiveCapacity(settlement.id)}  //  REBELLION: ${settlement.pressures.rebellion}%  //  HEALTH ${settlement.population.health}  //  PLAGUE ${settlement.plagueTicks ?? 0}`,
-        `FAITH: ${settlement.internalFaith}  //  RIVAL PRESSURE: ${settlement.externalReligiousPressure}`,
-        `CIVIC RECORD: TAKEN ${empire.moralMemory?.captivesTaken ?? 0}  //  INTEGRATED ${empire.moralMemory?.captivesIntegrated ?? 0}  //  RELEASED ${empire.moralMemory?.captivesReleased ?? 0}`
-      ].join("\n")
+      getTacticalUplinkStatusLines({
+        order: this.getModeLabel(),
+        settlement,
+        citizenCapacity: this.getCitizenCapacity(settlement.id),
+        captiveCapacity: this.getCaptiveCapacity(settlement.id),
+        selectedBattalion,
+        selectedCaravan: Boolean(this.selectedCaravanId),
+        selectedBattalionCount: this.selectedBattalionIds.size,
+        activeControlGroup
+      }).join("\n")
     );
     const victory = state.victory.winnerEmpireId;
     this.eventText.setText(
