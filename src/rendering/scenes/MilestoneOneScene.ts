@@ -337,6 +337,7 @@ export class MilestoneOneScene extends Phaser.Scene {
   private accessibilityAnnouncements?: HTMLElement;
   private readonly buildingTiles = new Map<BuildingKind, BuildingTile>();
   private worldLayer!: Phaser.GameObjects.Container;
+  private terrainLayer?: Phaser.GameObjects.Container;
   private readonly buildingSprites = new Map<string, Phaser.GameObjects.Rectangle>();
   private readonly buildingArtSprites = new Map<string, Phaser.GameObjects.Image>();
   private readonly buildingLabelSprites = new Map<string, Phaser.GameObjects.Text>();
@@ -668,10 +669,14 @@ export class MilestoneOneScene extends Phaser.Scene {
   }
 
   private drawTerrain(): void {
+    this.terrainLayer?.destroy(true);
+    this.terrainLayer = this.add.container(0, 0);
+    this.worldLayer.addAt(this.terrainLayer, 0);
+
     const backdrop = this.add.image(700, 450, "painted-world");
     backdrop.setDisplaySize(1400, 900);
     backdrop.setAlpha(0.82);
-    this.worldLayer.add(backdrop);
+    this.terrainLayer.add(backdrop);
 
     const graphics = this.add.graphics();
     graphics.fillStyle(getTerrainPresentation("grassland").color, 0.46);
@@ -691,7 +696,7 @@ export class MilestoneOneScene extends Phaser.Scene {
       this.drawTerrainZone(graphics, zone);
     }
 
-    this.worldLayer.add(graphics);
+    this.terrainLayer.add(graphics);
   }
 
   private drawTerrainZone(graphics: Phaser.GameObjects.Graphics, zone: TerrainZone): void {
@@ -712,7 +717,7 @@ export class MilestoneOneScene extends Phaser.Scene {
       backgroundColor: "#111818"
     });
     label.setOrigin(0.5, 0);
-    this.worldLayer.add(label);
+    this.terrainLayer?.add(label);
   }
 
   private drawTerrainTexture(graphics: Phaser.GameObjects.Graphics, zone: TerrainZone): void {
@@ -1214,6 +1219,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.simulation = new Simulation(structuredClone(snapshot.state), undefined, {
       eventLog: structuredClone(snapshot.recentEvents)
     });
+    this.drawTerrain();
     this.inspectedSettlementId = this.getActiveControlledSettlement()?.id ?? "settlement-capital";
     this.lastLessonEventId = undefined;
     this.lessonBanner.setVisible(false);
@@ -1939,6 +1945,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.clearPlacementPreview();
     this.assignOpeningLabor();
     this.centerCameraOnSettlement(this.inspectedSettlementId);
+    this.drawTerrain();
     this.renderWorld();
     this.updateUi([message]);
   }
@@ -2173,6 +2180,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.clearSelection();
     this.clearControlGroups();
     this.centerCameraOnSettlement(this.inspectedSettlementId);
+    this.drawTerrain();
     this.renderWorld();
   }
 

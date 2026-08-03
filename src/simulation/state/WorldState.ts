@@ -662,6 +662,22 @@ function applyScenario(world: WorldState, scenarioId: ScenarioId): WorldState {
     const townSquareId = "building-rivergate-town-square";
     return {
       ...world,
+      terrainZones: world.terrainZones.map((zone) => {
+        if (zone.id === "central-grassland") {
+          return { ...zone, bounds: { ...zone.bounds, height: 170 } };
+        }
+        if (zone.id === "river") {
+          return {
+            ...zone,
+            id: "rivergate-waterway",
+            label: "RIVERGATE WATERWAY",
+            // Keep the enemy land approach viable while making the southern waterway
+            // large enough to be a meaningful naval and supply theatre.
+            bounds: { x: 530, y: 470, width: 470, height: 145 }
+          };
+        }
+        return zone;
+      }),
       empires: {
         ...world.empires,
         "empire-player": {
@@ -697,6 +713,15 @@ function applyScenario(world: WorldState, scenarioId: ScenarioId): WorldState {
     const wallIds = ["building-stonewall-wall-1", "building-stonewall-gate", "building-stonewall-wall-2"];
     return {
       ...world,
+      terrainZones: [
+        {
+          id: "stonewall-ridge",
+          kind: "hills",
+          label: "STONEWALL RIDGE",
+          bounds: { x: 300, y: 150, width: 280, height: 270 }
+        },
+        ...world.terrainZones
+      ],
       empires: {
         ...world.empires,
         "empire-player": {
@@ -726,6 +751,20 @@ function applyScenario(world: WorldState, scenarioId: ScenarioId): WorldState {
   const rivalRoadIds = ["building-ashen-road-1", "building-ashen-road-2", "building-ashen-road-3"];
   return {
     ...world,
+    terrainZones: world.terrainZones.map((zone) => {
+      if (zone.id === "southern-marsh") {
+        return {
+          ...zone,
+          id: "ashen-marsh",
+          label: "ASHEN MARSH",
+          bounds: { x: 250, y: 470, width: 420, height: 260 }
+        };
+      }
+      if (zone.id === "luxury-grove") {
+        return { ...zone, id: "blighted-grove", label: "BLIGHTED GROVE" };
+      }
+      return zone;
+    }),
     empires: {
       ...world.empires,
       "empire-player": {

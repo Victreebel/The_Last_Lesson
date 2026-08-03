@@ -372,11 +372,11 @@ AI may only use information available to its empire.
 `WorldState.scenarioId` selects an authored opening profile before the match begins. Scenarios are authoritative save/replay data, not a renderer-only preset. The initial content set is:
 
 - `crownfall`: balanced economic opening and the default for legacy saves.
-- `rivergate`: completed Town Square, additional civic resources, and an opening that foregrounds supply and naval transport.
-- `ashen-oath`: captive population, an initial hovel, lower internal Faith, and a rival road corridor that amplifies religious pressure.
-- `stonewall`: completed walls and a gate, food reserves, and construction labor that foreground defensive geometry, garrisons, logistics, retreat, and counter-siege play.
+- `rivergate`: completed Town Square, additional civic resources, and an enlarged southern waterway that foregrounds supply and naval transport while keeping a viable land approach to the Crown.
+- `ashen-oath`: captive population, an initial hovel, lower internal Faith, a blighted marsh belt, and a rival road corridor that amplifies religious pressure.
+- `stonewall`: completed walls and a gate, food reserves, construction labor, and a hill-fort ridge that foreground defensive geometry, garrisons, logistics, retreat, and counter-siege play.
 
-Scenario content may alter opening state, structures, resources, and pressures, but must not change the fixed tick order or introduce non-deterministic rules. The campaign theatre selects a scenario first, then a Rival Doctrine difficulty profile.
+Scenario content may alter opening state, structures, resources, pressures, and ordered terrain zones, but must not change the fixed tick order or introduce non-deterministic rules. Terrain-zone IDs, bounds, labels, and order are authoritative scenario data. The renderer must redraw its terrain layer whenever it replaces the active world from a campaign start, saved reign, or authority snapshot. The campaign theatre selects a scenario first, then a Rival Doctrine difficulty profile.
 
 When an authored opening defines a non-zero starting labor allocation, the presentation layer must enqueue that allocation unchanged at the first simulation tick. Openings without authored labor use the standard Crown allocation. This preserves scenario identity without placing UI-specific behavior in the simulation.
 
@@ -1478,6 +1478,7 @@ The following compatible systems are now implemented in the prototype and are th
 - Rival starting settlements include terrain-valid farms on authored, labeled fertile fields. This is starting-world content, not a hidden economy bonus: their governing heirs still assign labor, raise forces, and make visible doctrine-driven decisions under the same simulation rules.
 - Capturing a castle kills its incumbent heir, transfers the settlement and civic structures, creates a replacement governor, and awards victory when the defeated empire owns no settlement.
 - Terrain is explicit data. Farms require fertile ground, lumber mills require forest, mines require iron veins, and movement/combat use terrain modifiers.
+- Each authored Campaign Theatre owns a distinct authoritative terrain variation: Crownfall is the baseline field, Rivergate expands the navigable southern waterway, Ashen Oath extends and blights its marsh approach, and Stonewall overlays a defensive hill-fort ridge. These map changes are part of `WorldState`, save files, replay origins, snapshots, and deterministic balance tests rather than presentation-only theatre decoration.
 - Completed farms, mills, and mines cap food, wood, and iron production from assigned labor. Construction costs are deducted from global resources.
 - Roads grant a movement multiplier and supply nearby friendly battalions. Unsupplied battalions lose supply and eventually morale.
 - The construction palette projects current Crown wood and iron into an affordability state, and its placement preview reports the precise invalid condition: battlefield boundary, terrain incompatibility, missing resources, foundation overlap, or structure clearance. This is renderer-side preflight only; the simulation remains the authority that validates every queued construction command.

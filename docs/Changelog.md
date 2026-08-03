@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.12 - 2026-08-03
+
+- Made every authored Campaign Theatre a distinct authoritative battlefield. Rivergate now has a larger navigable waterway while retaining a playable land siege route, Ashen Oath has a blighted marsh approach, and Stonewall opens on a defensive ridge. Terrain refreshes when a campaign starts, a save restores, or authority snapshots replace the active world.
+
 ## 2.6.11 - 2026-08-03
 
 - Made Campaign Theatre keyboard-operable. Arrow keys now move a visible focus across theatres and rival doctrines, `Tab` cycles all available choices, and `Enter` or `Space` selects the focused scenario or begins its reign with a screen-reader announcement.

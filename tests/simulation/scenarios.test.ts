@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Simulation } from "../../src/simulation/Simulation";
-import { createInitialWorld } from "../../src/simulation/state/WorldState";
+import { createInitialWorld, terrainAtPosition } from "../../src/simulation/state/WorldState";
 
 describe("campaign scenarios", () => {
   it("keeps Crownfall as the balanced default opening", () => {
@@ -18,6 +18,8 @@ describe("campaign scenarios", () => {
     expect(world.empires["empire-player"].resources.faith).toBe(8);
     expect(capital.buildingIds).toContain("building-rivergate-town-square");
     expect(world.buildings["building-rivergate-town-square"].complete).toBe(true);
+    expect(terrainAtPosition(world, { x: 700, y: 520 })).toBe("water");
+    expect(world.terrainZones.some((zone) => zone.id === "rivergate-waterway")).toBe(true);
   });
 
   it("starts Ashen Oath with a recoverable plague, captives, and a rival religious road corridor", () => {
@@ -34,6 +36,8 @@ describe("campaign scenarios", () => {
     expect(capital.buildingIds).toContain("building-ashen-hovel");
     expect(capital.externalReligiousPressure).toBeGreaterThan(0);
     expect(pressureEvent?.payload.roadPressure).toBeGreaterThan(0);
+    expect(terrainAtPosition(simulation.getState(), { x: 500, y: 520 })).toBe("marsh");
+    expect(simulation.getState().terrainZones.some((zone) => zone.id === "ashen-marsh")).toBe(true);
   });
 
   it("lets Ashen Oath's opening Faith cure the civic crisis immediately", () => {
@@ -67,6 +71,8 @@ describe("campaign scenarios", () => {
     expect(world.buildings["building-stonewall-wall-1"].complete).toBe(true);
     expect(world.empires["empire-player"].resources.iron).toBe(10);
     expect(capital.population).toMatchObject({ farmers: 6, builders: 2 });
+    expect(terrainAtPosition(world, { x: 420, y: 300 })).toBe("hills");
+    expect(world.terrainZones[0]?.id).toBe("stonewall-ridge");
   });
 
   it("keeps a Stonewall militia alive through the opening defense window", () => {
