@@ -2,7 +2,7 @@
 
 ## Technical Design Specification
 
-**Version:** 1.11
+**Version:** 1.12
 **Status:** Active Implementation Blueprint
 **Date:** 2026-08-03
 **Working Title:** The Last Lesson  
@@ -1473,6 +1473,8 @@ Each addition must preserve deterministic command replay and the simulation/pres
 The Book of Lessons may export a local `the-last-lesson-playtest-record` JSON artifact. Versioned playtest records contain only scenario, Rival Doctrine, tick, victory state, factual Civic Record, and event-type counts. They deliberately exclude player identity, browser metadata, local preferences, save state, and network data; they are facilitation evidence rather than telemetry and never enter authoritative state, saves, replays, or multiplayer authority. Unit coverage protects the pure record schema and browser coverage protects the actual Book download contract. When the Book is open, visibly labeled keys `1` through `9` expose every Book action to keyboard players; field control groups remain separate `Ctrl`/`Cmd` shortcuts.
 
 `docs/Privacy.md` is the player-facing disclosure for this implementation boundary. It must remain synchronized with browser-local storage, local file export, optional host transport, and any future account, analytics, cloud, payment, matchmaking, or persistence work.
+
+The Book of Lessons exposes a two-step local-data reset. Its first action must only request confirmation; its confirmed action may remove browser keys beginning with `the-last-lesson.` but must never mutate the active `WorldState`, delete downloaded files, or alter multiplayer authority. Browser coverage verifies both the confirmation boundary and that the active tactical reign remains visible after the reset.
 
 ---
 

@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.38 - 2026-08-03
+
+- Added a deliberate two-step `CLEAR LOCAL DATA` action to the Book of Lessons. It removes only this game’s browser-local records, preserves the current in-memory reign and downloaded archives, and is available by the visible contextual `0` shortcut. Browser coverage protects the confirmation boundary.
+
 ## 2.6.37 - 2026-08-03
 
 - Added a player-facing Privacy and Local Data Summary for the static campaign, local saves and playtest exports, and optional self-hosted multiplayer. It documents the current no-account, no-telemetry boundary and the exact browser-local records used for continuity and accessibility preferences.

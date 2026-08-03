@@ -1,4 +1,4 @@
-export const BOOK_PANEL_HEIGHT = 634;
+export const BOOK_PANEL_HEIGHT = 678;
 
 export const CAMPAIGN_THEATRE_LAYOUT = {
   width: 470,

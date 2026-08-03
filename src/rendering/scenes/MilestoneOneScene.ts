@@ -313,10 +313,12 @@ export class MilestoneOneScene extends Phaser.Scene {
   private replayControlLabel!: Phaser.GameObjects.Text;
   private motionControlLabel!: Phaser.GameObjects.Text;
   private visibilityControlLabel!: Phaser.GameObjects.Text;
+  private clearLocalDataLabel!: Phaser.GameObjects.Text;
   private lessonBannerHideTimer?: Phaser.Time.TimerEvent;
   private bookPanelExpanded = false;
   private reducedMotion = false;
   private highContrast = false;
+  private clearLocalDataConfirmationPending = false;
   private replayReview?: ReplayReviewState;
   private realmControl!: Phaser.GameObjects.Container;
   private realmControlLabel!: Phaser.GameObjects.Text;
@@ -460,7 +462,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     canvas.setAttribute("aria-describedby", "the-last-lesson-accessibility-brief");
     canvas.setAttribute(
       "aria-keyshortcuts",
-      "ArrowUp ArrowDown ArrowLeft ArrowRight Tab Enter B C D H R L M A F X Escape Space 1 2 3 4 5 6 7 8 9 Control+1 Control+2 Control+3 Control+4 Control+5 Control+6 Control+7 Control+8 Control+9"
+      "ArrowUp ArrowDown ArrowLeft ArrowRight Tab Enter B C D H R L M A F X Escape Space 0 1 2 3 4 5 6 7 8 9 Control+1 Control+2 Control+3 Control+4 Control+5 Control+6 Control+7 Control+8 Control+9"
     );
     this.accessibilityAnnouncements = document.getElementById("the-last-lesson-announcements") ?? undefined;
   }
@@ -543,6 +545,7 @@ export class MilestoneOneScene extends Phaser.Scene {
       return false;
     }
     const action = {
+      "0": () => this.requestClearLocalData(),
       "1": () => this.saveLocalGame(),
       "2": () => this.loadLocalGame(),
       "3": () => this.exportPortableSave(),
@@ -1472,6 +1475,13 @@ export class MilestoneOneScene extends Phaser.Scene {
       fontSize: "10px",
       color: UI_COLORS.text
     });
+    const clearLocalDataButton = this.add.rectangle(18, 624, 434, 34, UI_COLORS.danger, 1).setOrigin(0);
+    clearLocalDataButton.setStrokeStyle(1, UI_COLORS.trim);
+    this.clearLocalDataLabel = this.add.text(132, 635, "0 CLEAR LOCAL DATA", {
+      fontFamily: "Arial Black, Arial",
+      fontSize: "10px",
+      color: UI_COLORS.text
+    });
     this.bookPanel = this.add.container(0, 0, [
       background,
       title,
@@ -1493,7 +1503,9 @@ export class MilestoneOneScene extends Phaser.Scene {
       motionButton,
       this.motionControlLabel,
       visibilityButton,
-      this.visibilityControlLabel
+      this.visibilityControlLabel,
+      clearLocalDataButton,
+      this.clearLocalDataLabel
     ]);
     this.bookPanel.setScrollFactor(0).setDepth(70).setVisible(false);
     this.updateBookOfLessons();
@@ -1536,6 +1548,10 @@ export class MilestoneOneScene extends Phaser.Scene {
     }
     if (localY >= 580 && localY < 614) {
       this.toggleHighContrast();
+      return;
+    }
+    if (localY >= 624 && localY < 658) {
+      this.requestClearLocalData();
     }
   }
 
@@ -2208,6 +2224,9 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.bookPanel.setVisible(this.bookPanelExpanded);
     this.bookControlLabel.setText(this.bookPanelExpanded ? "BOOK [-]" : "BOOK [+]");
     this.replayControlLabel.setText(this.replayReview ? "7 RETURN TO REIGN" : "7 REVIEW REIGN");
+    this.clearLocalDataLabel.setText(
+      this.clearLocalDataConfirmationPending ? "0 CONFIRM CLEAR DATA" : "0 CLEAR LOCAL DATA"
+    );
     if (!this.bookPanelExpanded) {
       return;
     }
@@ -2397,6 +2416,32 @@ export class MilestoneOneScene extends Phaser.Scene {
       // A local save remains valid even if its optional replay origin was not retained.
     }
     return undefined;
+  }
+
+  private requestClearLocalData(): void {
+    if (!this.clearLocalDataConfirmationPending) {
+      this.clearLocalDataConfirmationPending = true;
+      this.updateBookOfLessons();
+      this.updateUi(["Press 0 or select CONFIRM CLEAR DATA to remove this browser's local records."]);
+      return;
+    }
+    try {
+      const keys = Array.from({ length: window.localStorage.length }, (_value, index) => window.localStorage.key(index)).filter(
+        (key): key is string => Boolean(key?.startsWith("the-last-lesson."))
+      );
+      for (const key of keys) {
+        window.localStorage.removeItem(key);
+      }
+      this.campaignChronicle = {};
+      this.campaignHonors = {};
+      this.clearLocalDataConfirmationPending = false;
+      this.updateBookOfLessons();
+      this.updateUi(["Local records cleared. This active reign and downloaded files remain available."]);
+    } catch {
+      this.clearLocalDataConfirmationPending = false;
+      this.updateBookOfLessons();
+      this.updateUi(["Local records could not be cleared in this browser."]);
+    }
   }
 
   private verifyCurrentReplay(): void {

@@ -257,6 +257,24 @@ test("exports a local playtest record from the Book of Lessons", async ({ page }
   await expect(page.locator("#the-last-lesson-announcements")).toContainText("Local playtest record exported");
 });
 
+test("requires deliberate confirmation before clearing Book-local data", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto("/");
+  await beginCrownfallRivalReign(page);
+  await page.evaluate(() => window.localStorage.setItem("the-last-lesson.test-record", "clear-me"));
+  await page.locator("canvas").press("l");
+  await expect(page.locator("#the-last-lesson-announcements")).toContainText("Book of Lessons opened");
+
+  await page.locator("canvas").press("0");
+  await expect(page.locator("#the-last-lesson-announcements")).toContainText("CONFIRM CLEAR DATA");
+  expect(await page.evaluate(() => window.localStorage.getItem("the-last-lesson.test-record"))).toBe("clear-me");
+
+  await page.locator("canvas").press("0");
+  await expect(page.locator("#the-last-lesson-announcements")).toContainText("Local records cleared");
+  expect(await page.evaluate(() => window.localStorage.getItem("the-last-lesson.test-record"))).toBeNull();
+  await expect(page.locator("canvas")).toHaveAttribute("data-campaign-phase", "tactical");
+});
+
 test("restores an exported portable reign archive through the Book of Lessons", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto("/");

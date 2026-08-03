@@ -28,9 +28,12 @@ browser profile unless the player explicitly downloads, shares, or exports it.
 | Browser-local Crown identity | Rejoin an optional multiplayer room as the same Crown without creating an account. |
 | Per-host-room reconnect credential | Reclaim a temporarily retained multiplayer room after an interrupted connection. |
 
-Clearing this site’s browser storage removes those local records. Exported
-`.tll` archives and `.playtest.json` files are ordinary files chosen and kept
-by the player; clearing browser storage does not remove downloaded files.
+Clearing this site’s browser storage removes those local records. The Book of
+Lessons also provides a deliberately two-step `CLEAR LOCAL DATA` action for
+the game’s own `the-last-lesson.*` records; it keeps the current in-memory
+reign and downloaded files intact. Exported `.tll` archives and
+`.playtest.json` files are ordinary files chosen and kept by the player;
+neither browser storage clearing nor the Book action removes downloaded files.
 
 ## Local Playtest Records
 

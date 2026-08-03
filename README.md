@@ -78,7 +78,7 @@ For container deployment, health checks, and the required `wss://` production bo
 - `Esc`: cancel building placement, close open command panels, or clear the current selection.
 - `VERIFY REPLAY`: confirm that the active reign can be reproduced from its opening world and command history.
 - `REVIEW REIGN`: replay the command history from tick zero in read-only mode, then return exactly to the live paused campaign.
-- With `BOOK` open, use the visible `1` through `9` shortcuts for local save/load, portable archive import/export, replay verification/review, local playtest evidence export, motion, and contrast. Outside the Book, battlefield control-group assignment remains `Ctrl`/`Cmd` + `1` through `9`.
+- With `BOOK` open, use the visible `1` through `9` shortcuts for local save/load, portable archive import/export, replay verification/review, local playtest evidence export, motion, and contrast. `0` begins a two-step local-data reset that preserves the current in-memory reign and downloaded files. Outside the Book, battlefield control-group assignment remains `Ctrl`/`Cmd` + `1` through `9`.
 - Space or `PAUSE`: pause/resume the live simulation.
 - `SPEED`: cycle the live presentation clock through 1x, 2x, and 3x without changing deterministic simulation rules.
 - A local reign pauses when its browser tab is hidden; resume deliberately on return. Multiplayer time remains host-owned.
