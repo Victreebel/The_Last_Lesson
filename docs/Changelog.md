@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.16 - 2026-08-03
+
+- Expanded the Campaign Theatre balance soak from one idealized plan to two representative Crown openings. Civic establishes the economy before its militia; Hold Fast commits a larger militia immediately while assigning only the civilian labor that remains. The 96-case release matrix now protects both openings across every theatre, seed, and Rival Doctrine profile.
+
 ## 2.6.15 - 2026-08-03
 
 - Added a bounded Campaign Theatre balance soak. Every release now checks the representative Crown opening across four deterministic world seeds, all four theatres, and each transparent Rival Doctrine profile, with a `pnpm balance:soak` tuning report for local review. The suite also protects the declared first-pressure order: Disciple later than Rival, and Rival later than Architect.

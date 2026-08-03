@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   CAMPAIGN_BALANCE_SCENARIOS,
   CAMPAIGN_BALANCE_SOAK_DIFFICULTIES,
+  CAMPAIGN_BALANCE_SOAK_OPENINGS,
   CAMPAIGN_BALANCE_SOAK_SEEDS,
   runCampaignBalancePlaytest,
   runCampaignBalanceSoak,
@@ -47,10 +48,12 @@ describe("campaign balance playtests", () => {
     const reports = runCampaignBalanceSoak();
 
     expect(reports).toHaveLength(
-      CAMPAIGN_BALANCE_SOAK_DIFFICULTIES.length *
+      CAMPAIGN_BALANCE_SOAK_OPENINGS.length *
+        CAMPAIGN_BALANCE_SOAK_DIFFICULTIES.length *
         CAMPAIGN_BALANCE_SOAK_SEEDS.length *
         CAMPAIGN_BALANCE_SCENARIOS.length
     );
+    expect(new Set(reports.map((report) => report.opening))).toEqual(new Set(CAMPAIGN_BALANCE_SOAK_OPENINGS));
     expect(new Set(reports.map((report) => report.rivalDifficulty))).toEqual(
       new Set(CAMPAIGN_BALANCE_SOAK_DIFFICULTIES)
     );
@@ -61,20 +64,33 @@ describe("campaign balance playtests", () => {
   it("preserves the transparent Rival Doctrine pressure order in every theatre", () => {
     const reports = runCampaignBalanceSoak();
 
-    for (const scenarioId of CAMPAIGN_BALANCE_SCENARIOS) {
-      for (const seed of CAMPAIGN_BALANCE_SOAK_SEEDS) {
-        const firstAttack = (difficulty: (typeof CAMPAIGN_BALANCE_SOAK_DIFFICULTIES)[number]) => {
-          const tick = reports.find(
-            (report) =>
-              report.scenarioId === scenarioId && report.seed === seed && report.rivalDifficulty === difficulty
-          )?.firstRivalAttackTick;
-          expect(tick).toBeDefined();
-          return tick!;
-        };
+    for (const opening of CAMPAIGN_BALANCE_SOAK_OPENINGS) {
+      for (const scenarioId of CAMPAIGN_BALANCE_SCENARIOS) {
+        for (const seed of CAMPAIGN_BALANCE_SOAK_SEEDS) {
+          const firstAttack = (difficulty: (typeof CAMPAIGN_BALANCE_SOAK_DIFFICULTIES)[number]) => {
+            const tick = reports.find(
+              (report) =>
+                report.opening === opening &&
+                report.scenarioId === scenarioId &&
+                report.seed === seed &&
+                report.rivalDifficulty === difficulty
+            )?.firstRivalAttackTick;
+            expect(tick).toBeDefined();
+            return tick!;
+          };
 
-        expect(firstAttack("disciple")).toBeGreaterThan(firstAttack("rival"));
-        expect(firstAttack("rival")).toBeGreaterThan(firstAttack("architect"));
+          expect(firstAttack("disciple")).toBeGreaterThan(firstAttack("rival"));
+          expect(firstAttack("rival")).toBeGreaterThan(firstAttack("architect"));
+        }
       }
     }
+  });
+
+  it("makes Hold Fast a materially earlier militia commitment than the civic opening", () => {
+    const civic = runCampaignBalancePlaytest("crownfall", { ticks: 1, opening: "civic" });
+    const holdFast = runCampaignBalancePlaytest("crownfall", { ticks: 1, opening: "hold-fast" });
+
+    expect(civic.playerBattalionCount).toBe(0);
+    expect(holdFast.playerBattalionCount).toBe(1);
   });
 });

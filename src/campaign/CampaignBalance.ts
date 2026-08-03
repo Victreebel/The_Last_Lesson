@@ -13,6 +13,11 @@ export const CAMPAIGN_BALANCE_SCENARIOS: readonly ScenarioId[] = [
 
 export const CAMPAIGN_BALANCE_TICKS = 180;
 
+/** Representative player priorities used by the unattended campaign probes. */
+export type CampaignBalanceOpening = "civic" | "hold-fast";
+
+export const CAMPAIGN_BALANCE_SOAK_OPENINGS: readonly CampaignBalanceOpening[] = ["civic", "hold-fast"];
+
 /** A bounded release-gate sample, intentionally small enough for every push. */
 export const CAMPAIGN_BALANCE_SOAK_SEEDS = [9601, 9623, 9659, 9697] as const;
 
@@ -26,6 +31,7 @@ export const CAMPAIGN_BALANCE_SOAK_DIFFICULTIES: readonly RivalDifficulty[] = [
 export interface CampaignBalanceReport {
   readonly scenarioId: ScenarioId;
   readonly seed: number;
+  readonly opening: CampaignBalanceOpening;
   readonly rivalDifficulty: RivalDifficulty;
   readonly ticks: number;
   readonly winnerEmpireId?: string;
@@ -54,7 +60,8 @@ export interface CampaignBalanceReport {
 const CAPITAL_ID = "settlement-capital";
 const OPENING_FARM_POSITION = { x: 180, y: 180 };
 
-function openingCommands(scenarioId: ScenarioId): readonly GameCommand[] {
+function openingCommands(scenarioId: ScenarioId, opening: CampaignBalanceOpening): readonly GameCommand[] {
+  const holdFast = opening === "hold-fast";
   const commands: GameCommand[] = [
     {
       id: "balance-opening-labor",
@@ -63,9 +70,9 @@ function openingCommands(scenarioId: ScenarioId): readonly GameCommand[] {
       type: "assign-labor",
       payload: {
         settlementId: CAPITAL_ID,
-        farmers: scenarioId === "stonewall" ? 6 : 8,
-        builders: scenarioId === "stonewall" ? 2 : 4,
-        lumberjacks: 6,
+        farmers: scenarioId === "stonewall" ? 6 : holdFast ? 7 : 8,
+        builders: scenarioId === "stonewall" ? 2 : holdFast ? 2 : 4,
+        lumberjacks: scenarioId === "stonewall" && holdFast ? 4 : holdFast ? 5 : 6,
         miners: 0,
         luxuryWorkers: 0
       }
@@ -102,11 +109,11 @@ function openingCommands(scenarioId: ScenarioId): readonly GameCommand[] {
   if (scenarioId === "stonewall") {
     commands.push(
       {
-        id: "balance-raise-gate-guard",
+        id: holdFast ? "balance-holdfast-gate-guard" : "balance-raise-gate-guard",
         issuedBy: "player-1",
         tick: 1,
         type: "create-battalion",
-        payload: { settlementId: CAPITAL_ID, size: 10, specialization: "militia" }
+        payload: { settlementId: CAPITAL_ID, size: holdFast ? 12 : 10, specialization: "militia" }
       },
       {
         id: "balance-march-to-gate",
@@ -125,11 +132,11 @@ function openingCommands(scenarioId: ScenarioId): readonly GameCommand[] {
     );
   } else {
     commands.push({
-      id: "balance-raise-crown-guard",
+      id: holdFast ? "balance-holdfast-crown-guard" : "balance-raise-crown-guard",
       issuedBy: "player-1",
-      tick: 12,
+      tick: holdFast ? 1 : 12,
       type: "create-battalion",
-      payload: { settlementId: CAPITAL_ID, size: 8, specialization: "militia" }
+      payload: { settlementId: CAPITAL_ID, size: holdFast ? 10 : 8, specialization: "militia" }
     });
   }
 
@@ -148,18 +155,24 @@ const firstRivalAttack = (events: readonly GameEvent[]): number | undefined =>
   )?.tick;
 
 /**
- * Runs one deterministic, representative opening for a campaign theatre.
+ * Runs one deterministic, representative Crown opening for a campaign theatre.
  * It is a balance instrument, never a gameplay authority or AI substitute.
  */
 export function runCampaignBalancePlaytest(
   scenarioId: ScenarioId,
-  options: { readonly seed?: number; readonly ticks?: number; readonly difficulty?: RivalDifficulty } = {}
+  options: {
+    readonly seed?: number;
+    readonly ticks?: number;
+    readonly difficulty?: RivalDifficulty;
+    readonly opening?: CampaignBalanceOpening;
+  } = {}
 ): CampaignBalanceReport {
   const seed = options.seed ?? 9600;
   const ticks = options.ticks ?? CAMPAIGN_BALANCE_TICKS;
+  const opening = options.opening ?? "civic";
   const rivalDifficulty = options.difficulty ?? "rival";
   const simulation = new Simulation(createInitialWorld(seed, rivalDifficulty, scenarioId));
-  for (const command of openingCommands(scenarioId)) {
+  for (const command of openingCommands(scenarioId, opening)) {
     simulation.enqueueCommand(command);
   }
   simulation.runTicks(ticks);
@@ -204,6 +217,7 @@ export function runCampaignBalancePlaytest(
   return {
     scenarioId,
     seed,
+    opening,
     rivalDifficulty,
     ticks,
     winnerEmpireId: state.victory.winnerEmpireId,
@@ -231,13 +245,18 @@ export function runCampaignBalancePlaytest(
 }
 
 export function runCampaignBalanceSuite(
-  options: { readonly seed?: number; readonly ticks?: number; readonly difficulty?: RivalDifficulty } = {}
+  options: {
+    readonly seed?: number;
+    readonly ticks?: number;
+    readonly difficulty?: RivalDifficulty;
+    readonly opening?: CampaignBalanceOpening;
+  } = {}
 ): readonly CampaignBalanceReport[] {
   return CAMPAIGN_BALANCE_SCENARIOS.map((scenarioId) => runCampaignBalancePlaytest(scenarioId, options));
 }
 
 /**
- * Exercises the standard Crown opening across bounded doctrine and seed matrices.
+ * Exercises reference Crown openings across bounded doctrine and seed matrices.
  * This is a release-quality balance probe, not a substitute for human playtests.
  */
 export function runCampaignBalanceSoak(
@@ -245,11 +264,15 @@ export function runCampaignBalanceSoak(
     readonly seeds?: readonly number[];
     readonly ticks?: number;
     readonly difficulties?: readonly RivalDifficulty[];
+    readonly openings?: readonly CampaignBalanceOpening[];
   } = {}
 ): readonly CampaignBalanceReport[] {
   const seeds = options.seeds ?? CAMPAIGN_BALANCE_SOAK_SEEDS;
   const difficulties = options.difficulties ?? CAMPAIGN_BALANCE_SOAK_DIFFICULTIES;
-  return difficulties.flatMap((difficulty) =>
-    seeds.flatMap((seed) => runCampaignBalanceSuite({ seed, ticks: options.ticks, difficulty }))
+  const openings = options.openings ?? CAMPAIGN_BALANCE_SOAK_OPENINGS;
+  return openings.flatMap((opening) =>
+    difficulties.flatMap((difficulty) =>
+      seeds.flatMap((seed) => runCampaignBalanceSuite({ seed, ticks: options.ticks, difficulty, opening }))
+    )
   );
 }
