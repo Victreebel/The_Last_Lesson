@@ -1287,6 +1287,7 @@ export class MilestoneOneScene extends Phaser.Scene {
         : lessonEvent.type === "doctrine-disciplined"
           ? "disciplined"
           : "observed";
+    const eventConfidence = typeof lessonEvent.payload.confidence === "number" ? lessonEvent.payload.confidence : 0;
     this.lessonBannerLabel.setText(
       getLessonPresentationLines({
         status,
@@ -1294,7 +1295,7 @@ export class MilestoneOneScene extends Phaser.Scene {
         condition: doctrine?.condition,
         action: doctrine?.preferredAction,
         goal: doctrine?.goal,
-        confidence: doctrine?.confidence ?? lessonEvent.payload.confidence
+        confidence: doctrine?.confidence ?? eventConfidence
       }).join("\n")
     );
     this.tweens.killTweensOf(this.lessonBanner);
