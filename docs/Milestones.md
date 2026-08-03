@@ -140,6 +140,7 @@ Implemented:
 - Campaign Theatre victories can now seal optional local Honors tied to each theatre's core tactical lesson, adding replay goals without affecting deterministic campaign rules or multiplayer authority.
 - Campaign Theatre now previews each selected theatre's optional Honor condition before a reign, letting players deliberately pursue scenario-specific mastery goals rather than discovering them only in the debrief.
 - Campaign Theatre now pairs each scenario's terrain identity and Honor with a concise opening directive, giving the player a concrete first civic or tactical response before choosing the Rival Doctrine.
+- Rival Doctrine cards now state their expected pressure and adaptation character beside their transparent grace and learning values, turning difficulty choice into an informed strategic decision without adding combat or resource bonuses.
 - Campaign Theatre maps now differ in authoritative terrain as well as their opening resources and rules: Rivergate expands a navigable southern waterway without closing the rival land route, Ashen Oath owns a blighted marsh belt, and Stonewall begins on a hill-fort ridge. Scenario, health, and balance suites protect those tactical identities.
 
 ## Milestone 4: Persistence Foundation

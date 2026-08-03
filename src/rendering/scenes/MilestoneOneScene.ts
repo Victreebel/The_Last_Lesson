@@ -1795,13 +1795,14 @@ export class MilestoneOneScene extends Phaser.Scene {
       });
       const detail = this.add.text(
         x + 12,
-        CAMPAIGN_THEATRE_LAYOUT.difficultyY + 56,
-        `GRACE ${profile.openingGraceTicks} TICKS\nLEARNING +${profile.doctrineConfidenceGain}`,
+        CAMPAIGN_THEATRE_LAYOUT.difficultyY + 42,
+        `${profile.briefing.toUpperCase()}\nGRACE ${profile.openingGraceTicks} TICKS // LEARNING +${profile.doctrineConfidenceGain}`,
         {
           fontFamily: "Arial, sans-serif",
-          fontSize: "10px",
+          fontSize: "7px",
           color: UI_COLORS.muted,
-          lineSpacing: 3
+          lineSpacing: 4,
+          wordWrap: { width: 112 }
         }
       );
       controls.push(button, label, detail);
@@ -1925,7 +1926,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     }
     if (focus.kind === "difficulty") {
       const profile = RIVAL_DIFFICULTY_PROFILES[focus.difficulty];
-      return `Campaign Theatre focus: Begin ${profile.label}. ${profile.openingGraceTicks} opening grace ticks. Learning plus ${profile.doctrineConfidenceGain}.`;
+      return `Campaign Theatre focus: Begin ${profile.label}. ${profile.briefing} ${profile.openingGraceTicks} opening grace ticks. Learning plus ${profile.doctrineConfidenceGain}.`;
     }
     return "Campaign Theatre focus: Continue local reign.";
   }

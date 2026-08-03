@@ -135,6 +135,8 @@ test("navigates Campaign Theatre with the keyboard before beginning a reign", as
   await canvas.press("ArrowDown");
   await expect(page.locator("#the-last-lesson-announcements")).toContainText("Chapter 4, STONEWALL");
   await canvas.press("Tab");
+  await expect(page.locator("#the-last-lesson-announcements")).toContainText("Begin DISCIPLE");
+  await expect(page.locator("#the-last-lesson-announcements")).toContainText("Measured opening. The rival learns slowly from each exchange");
   await canvas.press("Tab");
   await canvas.press("Tab");
   await canvas.press("Enter");

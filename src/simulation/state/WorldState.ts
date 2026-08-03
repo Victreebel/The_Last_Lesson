@@ -74,6 +74,8 @@ export const SCENARIO_PROFILES: Record<ScenarioId, ScenarioProfile> = {
 
 export interface RivalDifficultyProfile {
   readonly label: string;
+  /** Player-facing rival temperament. Presentation only; never a simulation modifier. */
+  readonly briefing: string;
   readonly openingGraceTicks: number;
   readonly doctrineConfidenceGain: number;
 }
@@ -81,16 +83,19 @@ export interface RivalDifficultyProfile {
 export const RIVAL_DIFFICULTY_PROFILES: Record<RivalDifficulty, RivalDifficultyProfile> = {
   disciple: {
     label: "DISCIPLE",
+    briefing: "Measured opening. The rival learns slowly from each exchange.",
     openingGraceTicks: 11,
     doctrineConfidenceGain: 1
   },
   rival: {
     label: "RIVAL",
+    briefing: "Balanced pressure. The rival adapts at the standard campaign pace.",
     openingGraceTicks: 8,
     doctrineConfidenceGain: 3
   },
   architect: {
     label: "ARCHITECT",
+    briefing: "Relentless opening. The rival prepares early and learns quickly.",
     openingGraceTicks: 5,
     doctrineConfidenceGain: 6
   }

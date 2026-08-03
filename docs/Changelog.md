@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.26 - 2026-08-03
+
+- Rival Doctrine selection now explains the rival's expected pressure and learning temperament in both the Campaign Theatre cards and keyboard/screen-reader focus. The established grace and learning values remain visible and unchanged; this is clearer difficulty presentation, not a balance change.
+
 ## 2.6.25 - 2026-08-03
 
 - Campaign Theatre now gives every chapter a concise Opening directive alongside its terrain intelligence and Honor. The same first response is included in keyboard and screen-reader focus, so the player can understand each opening's practical priority before committing a reign.
