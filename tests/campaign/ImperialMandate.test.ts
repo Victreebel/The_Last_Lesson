@@ -24,6 +24,9 @@ describe("imperial mandate", () => {
     expect(getImperialMandateProgress(taught).steps.find((step) => step.id === "teach-heir")).toMatchObject({
       complete: true
     });
+    expect(getImperialMandateProgress(initial).steps.find((step) => step.id === "teach-heir")?.instruction).toContain(
+      "[1] REWARD or [2] PUNISH"
+    );
   });
 
   it("puts each authored theatre's distinctive civic or defensive lesson before conquest", () => {

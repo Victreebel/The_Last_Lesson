@@ -33,7 +33,7 @@ const GUIDANCE: Record<MandateStepId, MandateGuidance> = {
   },
   "resolve-captives": {
     surface: "accord",
-    label: "ACCORD [D] // CAPTIVE POLICY",
+    label: "ACCORD [D] // 1 EXCHANGE",
     buildingTargets: [],
     commandTargets: ["assimilate", "release"]
   },
@@ -69,7 +69,7 @@ const GUIDANCE: Record<MandateStepId, MandateGuidance> = {
   },
   "teach-heir": {
     surface: "heir",
-    label: "HEIR [H] // FEEDBACK",
+    label: "HEIR [H] // 1 REWARD / 2 PUNISH",
     buildingTargets: [],
     commandTargets: []
   },

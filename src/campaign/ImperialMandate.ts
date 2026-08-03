@@ -81,7 +81,7 @@ export function getImperialMandateProgress(state: WorldState): ImperialMandatePr
     steps.push({
       id: "resolve-captives",
       label: "SECURE THE CAPTIVES: CHOOSE THE CROWN'S RESPONSE.",
-      instruction: "ACCORD [D] returns equal prisoners // COMMAND DOCK offers ASSIMILATE or RELEASE.",
+      instruction: "ACCORD [D], then [1] returns equal prisoners // COMMAND DOCK offers ASSIMILATE or RELEASE.",
       complete: !hasCaptives
     });
   }
@@ -139,7 +139,7 @@ export function getImperialMandateProgress(state: WorldState): ImperialMandatePr
   steps.push({
     id: "teach-heir",
     label: "TEACH THE HEIR: REWARD OR PUNISH THE LAST LESSON.",
-    instruction: "Open HEIR [H], then REWARD or PUNISH the last lesson.",
+    instruction: "Open HEIR [H], then [1] REWARD or [2] PUNISH the last lesson.",
     complete: hasGuidedHeir(state)
   });
   steps.push({

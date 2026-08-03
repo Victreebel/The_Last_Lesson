@@ -28,6 +28,11 @@ describe("mandate guidance", () => {
   it("keeps legitimate captive policy alternatives equally visible", () => {
     const guidance = getMandateGuidance("resolve-captives");
     expect(guidance.surface).toBe("accord");
+    expect(guidance.label).toContain("1 EXCHANGE");
     expect(guidance.commandTargets).toEqual(["assimilate", "release"]);
+  });
+
+  it("names the visible feedback keys needed to complete the teaching mandate", () => {
+    expect(getMandateGuidance("teach-heir").label).toContain("1 REWARD / 2 PUNISH");
   });
 });

@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.42 - 2026-08-03
+
+- Imperial Mandates now name the exact visible keyboard actions for the player-only Prisoner Accord and Heir feedback: `ACCORD [D]`, then `1` to exchange, and `HEIR [H]`, then `1` to Reward or `2` to Punish. The guidance remains a presentation-only projection of the existing command routes.
+
 ## 2.6.41 - 2026-08-03
 
 - The Heir and Prisoner Accord consoles now complete the management-strip keyboard pattern: with `HEIR` open, visible `1` rewards and `2` punishes the latest lesson; with `ACCORD` open, visible `1` proposes the available exchange. Both routes use the existing authoritative command paths and leave battlefield control groups unchanged when panels are closed.
