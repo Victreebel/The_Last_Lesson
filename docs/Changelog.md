@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.46 - 2026-08-03
+
+- Fixed fixed-HUD pointer alignment under the tactical camera. Wide-header and screen-space management controls now receive interaction at their rendered locations rather than at camera-shifted world coordinates.
+
 ## 2.6.45 - 2026-08-03
 
 - Added a wide-screen `FULL` top-bar control. It requests and exits browser fullscreen without altering the simulation, save/replay state, or multiplayer authority, and reports unavailable or rejected browser requests clearly.

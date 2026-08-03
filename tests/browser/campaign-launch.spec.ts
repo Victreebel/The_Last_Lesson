@@ -289,6 +289,21 @@ test("requests browser fullscreen from the wide tactical header", async ({ page 
   await expect(page.locator("#the-last-lesson-announcements")).toContainText("Fullscreen");
 });
 
+test("aligns visible wide-header controls with their pointer hit areas", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto("/");
+  await beginCrownfallRivalReign(page);
+
+  await clickCanvasPoint(page, { x: 468, y: 29 });
+  await expect(page.locator("#the-last-lesson-announcements")).toContainText("Simulation paused");
+
+  await clickCanvasPoint(page, { x: 548, y: 29 });
+  await expect(page.locator("#the-last-lesson-announcements")).toContainText("Simulation speed set to 2X");
+
+  await clickCanvasPoint(page, { x: 718, y: 29 });
+  await expect(page.locator("#the-last-lesson-announcements")).toContainText("Tactical sound disabled");
+});
+
 test("uses contextual keyboard actions from the Heir and Accord panels", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto("/");

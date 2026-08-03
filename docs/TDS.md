@@ -95,6 +95,8 @@ Campaign Theatre art is a cropped presentation atlas. Every rendered crop must b
 
 The wide tactical header may expose a browser fullscreen control. It targets only the Phaser canvas host, reflects native `fullscreenchange` state, and must report unavailable or rejected browser requests without treating them as simulation events. Fullscreen is hidden on compact headers and never enters `WorldState`, command history, saves, replays, multiplayer authority, or local campaign progression.
 
+Every interactive child of a fixed Phaser HUD or panel must independently use a zero scroll factor. Camera bounds and world scrolling may never displace the hit area of a visibly screen-anchored tactical, campaign, management, minimap, or victory control.
+
 Shortcuts are ignored during campaign setup and while a text input, select, or textarea has focus. This protects multiplayer-lobby entry and prevents browser form input from triggering game actions.
 
 ### 3.2 Core Systems

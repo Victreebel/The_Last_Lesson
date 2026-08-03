@@ -1002,7 +1002,36 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.createAccordPanel();
     this.createHeirPanel();
     this.createBuildingsPanel();
+    this.anchorScreenSpaceInputs(
+      this.pauseControl,
+      this.speedControl,
+      this.networkControl,
+      this.audioControl,
+      this.fullscreenControl,
+      this.bookControl,
+      this.bookPanel,
+      this.realmControl,
+      this.realmPanel,
+      this.victoryPanel,
+      this.campaignSetupPanel,
+      this.commandDock,
+      this.accordPanel,
+      this.heirPanel,
+      this.buildingsPanel
+    );
+    this.minimapPanel.setScrollFactor(0);
     this.layoutUi();
+  }
+
+  /** Keeps fixed HUD hit areas aligned with their rendered screen-space controls. */
+  private anchorScreenSpaceInputs(...containers: Phaser.GameObjects.Container[]): void {
+    for (const container of containers) {
+      container.iterate((child: Phaser.GameObjects.GameObject) => {
+        if (child.input) {
+          (child as Phaser.GameObjects.GameObject & Phaser.GameObjects.Components.ScrollFactor).setScrollFactor(0);
+        }
+      });
+    }
   }
 
   private createTopHud(): void {
