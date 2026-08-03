@@ -3389,6 +3389,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     const { width, height } = this.scale;
     const compact = width < 900;
     const narrow = width < 640;
+    const wideHeader = width >= 1100;
     const topHeight = narrow ? 122 : compact ? 94 : 58;
     const topPanelLayout = getTacticalTopPanelLayout(width, {
       accord: ACCORD_PANEL_WIDTH,
@@ -3416,9 +3417,9 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.networkControl.setPosition(narrow ? -85 : compact ? -164 : 0, narrow ? 48 : 0);
     this.audioControl.setScale(narrow ? 0.7 : 1);
     this.audioControl.setPosition(narrow ? -168 : compact ? -246 : 0, narrow ? 48 : 0);
-    this.fullscreenControl.setVisible(!compact);
+    this.fullscreenControl.setVisible(wideHeader);
     this.fullscreenControl.setPosition(0, 0);
-    this.resourceText.setPosition(compact ? 18 : 830, narrow ? 88 : compact ? 47 : 19);
+    this.resourceText.setPosition(compact ? 18 : wideHeader ? 830 : 758, narrow ? 88 : compact ? 47 : 19);
     const headerControlScale = narrow ? 0.7 : 1;
     const headerControlOffsetX = narrow ? -115 : 0;
     const headerControlOffsetY = narrow ? 48 : 0;
@@ -3495,7 +3496,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.speedControl.setVisible(tacticalVisible);
     this.networkControl.setVisible(tacticalVisible);
     this.audioControl.setVisible(tacticalVisible);
-    this.fullscreenControl.setVisible(tacticalVisible && this.scale.width >= 900);
+    this.fullscreenControl.setVisible(tacticalVisible && this.scale.width >= 1100);
     this.bookControl.setVisible(tacticalVisible);
     this.realmControl.setVisible(tacticalVisible);
     this.resourceText.setVisible(tacticalVisible);

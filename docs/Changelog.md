@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.49 - 2026-08-03
+
+- Restricted the `FULL` control to genuinely wide tactical headers and restored the resource strip’s compact-desktop position below that threshold, preventing fullscreen presentation controls from crowding operational status at 900px layouts.
+
 ## 2.6.48 - 2026-08-03
 
 - Added bounded Heir lesson review. The Heir console now lets the Crown select either of an Heir's two most recent doctrines before applying the existing Reward or Punish command; an explicit doctrine target keeps the action deterministic, replay-safe, and explainable.

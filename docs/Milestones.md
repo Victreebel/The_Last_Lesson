@@ -117,6 +117,7 @@ Implemented:
 - The fixed tactical HUD now anchors every interactive screen-space child independently of the world camera, keeping visible header, panel, command-dock, minimap, campaign, and victory controls aligned with their pointer hit areas.
 - The Mandate and Heir console now name the complete teaching consequence in player terms: field orders become lessons, Reward reinforces the selected judgment, and Punish weakens it.
 - The Heir console now exposes a bounded review strip for the latest and prior doctrine, allowing deliberate feedback on a recent judgment without turning the teaching loop into an unbounded history manager.
+- Browser fullscreen is now reserved for headers with enough lateral capacity to preserve the tactical resource strip at compact desktop sizes.
 - Religious infrastructure: completed road corridors and nearby caravans now propagate opposing faith through the existing pressure, rebellion, and faith systems with deterministic source-level events.
 - Campaign Theatre with four authored deterministic openings: Crownfall (balanced), Rivergate (civic supply and naval opening), Ashen Oath (captives and hostile religious roads), and Stonewall (a fortified border for testing defense, logistics, retreat, and counter-siege play).
 - Scout Hounds: Town Square-trained, non-population reconnaissance packs with high movement speed and extended visibility.

@@ -93,7 +93,7 @@ Campaign Theatre summary, terrain, Honor, opening, scenario-tag, status, and Riv
 
 Campaign Theatre art is a cropped presentation atlas. Every rendered crop must be bounded to its own visible scenario card on fresh renderer loads; an atlas coordinate or origin may never cover the campaign briefing, another card, focus outline, or card hit region. Art remains non-authoritative and may not influence campaign selection or scenario state.
 
-The wide tactical header may expose a browser fullscreen control. It targets only the Phaser canvas host, reflects native `fullscreenchange` state, and must report unavailable or rejected browser requests without treating them as simulation events. Fullscreen is hidden on compact headers and never enters `WorldState`, command history, saves, replays, multiplayer authority, or local campaign progression.
+The wide tactical header may expose a browser fullscreen control only where it does not crowd tactical resources (currently at 1100 CSS pixels or above). It targets only the Phaser canvas host, reflects native `fullscreenchange` state, and must report unavailable or rejected browser requests without treating them as simulation events. Fullscreen is hidden on compact headers and never enters `WorldState`, command history, saves, replays, multiplayer authority, or local campaign progression.
 
 Every interactive child of a fixed Phaser HUD or panel must independently use a zero scroll factor. Camera bounds and world scrolling may never displace the hit area of a visibly screen-anchored tactical, campaign, management, minimap, or victory control.
 
