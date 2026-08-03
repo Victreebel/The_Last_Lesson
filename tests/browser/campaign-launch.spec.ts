@@ -289,6 +289,26 @@ test("requests browser fullscreen from the wide tactical header", async ({ page 
   await expect(page.locator("#the-last-lesson-announcements")).toContainText("Fullscreen");
 });
 
+test("reserves fullscreen for headers with room for tactical resources", async ({ page }) => {
+  await page.setViewportSize({ width: 900, height: 700 });
+  await page.addInitScript(() => {
+    Reflect.set(window, "__tllFullscreenRequests", 0);
+    Object.defineProperty(HTMLElement.prototype, "requestFullscreen", {
+      configurable: true,
+      value: () => {
+        const requestCount = Number(Reflect.get(window, "__tllFullscreenRequests") ?? 0);
+        Reflect.set(window, "__tllFullscreenRequests", requestCount + 1);
+        return Promise.resolve();
+      }
+    });
+  });
+  await page.goto("/");
+  await beginCrownfallRivalReign(page);
+
+  await clickCanvasPoint(page, { x: 786, y: 29 });
+  await expect.poll(() => page.evaluate(() => Number(Reflect.get(window, "__tllFullscreenRequests") ?? 0))).toBe(0);
+});
+
 test("aligns visible wide-header controls with their pointer hit areas", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto("/");
