@@ -158,6 +158,19 @@ test("renders a usable tactical canvas on a phone-sized viewport", async ({ page
   expect(pageErrors).toEqual([]);
 });
 
+test("renders the compact tactical HUD at tablet width", async ({ page }) => {
+  const pageErrors: Error[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error));
+
+  await page.setViewportSize({ width: 768, height: 900 });
+  await page.goto("/");
+  await beginCrownfallRivalReign(page);
+  await page.waitForTimeout(800);
+  await expect(page.locator("canvas")).toHaveAttribute("data-campaign-phase", "tactical");
+  await expectRenderedCanvas(page);
+  expect(pageErrors).toEqual([]);
+});
+
 test("zooms the continuous tactical map around the player's cursor", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto("/");

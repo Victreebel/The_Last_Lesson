@@ -2,7 +2,7 @@
 
 ## Technical Design Specification
 
-**Version:** 1.6
+**Version:** 1.7
 **Status:** Active Implementation Blueprint
 **Date:** 2026-08-03
 **Working Title:** The Last Lesson  
@@ -1535,6 +1535,7 @@ The following compatible systems are now implemented in the prototype and are th
 - The same selected Crown Castle establishes the active command seat for player-issued settlement actions. Placement, labor assignment, unit and transport production, captive assimilation, local Faith miracles, HUD population data, and building counts must read and write that settlement rather than assuming the opening capital.
 - The renderer provides a compact Realm roster that enumerates player-owned settlements from the authoritative Empire state. Selecting an entry centers the camera on its Castle and establishes the same active command seat as clicking that Castle; it is a renderer-only navigation layer and does not mutate deterministic simulation state.
 - The expanded Build palette owns the upper-right tactical surface. The minimap is placed beneath it only when the viewport can contain both panels without overlap; otherwise it is hidden for the duration of palette expansion. This is a presentation-layout rule only and must never affect world coordinates, selection, placement validation, command submission, saves, replays, or multiplayer authority.
+- At compact desktop and tablet widths, Accord, Heir, and Build headers share one width-aware top-right strip that scales all three panels together before any header can overlap. Narrow phones retain their dedicated stacked arrangement. Only one of these management panels may remain expanded at a time, preventing an expanded civic surface from obscuring another control. This is presentation state only and cannot affect simulation, commands, saves, replays, or multiplayer authority.
 - The renderer consumes doctrine-observed, doctrine-reinforced, and doctrine-disciplined events to display a transient Lesson banner with the heir, observed condition, preferred action, intended goal, confidence, and the exact `H` feedback path. The banner de-duplicates by event ID and remains presentation-only, preserving deterministic saves and replays.
 - The renderer translates immutable event-log records into a player-facing Chronicle for the Tactical Uplink and Book of Lessons. Narratives may resolve current display labels for settlements, heirs, and entities, but must never mutate event payloads, authoritative state, saves, replay records, or multiplayer snapshots. New event types require either a concise Chronicle narrative or a humanized fallback; opaque internal event identifiers must not become the default player-facing history.
 - The Tactical Uplink selects from the current tick's event records by consequence before it announces a latest report. Victory, capture, miracles, civic crisis, heir concern and decision, doctrine feedback, and battlefield collapse outrank routine resource production; the Book of Lessons retains the complete chronological event history. This priority is presentation-only and must not reorder the authoritative log.

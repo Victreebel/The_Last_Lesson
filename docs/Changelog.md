@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.34 - 2026-08-03
+
+- Fixed the compact-width tactical HUD: Accord, Heir, and Build panels now share a protected top-right strip and scale together instead of overlapping. Expanding one management panel now closes the other two, preserving clear control ownership on tablets and narrow laptops.
+
 ## 2.6.33 - 2026-08-03
 
 - Ashen Oath now calls out the compact `ACCORD [D]` header as the active captive-policy surface, while the Command Dock continues to highlight both assimilation and release. The three civic responses are discoverable together without changing simulation rules, heir learning, or balance.

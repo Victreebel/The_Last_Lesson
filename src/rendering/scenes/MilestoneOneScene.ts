@@ -17,6 +17,7 @@ import { describeGameEvent, selectTacticalReportEvents } from "../eventNarrative
 import { getMiracleFeedbackPresentation } from "../miraclePresentation";
 import { getOrderIndicators } from "../orderPresentation";
 import { getLessonPresentationLines, type LessonPresentationStatus } from "../lessonPresentation";
+import { getTacticalTopPanelLayout } from "../tacticalPanelLayout";
 import { getTerrainPresentation } from "../terrainPresentation";
 import { getTacticalUplinkStatusLines } from "../tacticalUplink";
 import { BOOK_PANEL_HEIGHT, CAMPAIGN_THEATRE_LAYOUT } from "../uiLayout";
@@ -593,11 +594,23 @@ export class MilestoneOneScene extends Phaser.Scene {
 
   private toggleBuildingsPanel(): void {
     this.buildingsPanelExpanded = !this.buildingsPanelExpanded;
+    if (this.buildingsPanelExpanded) {
+      this.accordPanelExpanded = false;
+      this.heirPanelExpanded = false;
+      this.updateAccordPanel();
+      this.updateHeirPanel();
+    }
     this.updateBuildingsPanel();
   }
 
   private toggleHeirPanel(): void {
     this.heirPanelExpanded = !this.heirPanelExpanded;
+    if (this.heirPanelExpanded) {
+      this.accordPanelExpanded = false;
+      this.buildingsPanelExpanded = false;
+      this.updateAccordPanel();
+      this.updateBuildingsPanel();
+    }
     this.updateHeirPanel();
   }
 
@@ -3036,10 +3049,12 @@ export class MilestoneOneScene extends Phaser.Scene {
     const compact = width < 900;
     const narrow = width < 640;
     const topHeight = narrow ? 122 : compact ? 94 : 58;
-    const scale = narrow ? 0.6 : Math.min(1, Math.max(0.72, (width - 24) / BUILD_PANEL_WIDTH));
-    const buildPanelX = width - 16 - BUILD_PANEL_WIDTH * scale;
-    const heirPanelX = buildPanelX - 12 - HEIR_PANEL_WIDTH * scale;
-    const accordPanelX = heirPanelX - 12 - ACCORD_PANEL_WIDTH * scale;
+    const topPanelLayout = getTacticalTopPanelLayout(width, {
+      accord: ACCORD_PANEL_WIDTH,
+      heir: HEIR_PANEL_WIDTH,
+      build: BUILD_PANEL_WIDTH
+    });
+    const scale = narrow ? 0.6 : topPanelLayout.scale;
 
     this.topHud.setSize(width, topHeight);
     this.gameTitleText.setPosition(18, 10);
@@ -3111,15 +3126,15 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.updateMinimap();
     if (this.heirPanel) {
       this.heirPanel.setScale(scale);
-      this.heirPanel.setPosition(narrow ? 10 : Math.max(16, heirPanelX), topHeight + 14);
+      this.heirPanel.setPosition(narrow ? 10 : topPanelLayout.heirX, topHeight + 14);
     }
     if (this.accordPanel) {
       this.accordPanel.setScale(scale);
-      this.accordPanel.setPosition(narrow ? 10 : Math.max(16, accordPanelX), narrow ? topHeight + 70 : topHeight + 14);
+      this.accordPanel.setPosition(narrow ? 10 : topPanelLayout.accordX, narrow ? topHeight + 70 : topHeight + 14);
     }
     if (this.buildingsPanel) {
       this.buildingsPanel.setScale(scale);
-      this.buildingsPanel.setPosition(narrow ? 194 : buildPanelX, topHeight + 14);
+      this.buildingsPanel.setPosition(narrow ? 194 : topPanelLayout.buildX, topHeight + 14);
     }
     // The Heir panel requests an early layout while the Build panel is still being created.
     if (this.buildingsPanel) {

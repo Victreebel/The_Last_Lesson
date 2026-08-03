@@ -10,6 +10,7 @@ it never replaces them or changes the frozen simulation rules.
 
 - One facilitator and one player.
 - Record the build commit, browser, viewport class, scenario, and Rival Doctrine.
+- Include at least one 640-899px compact-width session alongside desktop and phone checks.
 - Use a fresh local profile for first-session testing.
 - Observe without coaching until the player explicitly asks for help.
 - Capture the first 25 minutes, then a short post-session interview.
