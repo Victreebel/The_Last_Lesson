@@ -191,6 +191,54 @@ test("zooms the continuous tactical map around the player's cursor", async ({ pa
   expect(after.equals(before)).toBe(false);
 });
 
+test("clears management chrome in Field view and restores it for a panel shortcut", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto("/");
+  await beginCrownfallRivalReign(page);
+
+  const canvas = page.locator("canvas");
+  await canvas.focus();
+  await canvas.press("h");
+  await expect(page.locator("#the-last-lesson-announcements")).toContainText("Heir panel expanded");
+
+  await canvas.press("z");
+  await expect(canvas).toHaveAttribute("data-tactical-presentation", "field");
+  await expect(page.locator("#the-last-lesson-announcements")).toContainText("Field view enabled");
+
+  await canvas.press("b");
+  await expect(canvas).toHaveAttribute("data-tactical-presentation", "command");
+  await expect(page.locator("#the-last-lesson-announcements")).toContainText("Build panel expanded");
+});
+
+test("pans the battlefield with middle-mouse drag and Field-view edge scrolling", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto("/");
+  await beginCrownfallRivalReign(page);
+
+  const canvas = page.locator("canvas");
+  const bounds = await canvas.boundingBox();
+  if (!bounds) {
+    throw new Error("Tactical canvas did not expose a layout box.");
+  }
+
+  const beforeDrag = await canvas.screenshot();
+  await page.mouse.move(bounds.x + bounds.width * 0.62, bounds.y + bounds.height * 0.52);
+  await page.mouse.down({ button: "middle" });
+  await page.mouse.move(bounds.x + bounds.width * 0.48, bounds.y + bounds.height * 0.42, { steps: 6 });
+  await page.mouse.up({ button: "middle" });
+  await page.waitForTimeout(80);
+  const afterDrag = await canvas.screenshot();
+  expect(afterDrag.equals(beforeDrag)).toBe(false);
+
+  await canvas.focus();
+  await canvas.press("z");
+  const beforeEdgeScroll = await canvas.screenshot();
+  await page.mouse.move(bounds.x + bounds.width - 2, bounds.y + bounds.height * 0.5);
+  await page.waitForTimeout(180);
+  const afterEdgeScroll = await canvas.screenshot();
+  expect(afterEdgeScroll.equals(beforeEdgeScroll)).toBe(false);
+});
+
 test("surfaces and resolves Ashen Oath's opening civic crisis", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto("/");

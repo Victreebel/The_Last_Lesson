@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.6.51 - 2026-08-03
+
+- Added `FIELD [Z]`, a persistent tactical declutter control that collapses management panels and command chrome for an unobstructed battlefield while retaining the minimap and core header. Opening Build, Heir, Accord, Realm, or Book restores the command interface automatically.
+- Added middle-button camera drag everywhere on the battlefield and map-edge scrolling in Field view. Both are presentation-only controls that preserve selection, orders, deterministic saves, replays, and multiplayer authority.
+
 ## 2.6.50 - 2026-08-03
 
 - Corrected Crown-governor learning to match the frozen Heir rule: autonomous decisions now create explainable provisional lessons at zero confidence, and only player Reward or Punish changes their confidence. Rival adaptation remains governed by the selected Rival Doctrine profile.

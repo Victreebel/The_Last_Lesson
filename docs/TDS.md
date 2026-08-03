@@ -2,7 +2,7 @@
 
 ## Technical Design Specification
 
-**Version:** 1.22
+**Version:** 1.23
 **Status:** Active Implementation Blueprint
 **Date:** 2026-08-03
 **Working Title:** The Last Lesson  
@@ -81,6 +81,7 @@ The scene exposes the same command state through pointer controls and keyboard c
 | `M`, `A` | Enter movement or attack targeting mode. |
 | `F` | Enter advance mode. Selected battalions receive deterministic attack-move orders that retain a final destination while engaging visible nearby enemies. |
 | `X` | Toggle locally persisted high-contrast presentation. This is renderer-only and may never affect simulation, save, replay, or multiplayer authority. |
+| `Z` / `FIELD` | Toggle Field view. Field view collapses every management surface and clears optional command chrome while retaining the minimap and core simulation header. Opening any management surface restores the command interface. This is presentation-only and may never affect simulation, save, replay, or multiplayer authority. |
 | `Ctrl`/`Cmd` + `1` through `9` | Bind the selected Crown battalions to a presentation-only control group; press the number to select its surviving members, or press it twice to center the camera on them. |
 | `Space` | Toggle the local presentation clock when the player is the authority. |
 | `Esc` | Cancel placement first; otherwise close panels; otherwise clear selection. |
@@ -96,6 +97,8 @@ Campaign Theatre art is a cropped presentation atlas. Every rendered crop must b
 The wide tactical header may expose a browser fullscreen control only where it does not crowd tactical resources (currently at 1100 CSS pixels or above). It targets only the Phaser canvas host, reflects native `fullscreenchange` state, and must report unavailable or rejected browser requests without treating them as simulation events. Fullscreen is hidden on compact headers and never enters `WorldState`, command history, saves, replays, multiplayer authority, or local campaign progression.
 
 Every interactive child of a fixed Phaser HUD or panel must independently use a zero scroll factor. Camera bounds and world scrolling may never displace the hit area of a visibly screen-anchored tactical, campaign, management, minimap, or victory control.
+
+The tactical camera must remain usable while management surfaces are open. Arrow-key panning, cursor-anchored wheel zoom, and middle-button map drag are always available over the battlefield. Field view additionally enables bounded map-edge scrolling outside the header. Camera movement is renderer-only and must never create commands, modify selection, or enter saves, replays, or multiplayer authority.
 
 Shortcuts are ignored during campaign setup and while a text input, select, or textarea has focus. This protects multiplayer-lobby entry and prevents browser form input from triggering game actions.
 

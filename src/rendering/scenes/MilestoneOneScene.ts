@@ -211,6 +211,8 @@ const AUTO_SAVE_INTERVAL_TICKS = 5;
 const CAMERA_ZOOM_MIN = 0.72;
 const CAMERA_ZOOM_MAX = 1.5;
 const CAMERA_ZOOM_STEP = 0.1;
+const CAMERA_EDGE_SCROLL_MARGIN = 24;
+const CAMERA_EDGE_SCROLL_SPEED = 11;
 const UI_COLORS = {
   panel: 0x12191a,
   panelDeep: 0x0b1011,
@@ -314,6 +316,10 @@ export class MilestoneOneScene extends Phaser.Scene {
   private audioControlLabel!: Phaser.GameObjects.Text;
   private fullscreenControl!: Phaser.GameObjects.Container;
   private fullscreenControlLabel!: Phaser.GameObjects.Text;
+  private fieldModeControl!: Phaser.GameObjects.Container;
+  private fieldModeControlButton!: Phaser.GameObjects.Rectangle;
+  private fieldModeControlLabel!: Phaser.GameObjects.Text;
+  private fieldMode = false;
   private fullscreenActive = false;
   private audioEnabled = true;
   private bookControl!: Phaser.GameObjects.Container;
@@ -394,6 +400,12 @@ export class MilestoneOneScene extends Phaser.Scene {
   private placementPreview?: Phaser.GameObjects.Rectangle;
   private selectionBox?: Phaser.GameObjects.Rectangle;
   private pointerDownWorld?: Phaser.Math.Vector2;
+  private cameraDragOrigin?: {
+    readonly pointerX: number;
+    readonly pointerY: number;
+    readonly scrollX: number;
+    readonly scrollY: number;
+  };
   private selectionDragActive = false;
   private suppressNextPointerUp = false;
   private cursors?: Phaser.Types.Input.Keyboard.CursorKeys;
@@ -485,7 +497,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     canvas.setAttribute("aria-describedby", "the-last-lesson-accessibility-brief");
     canvas.setAttribute(
       "aria-keyshortcuts",
-      "ArrowUp ArrowDown ArrowLeft ArrowRight Tab Enter B C D H R L M A F X Escape Space 0 1 2 3 4 5 6 7 8 9 Q W E Control+1 Control+2 Control+3 Control+4 Control+5 Control+6 Control+7 Control+8 Control+9"
+      "ArrowUp ArrowDown ArrowLeft ArrowRight Tab Enter B C D H R L M A F X Z Escape Space 0 1 2 3 4 5 6 7 8 9 Q W E Control+1 Control+2 Control+3 Control+4 Control+5 Control+6 Control+7 Control+8 Control+9"
     );
     this.accessibilityAnnouncements = document.getElementById("the-last-lesson-announcements") ?? undefined;
   }
@@ -520,6 +532,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     bind("A", () => this.enterAttackMode());
     bind("F", () => this.enterAttackMoveMode());
     bind("X", () => this.toggleHighContrast());
+    bind("Z", () => this.toggleFieldMode());
     bind("ESC", () => this.cancelActiveCommand());
     keyboard.on("keydown", (event: KeyboardEvent) => {
       if (event.repeat || this.isTextInputFocused()) {
@@ -719,6 +732,7 @@ export class MilestoneOneScene extends Phaser.Scene {
   }
 
   private toggleBuildingsPanel(): void {
+    this.restoreCommandInterface();
     this.buildingsPanelExpanded = !this.buildingsPanelExpanded;
     if (this.buildingsPanelExpanded) {
       this.accordPanelExpanded = false;
@@ -735,6 +749,7 @@ export class MilestoneOneScene extends Phaser.Scene {
   }
 
   private toggleHeirPanel(): void {
+    this.restoreCommandInterface();
     this.heirPanelExpanded = !this.heirPanelExpanded;
     if (this.heirPanelExpanded) {
       this.accordPanelExpanded = false;
@@ -751,6 +766,7 @@ export class MilestoneOneScene extends Phaser.Scene {
   }
 
   private toggleAccordPanel(): void {
+    this.restoreCommandInterface();
     this.accordPanelExpanded = !this.accordPanelExpanded;
     if (this.accordPanelExpanded) {
       this.heirPanelExpanded = false;
@@ -767,6 +783,7 @@ export class MilestoneOneScene extends Phaser.Scene {
   }
 
   private toggleRealmPanel(): void {
+    this.restoreCommandInterface();
     this.realmPanelExpanded = !this.realmPanelExpanded;
     this.bookPanelExpanded = false;
     this.updateBookOfLessons();
@@ -774,11 +791,44 @@ export class MilestoneOneScene extends Phaser.Scene {
   }
 
   private toggleBookOfLessons(): void {
+    this.restoreCommandInterface();
     this.bookPanelExpanded = !this.bookPanelExpanded;
     this.realmPanelExpanded = false;
     this.updateRealmPanel();
     this.updateBookOfLessons();
     this.updateUi([this.bookPanelExpanded ? "Book of Lessons opened." : "Book of Lessons closed."]);
+  }
+
+  /** Field view clears optional command chrome so the map remains usable at every zoom level. */
+  private toggleFieldMode(): void {
+    this.fieldMode = !this.fieldMode;
+    if (this.fieldMode) {
+      this.bookPanelExpanded = false;
+      this.realmPanelExpanded = false;
+      this.accordPanelExpanded = false;
+      this.heirPanelExpanded = false;
+      this.buildingsPanelExpanded = false;
+      this.hideCommandTooltip();
+    }
+    this.updateUi([
+      this.fieldMode
+        ? "Field view enabled. Management panels are collapsed; use middle drag, map edges, arrows, or the minimap to move."
+        : "Command interface restored."
+    ]);
+    this.announceAccessibility(
+      this.fieldMode
+        ? "Field view enabled. Use middle mouse drag, map edges, arrows, or the minimap to move."
+        : "Command interface restored."
+    );
+  }
+
+  /** A management shortcut always restores the controls needed to complete its task. */
+  private restoreCommandInterface(): void {
+    if (!this.fieldMode) {
+      return;
+    }
+    this.fieldMode = false;
+    this.hideCommandTooltip();
   }
 
   private assignControlGroup(slot: number): void {
@@ -865,6 +915,19 @@ export class MilestoneOneScene extends Phaser.Scene {
     if (this.cursors?.right.isDown) camera.scrollX += speed;
     if (this.cursors?.up.isDown) camera.scrollY -= speed;
     if (this.cursors?.down.isDown) camera.scrollY += speed;
+
+    if (!this.fieldMode || this.campaignSetupPending || this.cameraDragOrigin) {
+      return;
+    }
+
+    const pointer = this.input.activePointer;
+    if (!pointer.active || pointer.y < this.topHud.height) {
+      return;
+    }
+    if (pointer.x <= CAMERA_EDGE_SCROLL_MARGIN) camera.scrollX -= CAMERA_EDGE_SCROLL_SPEED;
+    if (pointer.x >= this.scale.width - CAMERA_EDGE_SCROLL_MARGIN) camera.scrollX += CAMERA_EDGE_SCROLL_SPEED;
+    if (pointer.y <= CAMERA_EDGE_SCROLL_MARGIN) camera.scrollY -= CAMERA_EDGE_SCROLL_SPEED;
+    if (pointer.y >= this.scale.height - CAMERA_EDGE_SCROLL_MARGIN) camera.scrollY += CAMERA_EDGE_SCROLL_SPEED;
   }
 
   private drawTerrain(): void {
@@ -1006,6 +1069,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.createCommandTooltip();
     this.createCommandDock();
     this.createMinimap();
+    this.createFieldModeControl();
     this.createAccordPanel();
     this.createHeirPanel();
     this.createBuildingsPanel();
@@ -1022,6 +1086,7 @@ export class MilestoneOneScene extends Phaser.Scene {
       this.victoryPanel,
       this.campaignSetupPanel,
       this.commandDock,
+      this.fieldModeControl,
       this.accordPanel,
       this.heirPanel,
       this.buildingsPanel
@@ -1136,6 +1201,24 @@ export class MilestoneOneScene extends Phaser.Scene {
       color: UI_COLORS.text
     });
     this.resourceText.setScrollFactor(0).setDepth(41);
+  }
+
+  private createFieldModeControl(): void {
+    this.fieldModeControlButton = this.add.rectangle(0, 0, 98, 30, UI_COLORS.command, 0.98).setOrigin(0);
+    this.fieldModeControlButton.setStrokeStyle(1, UI_COLORS.trim);
+    this.fieldModeControlButton.setInteractive({ useHandCursor: true });
+    this.fieldModeControlButton.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+      pointer.event.stopPropagation();
+      this.suppressNextPointerUp = true;
+      this.toggleFieldMode();
+    });
+    this.fieldModeControlLabel = this.add.text(10, 9, "FIELD [Z]", {
+      fontFamily: "Arial Black, Arial",
+      fontSize: "9px",
+      color: UI_COLORS.text
+    });
+    this.fieldModeControl = this.add.container(0, 0, [this.fieldModeControlButton, this.fieldModeControlLabel]);
+    this.fieldModeControl.setScrollFactor(0).setDepth(85);
   }
 
   private togglePause(): void {
@@ -3467,6 +3550,10 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.minimapTitle.setVisible(minimapVisible);
     this.minimapPanel.setPosition(this.minimapBounds.x, this.minimapBounds.y);
     this.minimapTitle.setPosition(this.minimapBounds.x + 10, this.minimapBounds.y + 8);
+    this.fieldModeControl.setPosition(
+      Math.max(12, Math.round((width - 98) / 2)),
+      minimapVisible ? Math.max(topHeight + 12, minimapY - 38) : Math.max(topHeight + 12, height - 42)
+    );
     this.updateMinimap();
     if (this.heirPanel) {
       this.heirPanel.setScale(scale);
@@ -3490,6 +3577,7 @@ export class MilestoneOneScene extends Phaser.Scene {
   private applyCampaignPresentationMode(): void {
     const theatreOpen = this.campaignSetupPending;
     const tacticalVisible = !theatreOpen;
+    const commandInterfaceVisible = tacticalVisible && !this.fieldMode;
 
     this.worldLayer.setAlpha(theatreOpen ? 0.3 : 1);
     this.pauseControl.setVisible(tacticalVisible);
@@ -3497,25 +3585,32 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.networkControl.setVisible(tacticalVisible);
     this.audioControl.setVisible(tacticalVisible);
     this.fullscreenControl.setVisible(tacticalVisible && this.scale.width >= 1100);
-    this.bookControl.setVisible(tacticalVisible);
-    this.realmControl.setVisible(tacticalVisible);
+    this.bookControl.setVisible(commandInterfaceVisible);
+    this.realmControl.setVisible(commandInterfaceVisible);
     this.resourceText.setVisible(tacticalVisible);
-    this.intelPanel.setVisible(tacticalVisible && this.scale.width >= 640);
-    this.commandDock.setVisible(tacticalVisible);
-    this.accordPanel.setVisible(tacticalVisible);
-    this.heirPanel.setVisible(tacticalVisible);
-    this.buildingsPanel.setVisible(tacticalVisible);
+    this.intelPanel.setVisible(commandInterfaceVisible && this.scale.width >= 640);
+    this.commandDock.setVisible(commandInterfaceVisible);
+    this.accordPanel.setVisible(commandInterfaceVisible);
+    this.heirPanel.setVisible(commandInterfaceVisible);
+    this.buildingsPanel.setVisible(commandInterfaceVisible);
+    this.fieldModeControl.setVisible(tacticalVisible);
+    this.fieldModeControlButton.setFillStyle(this.fieldMode ? UI_COLORS.commandActive : UI_COLORS.command, 0.98);
+    this.fieldModeControlLabel.setText(this.fieldMode ? "HUD [Z]" : "FIELD [Z]");
     this.minimapPanel.setVisible(tacticalVisible && this.minimapEligible);
     this.minimapGraphics.setVisible(tacticalVisible && this.minimapEligible);
     this.minimapTitle.setVisible(tacticalVisible && this.minimapEligible);
-    this.bookPanel.setVisible(tacticalVisible && this.bookPanelExpanded);
-    this.realmPanel.setVisible(tacticalVisible && this.realmPanelExpanded);
+    this.bookPanel.setVisible(commandInterfaceVisible && this.bookPanelExpanded);
+    this.realmPanel.setVisible(commandInterfaceVisible && this.realmPanelExpanded);
     if (theatreOpen) {
       this.lessonBanner.setVisible(false);
       this.victoryPanel.setVisible(false);
     }
 
     this.game.canvas.setAttribute("data-campaign-phase", theatreOpen ? "theatre" : "tactical");
+    this.game.canvas.setAttribute(
+      "data-tactical-presentation",
+      theatreOpen ? "theatre" : this.fieldMode ? "field" : "command"
+    );
     this.game.canvas.setAttribute(
       "aria-label",
       theatreOpen ? "The Last Lesson Campaign Theatre selection" : "The Last Lesson tactical map and command interface"
@@ -3629,6 +3724,17 @@ export class MilestoneOneScene extends Phaser.Scene {
   }
 
   private handlePointerDown(pointer: Phaser.Input.Pointer): void {
+    if (this.isMiddleClick(pointer)) {
+      this.cameraDragOrigin = {
+        pointerX: pointer.x,
+        pointerY: pointer.y,
+        scrollX: this.cameras.main.scrollX,
+        scrollY: this.cameras.main.scrollY
+      };
+      this.hideCommandTooltip();
+      return;
+    }
+
     if (this.isPrimaryClick(pointer) && this.isBookControlPointer(pointer)) {
       this.toggleBookOfLessons();
       return;
@@ -3714,6 +3820,13 @@ export class MilestoneOneScene extends Phaser.Scene {
   }
 
   private handlePointerMove(pointer: Phaser.Input.Pointer): void {
+    if (this.cameraDragOrigin) {
+      const camera = this.cameras.main;
+      camera.scrollX = this.cameraDragOrigin.scrollX - (pointer.x - this.cameraDragOrigin.pointerX) / camera.zoom;
+      camera.scrollY = this.cameraDragOrigin.scrollY - (pointer.y - this.cameraDragOrigin.pointerY) / camera.zoom;
+      return;
+    }
+
     const worldPoint = pointer.positionToCamera(this.cameras.main) as Phaser.Math.Vector2;
 
     if (this.mode === "building") {
@@ -3735,6 +3848,10 @@ export class MilestoneOneScene extends Phaser.Scene {
   }
 
   private handlePointerUp(pointer: Phaser.Input.Pointer): void {
+    if (this.cameraDragOrigin) {
+      this.cameraDragOrigin = undefined;
+      return;
+    }
     if (this.suppressNextPointerUp) {
       this.suppressNextPointerUp = false;
       this.pointerDownWorld = undefined;
@@ -4092,8 +4209,12 @@ export class MilestoneOneScene extends Phaser.Scene {
     return pointer.rightButtonDown() || (pointer.event as MouseEvent | undefined)?.button === 2;
   }
 
+  private isMiddleClick(pointer: Phaser.Input.Pointer): boolean {
+    return pointer.middleButtonDown() || (pointer.event as MouseEvent | undefined)?.button === 1;
+  }
+
   private isPrimaryClick(pointer: Phaser.Input.Pointer): boolean {
-    return !this.isRightClick(pointer);
+    return !this.isRightClick(pointer) && !this.isMiddleClick(pointer);
   }
 
   private isShiftHeld(pointer: Phaser.Input.Pointer): boolean {
