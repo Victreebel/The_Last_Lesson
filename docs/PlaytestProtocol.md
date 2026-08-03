@@ -26,6 +26,8 @@ it never replaces them or changes the frozen simulation rules.
    early field battalion?
 5. Does the player recognize the Rival's first pressure as fair, legible, and
    attributable to the chosen doctrine rather than an unexplained bonus?
+6. When a Prisoner Accord is available, does the player understand that it
+   returns equal people to both realms and does not teach the Heir?
 
 ## Theatre Coverage
 
@@ -37,7 +39,7 @@ does not always receive the least experienced sessions.
 | --- | --- | --- | --- |
 | Crownfall | Food and first levy | Player reaches farm, militia, scout, and first lesson unaided | Missing the fertile-ground requirement or overbuilding before food |
 | Rivergate | Supply route | Player commissions a wagon and identifies the river as an opportunity | Treating the river as decoration or never noticing naval logistics |
-| Ashen Oath | Plague and captives | Player understands the civic choice and can explain its consequence | Punishment/assimilation confusion or moral framing that feels opaque |
+| Ashen Oath | Plague, captives, and prisoner accord | Player understands assimilation, release, and equal exchange as distinct civic choices | Punishment/assimilation confusion, an unclear Accord requirement, or moral framing that feels opaque |
 | Stonewall | Gate defense | Player raises and garrisons a force before the first serious pressure | Gate status, garrison command, or ridge advantage going unnoticed |
 
 ## Observation Sheet

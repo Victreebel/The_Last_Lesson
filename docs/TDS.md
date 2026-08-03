@@ -2,9 +2,9 @@
 
 ## Technical Design Specification
 
-**Version:** 1.2
+**Version:** 1.3
 **Status:** Active Implementation Blueprint
-**Date:** 2026-08-02
+**Date:** 2026-08-03
 **Working Title:** The Last Lesson  
 **Repository Identity:** `the-last-lesson`  
 **Internal Codename:** `TLL`  
@@ -868,6 +868,12 @@ No single threshold should be the only cause of rebellion.
 
 Each empire records factual captive actions: captives taken, integrated, and released. This is not a good/evil meter. The unresolved captivity burden is derived as `max(0, floor((taken - integrated - released * 2) / 4))` and contributes directly to rebellion pressure. Releasing and integrating people are therefore strategic acts with a persistent social consequence. `moral-memory-changed` events expose the exact record after every action.
 
+### 15.4b Prisoner Accord
+
+`exchange-captives` is the first implemented diplomacy command and is intentionally narrow. The God-King may exchange an equal count of captives between one Crown settlement and one rival settlement. Both settlements must retain an intact, completed Castle, each must hold the requested captive count, and each must have enough completed Castle/Villa capacity to receive the returning citizens. The command transfers no resources, does not change heir doctrine, and records the returned people as released in both empires' Civic Records. It emits one `captives-exchanged` event, so the tactical record, replay, save history, and multiplayer authority observe the same factual agreement.
+
+Governors do not initiate, accept, learn from, or refuse an Accord. This preserves the frozen rule that diplomatic negotiation is a player-only God-King decision.
+
 ### 15.5 Settlement Defection
 
 Defection is a rare territorial failure, not another damage mechanic. A settlement defects only when all of the following are true on a world tick:
@@ -1435,7 +1441,7 @@ The project is a TypeScript, Vite, Phaser, Vitest, and `ws` application. Its fir
 Document versions:
 
 - `1.0`: frozen design and initial architecture
-- `1.x`: compatible refinements
+- `1.x`: compatible refinements, including additive player-only diplomatic commands
 - `2.0`: breaking design or architecture change
 
 Save versions:
@@ -1573,4 +1579,4 @@ The following compatible systems are now implemented in the prototype and are th
 - The browser persists a validated local Crown identity and retains the last successful connection request only while a remote reign is active. After a socket loss, `REJOIN` reconnects directly to that named room using the same identity; local campaign transitions and deliberate disconnection clear the request. This is convenience identity only, not an account, reconnect token, or authorization credential.
 - Each hosted room applies a deterministic-host-adjacent transport budget of 48 submitted intents per connected Crown identity in a rolling five-second window. The budget is enforced before authority submission, is retained while an idle room awaits rejoin, and reports a protocol error without advancing the simulation. It is transport protection only: rate timing and counters never enter `WorldState`, saves, replays, command ordering, or state hashes.
 
-Implementation intentionally keeps tactical identifiers explicit while presentation matures. Painterly terrain, responsive command UI, optional tactical audio, authored campaign theatres, full captive gameplay, transport vehicles, and authoritative multiplayer are implemented. Advanced diplomacy, account-backed internet matchmaking, and a complete bespoke art/content package remain production-delivery work rather than implied completed features.
+Implementation intentionally keeps tactical identifiers explicit while presentation matures. Painterly terrain, responsive command UI, optional tactical audio, authored campaign theatres, full captive gameplay, transport vehicles, the player-only Prisoner Accord, and authoritative multiplayer are implemented. Broader diplomacy, account-backed internet matchmaking, and a complete bespoke art/content package remain production-delivery work rather than implied completed features.

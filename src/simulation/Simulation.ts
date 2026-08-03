@@ -874,6 +874,71 @@ export class Simulation {
       return;
     }
 
+    if (command.type === "exchange-captives") {
+      const settlement = this.state.settlements[command.payload.settlementId];
+      const rivalSettlement = this.state.settlements[command.payload.rivalSettlementId];
+      const count = Math.max(1, Math.floor(command.payload.count));
+      const participantCastlesIntact =
+        settlement &&
+        rivalSettlement &&
+        this.state.buildings[settlement.centralBuildingId]?.kind === "castle" &&
+        this.state.buildings[settlement.centralBuildingId]?.complete &&
+        this.state.buildings[rivalSettlement.centralBuildingId]?.kind === "castle" &&
+        this.state.buildings[rivalSettlement.centralBuildingId]?.complete;
+      const bothCanReceiveCitizens =
+        settlement &&
+        rivalSettlement &&
+        settlement.population.citizens + count <= this.getCitizenCapacity(settlement.id) &&
+        rivalSettlement.population.citizens + count <= this.getCitizenCapacity(rivalSettlement.id);
+
+      if (
+        !settlement ||
+        !rivalSettlement ||
+        settlement.ownerEmpireId === rivalSettlement.ownerEmpireId ||
+        settlement.population.captives < count ||
+        rivalSettlement.population.captives < count ||
+        !participantCastlesIntact ||
+        !bothCanReceiveCitizens
+      ) {
+        this.eventWriter.emit(tick, "command-rejected", { commandId: command.id, reason: "accord-unavailable" });
+        return;
+      }
+
+      this.state = {
+        ...this.state,
+        settlements: {
+          ...this.state.settlements,
+          [settlement.id]: {
+            ...settlement,
+            population: {
+              ...settlement.population,
+              captives: settlement.population.captives - count,
+              citizens: settlement.population.citizens + count
+            }
+          },
+          [rivalSettlement.id]: {
+            ...rivalSettlement,
+            population: {
+              ...rivalSettlement.population,
+              captives: rivalSettlement.population.captives - count,
+              citizens: rivalSettlement.population.citizens + count
+            }
+          }
+        }
+      };
+      this.eventWriter.emit(tick, "captives-exchanged", {
+        commandId: command.id,
+        settlementId: settlement.id,
+        rivalSettlementId: rivalSettlement.id,
+        count,
+        playerEmpireId: settlement.ownerEmpireId,
+        rivalEmpireId: rivalSettlement.ownerEmpireId
+      });
+      this.recordMoralMemory(settlement.ownerEmpireId, "captivesReleased", count, tick);
+      this.recordMoralMemory(rivalSettlement.ownerEmpireId, "captivesReleased", count, tick);
+      return;
+    }
+
     if (command.type === "reward-heir" || command.type === "punish-heir") {
       const feedback = command.type === "reward-heir" ? HEIR_FEEDBACK.reward : HEIR_FEEDBACK.punish;
       this.applyHeirFeedback(
@@ -3791,6 +3856,9 @@ function getDoctrineObservation(command: GameCommand, state: WorldState): Doctri
         preferredAction: "Release captives",
         goal: "Strengthen loyalty and divine legitimacy"
       };
+    case "exchange-captives":
+      // Diplomacy belongs to the God-King alone, never to governor doctrine.
+      return undefined;
     case "generate-faith":
       return {
         domain: "faith",

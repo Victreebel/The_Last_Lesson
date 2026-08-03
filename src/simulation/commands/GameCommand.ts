@@ -19,6 +19,7 @@ export type CommandType =
   | "attack-target"
   | "assimilate-captives"
   | "release-captives"
+  | "exchange-captives"
   | "reward-heir"
   | "punish-heir"
   | "cast-miracle";
@@ -115,6 +116,13 @@ export interface ReleaseCaptivesPayload {
   readonly count: number;
 }
 
+/** A player-negotiated accord; governors neither initiate nor learn from it. */
+export interface ExchangeCaptivesPayload {
+  readonly settlementId: SettlementId;
+  readonly rivalSettlementId: SettlementId;
+  readonly count: number;
+}
+
 export interface HeirFeedbackPayload {
   readonly heirId: HeirId;
 }
@@ -144,6 +152,7 @@ export type GameCommand =
   | GameCommandBase<"attack-target", AttackTargetPayload>
   | GameCommandBase<"assimilate-captives", AssimilateCaptivesPayload>
   | GameCommandBase<"release-captives", ReleaseCaptivesPayload>
+  | GameCommandBase<"exchange-captives", ExchangeCaptivesPayload>
   | GameCommandBase<"reward-heir", HeirFeedbackPayload>
   | GameCommandBase<"punish-heir", HeirFeedbackPayload>
   | GameCommandBase<"cast-miracle", CastMiraclePayload>;

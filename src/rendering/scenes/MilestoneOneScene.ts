@@ -197,6 +197,7 @@ const BUILDING_DISPLAY_LABELS: Record<BuildingKind, string> = {
 
 const BUILD_PANEL_WIDTH = 306;
 const HEIR_PANEL_WIDTH = 286;
+const ACCORD_PANEL_WIDTH = 262;
 const PLACEMENT_GRID_SIZE = 32;
 const DRAG_THRESHOLD = 10;
 const MINIMAP_WIDTH = 230;
@@ -347,6 +348,14 @@ export class MilestoneOneScene extends Phaser.Scene {
   private heirPanelBody!: Phaser.GameObjects.Text;
   private heirPanelExpanded = false;
   private readonly heirFeedbackControls: HeirFeedbackControl[] = [];
+  private accordPanel!: Phaser.GameObjects.Container;
+  private accordPanelBg!: Phaser.GameObjects.Rectangle;
+  private accordPanelHeader!: Phaser.GameObjects.Rectangle;
+  private accordPanelTitle!: Phaser.GameObjects.Text;
+  private accordPanelBody!: Phaser.GameObjects.Text;
+  private accordExchangeButton!: Phaser.GameObjects.Rectangle;
+  private accordExchangeLabel!: Phaser.GameObjects.Text;
+  private accordPanelExpanded = false;
   private buildingsPanel!: Phaser.GameObjects.Container;
   private buildingsPanelBg!: Phaser.GameObjects.Rectangle;
   private buildingsPanelHeader!: Phaser.GameObjects.Rectangle;
@@ -449,7 +458,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     canvas.setAttribute("aria-describedby", "the-last-lesson-accessibility-brief");
     canvas.setAttribute(
       "aria-keyshortcuts",
-      "ArrowUp ArrowDown ArrowLeft ArrowRight Tab Enter B C H R L M A F X Escape Space Control+1 Control+2 Control+3 Control+4 Control+5 Control+6 Control+7 Control+8 Control+9"
+      "ArrowUp ArrowDown ArrowLeft ArrowRight Tab Enter B C D H R L M A F X Escape Space Control+1 Control+2 Control+3 Control+4 Control+5 Control+6 Control+7 Control+8 Control+9"
     );
     this.accessibilityAnnouncements = document.getElementById("the-last-lesson-announcements") ?? undefined;
   }
@@ -477,6 +486,7 @@ export class MilestoneOneScene extends Phaser.Scene {
 
     bind("SPACE", () => this.togglePause());
     bind("B", () => this.toggleBuildingsPanel());
+    bind("D", () => this.toggleAccordPanel());
     bind("H", () => this.toggleHeirPanel());
     bind("R", () => this.toggleRealmPanel());
     bind("L", () => this.toggleBookOfLessons());
@@ -563,13 +573,15 @@ export class MilestoneOneScene extends Phaser.Scene {
       this.cancelPlacement();
       return;
     }
-    if (this.bookPanelExpanded || this.realmPanelExpanded || this.heirPanelExpanded || this.buildingsPanelExpanded) {
+    if (this.bookPanelExpanded || this.realmPanelExpanded || this.accordPanelExpanded || this.heirPanelExpanded || this.buildingsPanelExpanded) {
       this.bookPanelExpanded = false;
       this.realmPanelExpanded = false;
+      this.accordPanelExpanded = false;
       this.heirPanelExpanded = false;
       this.buildingsPanelExpanded = false;
       this.updateBookOfLessons();
       this.updateRealmPanel();
+      this.updateAccordPanel();
       this.updateHeirPanel();
       this.updateBuildingsPanel();
       return;
@@ -587,6 +599,17 @@ export class MilestoneOneScene extends Phaser.Scene {
   private toggleHeirPanel(): void {
     this.heirPanelExpanded = !this.heirPanelExpanded;
     this.updateHeirPanel();
+  }
+
+  private toggleAccordPanel(): void {
+    this.accordPanelExpanded = !this.accordPanelExpanded;
+    if (this.accordPanelExpanded) {
+      this.heirPanelExpanded = false;
+      this.buildingsPanelExpanded = false;
+      this.updateHeirPanel();
+      this.updateBuildingsPanel();
+    }
+    this.updateAccordPanel();
   }
 
   private toggleRealmPanel(): void {
@@ -829,6 +852,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.createCommandTooltip();
     this.createCommandDock();
     this.createMinimap();
+    this.createAccordPanel();
     this.createHeirPanel();
     this.createBuildingsPanel();
     this.layoutUi();
@@ -2656,6 +2680,121 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.updateHeirPanel();
   }
 
+  private createAccordPanel(): void {
+    this.accordPanelBg = this.add.rectangle(0, 0, ACCORD_PANEL_WIDTH, 48, UI_COLORS.panel, 0.96).setOrigin(0);
+    this.accordPanelBg.setStrokeStyle(1, UI_COLORS.trim);
+    this.accordPanelBg.setInteractive({ useHandCursor: false });
+    this.accordPanelBg.on("pointerdown", (pointer: Phaser.Input.Pointer) => pointer.event.stopPropagation());
+    this.accordPanelHeader = this.add.rectangle(0, 0, ACCORD_PANEL_WIDTH, 48, UI_COLORS.panelDeep, 0.98).setOrigin(0);
+    this.accordPanelHeader.setInteractive({ useHandCursor: true });
+    this.accordPanelHeader.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+      pointer.event.stopPropagation();
+      this.toggleAccordPanel();
+    });
+    this.accordPanelTitle = this.add.text(14, 9, "", {
+      fontFamily: "Arial Black, Arial",
+      fontSize: "12px",
+      color: "#f2d77f"
+    });
+    this.accordPanelBody = this.add.text(14, 56, "", {
+      fontFamily: "Arial, sans-serif",
+      fontSize: "10px",
+      color: UI_COLORS.text,
+      lineSpacing: 4,
+      wordWrap: { width: ACCORD_PANEL_WIDTH - 28 }
+    });
+    this.accordExchangeButton = this.add.rectangle(14, 142, ACCORD_PANEL_WIDTH - 28, 36, UI_COLORS.commandActive, 1).setOrigin(0);
+    this.accordExchangeButton.setStrokeStyle(1, UI_COLORS.trim);
+    this.accordExchangeButton.setInteractive({ useHandCursor: true });
+    this.accordExchangeButton.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+      pointer.event.stopPropagation();
+      this.suppressNextPointerUp = true;
+      this.exchangeCaptives();
+    });
+    this.accordExchangeButton.on("pointerover", (pointer: Phaser.Input.Pointer) => {
+      this.showCommandTooltip(pointer, "Prisoner Accord: return equal numbers of captives. This Crown-only negotiation does not teach heirs.");
+    });
+    this.accordExchangeButton.on("pointerout", () => this.hideCommandTooltip());
+    this.accordExchangeLabel = this.add.text(28, 153, "", {
+      fontFamily: "Arial Black, Arial",
+      fontSize: "10px",
+      color: UI_COLORS.text
+    });
+    this.accordPanel = this.add.container(0, 0, [
+      this.accordPanelBg,
+      this.accordPanelHeader,
+      this.accordPanelTitle,
+      this.accordPanelBody,
+      this.accordExchangeButton,
+      this.accordExchangeLabel
+    ]);
+    this.accordPanel.setScrollFactor(0).setDepth(40).setSize(ACCORD_PANEL_WIDTH, 48);
+    this.updateAccordPanel();
+  }
+
+  private getPrisonerAccord():
+    | { readonly settlement: SettlementState; readonly rivalSettlement: SettlementState; readonly count: number }
+    | undefined {
+    const settlement = this.getActiveControlledSettlement();
+    if (!settlement) {
+      return undefined;
+    }
+    const rivals = Object.values(this.simulation.getState().settlements)
+      .filter((candidate) => candidate.ownerEmpireId !== settlement.ownerEmpireId)
+      .sort(
+        (left, right) =>
+          right.population.captives - left.population.captives || left.id.localeCompare(right.id)
+      );
+    const rivalSettlement = rivals[0];
+    if (!rivalSettlement) {
+      return undefined;
+    }
+    const count = Math.max(
+      0,
+      Math.min(
+        4,
+        settlement.population.captives,
+        rivalSettlement.population.captives,
+        this.getCitizenCapacity(settlement.id) - settlement.population.citizens,
+        this.getCitizenCapacity(rivalSettlement.id) - rivalSettlement.population.citizens
+      )
+    );
+    return { settlement, rivalSettlement, count };
+  }
+
+  private updateAccordPanel(): void {
+    const accord = this.getPrisonerAccord();
+    const height = this.accordPanelExpanded ? 190 : 48;
+    this.accordPanelBg.setSize(ACCORD_PANEL_WIDTH, height);
+    this.accordPanel.setSize(ACCORD_PANEL_WIDTH, height);
+    this.accordPanelTitle.setText(this.accordPanelExpanded ? "ACCORD // PRISONERS [-]" : "ACCORD // PRISONERS [+]");
+    this.accordPanelBody.setVisible(this.accordPanelExpanded);
+    this.accordExchangeButton.setVisible(this.accordPanelExpanded);
+    this.accordExchangeLabel.setVisible(this.accordPanelExpanded);
+
+    if (this.accordPanelExpanded) {
+      const settlement = accord?.settlement;
+      const rivalSettlement = accord?.rivalSettlement;
+      const available = accord?.count ?? 0;
+      this.accordPanelBody.setText(
+        settlement && rivalSettlement
+          ? [
+              `${this.getSettlementDisplayName(settlement.id)} HOLDS: ${settlement.population.captives} RIVAL`,
+              `${this.getSettlementDisplayName(rivalSettlement.id)} HOLDS: ${rivalSettlement.population.captives} CROWN`,
+              available > 0
+                ? "RETURN EQUAL PRISONERS. HEIRS DO NOT LEARN."
+                : "Both realms must hold prisoners and have civil housing."
+            ].join("\n")
+          : "No rival settlement can negotiate an accord."
+      );
+      this.accordExchangeLabel.setText(available > 0 ? `EXCHANGE ${available} CAPTIVE${available === 1 ? "" : "S"}` : "ACCORD UNAVAILABLE");
+      this.accordExchangeButton.setFillStyle(available > 0 ? UI_COLORS.commandActive : UI_COLORS.command, 1);
+      this.accordExchangeButton.setAlpha(available > 0 ? 1 : 0.45);
+      this.accordExchangeLabel.setAlpha(available > 0 ? 1 : 0.55);
+    }
+    this.layoutUi();
+  }
+
   private addHeirFeedbackButton(
     x: number,
     y: number,
@@ -2892,6 +3031,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     const scale = narrow ? 0.6 : Math.min(1, Math.max(0.72, (width - 24) / BUILD_PANEL_WIDTH));
     const buildPanelX = width - 16 - BUILD_PANEL_WIDTH * scale;
     const heirPanelX = buildPanelX - 12 - HEIR_PANEL_WIDTH * scale;
+    const accordPanelX = heirPanelX - 12 - ACCORD_PANEL_WIDTH * scale;
 
     this.topHud.setSize(width, topHeight);
     this.gameTitleText.setPosition(18, 10);
@@ -2965,6 +3105,10 @@ export class MilestoneOneScene extends Phaser.Scene {
       this.heirPanel.setScale(scale);
       this.heirPanel.setPosition(narrow ? 10 : Math.max(16, heirPanelX), topHeight + 14);
     }
+    if (this.accordPanel) {
+      this.accordPanel.setScale(scale);
+      this.accordPanel.setPosition(narrow ? 10 : Math.max(16, accordPanelX), narrow ? topHeight + 70 : topHeight + 14);
+    }
     if (this.buildingsPanel) {
       this.buildingsPanel.setScale(scale);
       this.buildingsPanel.setPosition(narrow ? 194 : buildPanelX, topHeight + 14);
@@ -2990,6 +3134,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.resourceText.setVisible(tacticalVisible);
     this.intelPanel.setVisible(tacticalVisible && this.scale.width >= 640);
     this.commandDock.setVisible(tacticalVisible);
+    this.accordPanel.setVisible(tacticalVisible);
     this.heirPanel.setVisible(tacticalVisible);
     this.buildingsPanel.setVisible(tacticalVisible);
     this.minimapPanel.setVisible(tacticalVisible && this.minimapEligible);
@@ -3762,6 +3907,25 @@ export class MilestoneOneScene extends Phaser.Scene {
       payload: { settlementId: settlement.id, count }
     });
     this.updateUi([`${count} captive(s) released by royal decree.`]);
+  }
+
+  private exchangeCaptives(): void {
+    const accord = this.getPrisonerAccord();
+    if (!accord || accord.count === 0) {
+      this.updateUi(["A prisoner accord requires captives and citizen housing on both sides."]);
+      return;
+    }
+    this.issueCommand({
+      type: "exchange-captives",
+      payload: {
+        settlementId: accord.settlement.id,
+        rivalSettlementId: accord.rivalSettlement.id,
+        count: accord.count
+      }
+    });
+    this.updateUi([
+      `Prisoner accord proposed: ${accord.count} returned between ${this.getSettlementDisplayName(accord.settlement.id)} and ${this.getSettlementDisplayName(accord.rivalSettlement.id)}.`
+    ]);
   }
 
   private disembarkCaravan(): void {
@@ -4575,6 +4739,7 @@ export class MilestoneOneScene extends Phaser.Scene {
         ? `VICTORY // ${state.empires[victory]?.name.toUpperCase() ?? "THE WINNER"} HOLDS EVERY THRONE.`
         : this.getTacticalUplinkMandate(settlement, events)
     );
+    this.updateAccordPanel();
     this.updateHeirPanel();
     this.updateLessonBanner();
     this.updateMandateGuidance();

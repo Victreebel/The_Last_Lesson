@@ -23,6 +23,7 @@ const TACTICAL_EVENT_PRIORITY: Partial<Record<GameEvent["type"], number>> = {
   "battle-morale-shifted": 70,
   "entity-destroyed": 70,
   "captives-liberated": 70,
+  "captives-exchanged": 70,
   "captive-escape": 70,
   "religious-pressure-changed": 60,
   "supply-delivered": 55,
@@ -153,6 +154,8 @@ export const describeGameEvent = (event: GameEvent, context: EventNarrativeConte
     case "captives-released":
     case "captives-liberated":
       return `${settlement} released ${count ?? 0} captive${count === 1 ? "" : "s"}.`;
+    case "captives-exchanged":
+      return `${settlement} and ${context.settlementName(getString(event, "rivalSettlementId"))} exchanged ${count ?? 0} captive${count === 1 ? "" : "s"}.`;
     case "captive-escape":
       return `${count ?? 0} captive${count === 1 ? "" : "s"} escaped from ${settlement}.`;
     case "religious-pressure-changed":

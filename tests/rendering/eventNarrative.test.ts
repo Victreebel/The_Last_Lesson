@@ -53,6 +53,19 @@ describe("event narrative", () => {
     ).toBe("Mend Settlement answered at Crownkeep, restoring 30 health and ending the plague.");
   });
 
+  it("makes prisoner accords readable in the tactical record", () => {
+    expect(
+      describeGameEvent(
+        event("captives-exchanged", {
+          settlementId: "settlement-capital",
+          rivalSettlementId: "settlement-rival",
+          count: 3
+        }),
+        context
+      )
+    ).toBe("Crownkeep and Unknown Seat exchanged 3 captives.");
+  });
+
   it("keeps decisive reports ahead of routine production in the Tactical Uplink", () => {
     const reports = selectTacticalReportEvents([
       event("faith-produced", { settlementId: "settlement-capital", amount: 4 }),

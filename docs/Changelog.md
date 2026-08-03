@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.30 - 2026-08-03
+
+- Added the Crown-only Prisoner Accord. When both realms hold captives and can house returning citizens, the Accord panel deterministically exchanges up to four people, records the release in each Civic Record, and produces a replay-safe tactical event. Heirs neither negotiate nor learn from the agreement.
+
 ## 2.6.29 - 2026-08-03
 
 - Added a shared battalion-readiness presentation contract. Every battlefield battalion now carries a persistent defense bar, while the selected-force Tactical Uplink reports matching `H` (defense), `M` (morale), and `S` (supply) percentages. The change is renderer-only and reads immutable authoritative state.

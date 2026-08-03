@@ -101,6 +101,7 @@ Implemented:
 - The in-world Lesson banner now also names the observed condition and intended strategic goal, then directs the player to the existing Heir feedback control. This creates a complete decision-to-doctrine handoff without adding tutorial state or changing learning rules.
 - Heir feedback now states its exact doctrine-confidence and Trust effect before the player commits, making teaching consequences explicit rather than leaving the core progression loop as hidden arithmetic.
 - Captive policy choice between population-oriented assimilation and stability-oriented release, including deterministic effects on happiness, loyalty, devotion, and internal Faith.
+- A Crown-only Prisoner Accord, which exchanges equal captive groups when both settlements can receive citizens. It is a replay-safe, authority-validated player negotiation and intentionally does not create heir doctrine.
 - Tactical Uplink threat forecast that summarizes the active settlement's most urgent food, rebellion, religious, or observed military risk.
 - Adjustable 1x/2x/3x live presentation speed for accelerating tactical downtime without changing deterministic tick rules.
 - Campaign-opening Rival Doctrine profiles for fair, transparent difficulty that changes rival learning pace and opening grace rather than granting raw simulation bonuses.

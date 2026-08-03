@@ -108,6 +108,8 @@ test("launches the campaign theatre and begins a Crownfall reign", async ({ page
   await beginCrownfallRivalReign(page);
   await expect(page.locator("canvas")).toHaveAttribute("data-campaign-phase", "tactical");
   await expect(page.locator("canvas")).toHaveAttribute("aria-label", "The Last Lesson tactical map and command interface");
+  expect(await page.locator("canvas").getAttribute("aria-keyshortcuts")).toContain("D");
+  await page.locator("canvas").press("D");
   await expect(page.locator("#the-last-lesson-announcements")).toContainText("Open BUILD [B], choose FARM");
   await expect.poll(() => assetUrls.some((url) => url.endsWith("painterly-battlefield-v1.webp"))).toBe(true);
   await expect.poll(() => assetUrls.some((url) => url.endsWith("building-atlas-v1.webp"))).toBe(true);

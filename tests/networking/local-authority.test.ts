@@ -58,6 +58,18 @@ describe("local authoritative networking", () => {
         payload: { empireId: "empire-player", amount: 999 }
       })
     ).toThrow("not authorized");
+    expect(
+      authority.submit("player-1", {
+        type: "exchange-captives",
+        payload: { settlementId: "settlement-capital", rivalSettlementId: "settlement-rival", count: 1 }
+      }).type
+    ).toBe("exchange-captives");
+    expect(() =>
+      authority.submit("player-1", {
+        type: "exchange-captives",
+        payload: { settlementId: "settlement-rival", rivalSettlementId: "settlement-capital", count: 1 }
+      })
+    ).toThrow("not authorized");
   });
 
   it("prepares the host-owned opening labor order without overriding a player's first command", () => {
