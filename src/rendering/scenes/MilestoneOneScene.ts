@@ -330,6 +330,7 @@ export class MilestoneOneScene extends Phaser.Scene {
   private minimapGraphics!: Phaser.GameObjects.Graphics;
   private minimapTitle!: Phaser.GameObjects.Text;
   private minimapBounds = { x: 0, y: 0 };
+  private minimapEligible = false;
   private commandDock!: Phaser.GameObjects.Container;
   private commandMandateText!: Phaser.GameObjects.Text;
   private commandTooltip!: Phaser.GameObjects.Container;
@@ -2882,6 +2883,7 @@ export class MilestoneOneScene extends Phaser.Scene {
       ? Math.max(topHeight + 210, topHeight + 14 + buildPanelHeight * scale + 12)
       : Math.max(topHeight + 210, height - MINIMAP_HEIGHT - 16);
     const minimapVisible = !narrow && minimapY + MINIMAP_HEIGHT <= height - 16;
+    this.minimapEligible = minimapVisible;
     this.minimapBounds = { x: Math.max(16, width - MINIMAP_WIDTH - 16), y: minimapY };
     this.minimapPanel.setVisible(minimapVisible);
     this.minimapGraphics.setVisible(minimapVisible);
@@ -2897,6 +2899,44 @@ export class MilestoneOneScene extends Phaser.Scene {
       this.buildingsPanel.setScale(scale);
       this.buildingsPanel.setPosition(narrow ? 194 : buildPanelX, topHeight + 14);
     }
+    // The Heir panel requests an early layout while the Build panel is still being created.
+    if (this.buildingsPanel) {
+      this.applyCampaignPresentationMode();
+    }
+  }
+
+  /** Keeps Campaign Theatre a calm selection view; it never changes game state or input rules. */
+  private applyCampaignPresentationMode(): void {
+    const theatreOpen = this.campaignSetupPending;
+    const tacticalVisible = !theatreOpen;
+
+    this.worldLayer.setAlpha(theatreOpen ? 0.3 : 1);
+    this.pauseControl.setVisible(tacticalVisible);
+    this.speedControl.setVisible(tacticalVisible);
+    this.networkControl.setVisible(tacticalVisible);
+    this.audioControl.setVisible(tacticalVisible);
+    this.bookControl.setVisible(tacticalVisible);
+    this.realmControl.setVisible(tacticalVisible);
+    this.resourceText.setVisible(tacticalVisible);
+    this.intelPanel.setVisible(tacticalVisible && this.scale.width >= 640);
+    this.commandDock.setVisible(tacticalVisible);
+    this.heirPanel.setVisible(tacticalVisible);
+    this.buildingsPanel.setVisible(tacticalVisible);
+    this.minimapPanel.setVisible(tacticalVisible && this.minimapEligible);
+    this.minimapGraphics.setVisible(tacticalVisible && this.minimapEligible);
+    this.minimapTitle.setVisible(tacticalVisible && this.minimapEligible);
+    this.bookPanel.setVisible(tacticalVisible && this.bookPanelExpanded);
+    this.realmPanel.setVisible(tacticalVisible && this.realmPanelExpanded);
+    if (theatreOpen) {
+      this.lessonBanner.setVisible(false);
+      this.victoryPanel.setVisible(false);
+    }
+
+    this.game.canvas.setAttribute("data-campaign-phase", theatreOpen ? "theatre" : "tactical");
+    this.game.canvas.setAttribute(
+      "aria-label",
+      theatreOpen ? "The Last Lesson Campaign Theatre selection" : "The Last Lesson tactical map and command interface"
+    );
   }
 
   private updateBuildingsPanel(): void {
@@ -4470,6 +4510,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.updateBookOfLessons();
     this.updateVictoryPanel();
     this.updateMinimap();
+    this.applyCampaignPresentationMode();
     const latestPlayerMessage = events.at(-1);
     if (latestPlayerMessage?.includes(" ")) {
       this.announceAccessibility(latestPlayerMessage);

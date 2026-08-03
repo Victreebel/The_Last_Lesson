@@ -98,12 +98,16 @@ test("launches the campaign theatre and begins a Crownfall reign", async ({ page
   await page.goto("/");
   await expect(page.locator("canvas")).toBeVisible();
   await expect(page.locator("canvas")).toHaveAttribute("role", "application");
+  await expect(page.locator("canvas")).toHaveAttribute("data-campaign-phase", "theatre");
+  await expect(page.locator("canvas")).toHaveAttribute("aria-label", "The Last Lesson Campaign Theatre selection");
   expect(await page.locator("canvas").getAttribute("aria-keyshortcuts")).toContain("Control+9");
   await expect(page.locator('link[rel="manifest"]')).toHaveAttribute("href", /manifest[.]webmanifest$/);
   await page.waitForTimeout(800);
   await expectRenderedCanvas(page);
   await page.waitForFunction(async () => Boolean((await navigator.serviceWorker.ready).active));
   await beginCrownfallRivalReign(page);
+  await expect(page.locator("canvas")).toHaveAttribute("data-campaign-phase", "tactical");
+  await expect(page.locator("canvas")).toHaveAttribute("aria-label", "The Last Lesson tactical map and command interface");
   await expect(page.locator("#the-last-lesson-announcements")).toContainText("Open BUILD [B], choose FARM");
   await expect.poll(() => assetUrls.some((url) => url.endsWith("painterly-battlefield-v1.webp"))).toBe(true);
   await expect.poll(() => assetUrls.some((url) => url.endsWith("building-atlas-v1.webp"))).toBe(true);

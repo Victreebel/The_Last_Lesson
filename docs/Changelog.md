@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.19 - 2026-08-03
+
+- Reframed Campaign Theatre as a focused pre-reign view. The campaign picker now sits over a subdued painterly map while inactive tactical HUD, world labels, and command panels stay out of the decision; launching a reign restores the complete command shell. The canvas now exposes the matching campaign/tactical presentation phase and accessible name for browser-level regression coverage.
+
 ## 2.6.18 - 2026-08-03
 
 - Connected each state-derived Imperial Mandate to its actual existing Build, Command, or Heir control. The tactical dock now names the active action surface and highlights its actionable control without auto-opening panels, issuing orders, or placing tutorial flags in simulation state. Captive-policy mandates deliberately highlight both assimilation and release so the player keeps the intended strategic choice.
