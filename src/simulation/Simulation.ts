@@ -936,6 +936,8 @@ export class Simulation {
       });
       this.recordMoralMemory(settlement.ownerEmpireId, "captivesReleased", count, tick);
       this.recordMoralMemory(rivalSettlement.ownerEmpireId, "captivesReleased", count, tick);
+      this.recordMoralMemory(settlement.ownerEmpireId, "captivesExchanged", count, tick);
+      this.recordMoralMemory(rivalSettlement.ownerEmpireId, "captivesExchanged", count, tick);
       return;
     }
 
@@ -3445,8 +3447,13 @@ export class Simulation {
     if (!empire || count <= 0) {
       return;
     }
-    const memory = empire.moralMemory ?? { captivesTaken: 0, captivesIntegrated: 0, captivesReleased: 0 };
-    const nextMemory = { ...memory, [field]: memory[field] + count };
+    const memory = empire.moralMemory ?? {
+      captivesTaken: 0,
+      captivesIntegrated: 0,
+      captivesReleased: 0,
+      captivesExchanged: 0
+    };
+    const nextMemory = { ...memory, [field]: (memory[field] ?? 0) + count };
     this.state = {
       ...this.state,
       empires: { ...this.state.empires, [empire.id]: { ...empire, moralMemory: nextMemory } }

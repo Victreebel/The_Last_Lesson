@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.32 - 2026-08-03
+
+- Civic Records now expose `EXCHANGED` alongside captives taken, integrated, and released. Prisoner Accord returns remain part of the existing release-based rebellion calculation but are no longer hidden inside the general release count.
+
 ## 2.6.31 - 2026-08-03
 
 - Ashen Oath now opens with reciprocal, securely housed prisoners and completed civil housing on both thrones. The player can inspect the Prisoner Accord immediately, return four people without erasing the opening's larger captive-unrest problem, and still choose assimilation or release for the remaining population.

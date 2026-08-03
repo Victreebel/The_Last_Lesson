@@ -14,7 +14,7 @@ describe("reign reports", () => {
         "empire-player": {
           ...initial.empires["empire-player"],
           resources: { ...initial.empires["empire-player"].resources, faith: 84 },
-          moralMemory: { captivesTaken: 9, captivesIntegrated: 4, captivesReleased: 3 }
+          moralMemory: { captivesTaken: 9, captivesIntegrated: 4, captivesReleased: 3, captivesExchanged: 2 }
         }
       }
     };
@@ -39,10 +39,11 @@ describe("reign reports", () => {
       faithHeld: 84,
       captivesTaken: 9,
       captivesIntegrated: 4,
-      captivesReleased: 3
+      captivesReleased: 3,
+      captivesExchanged: 2
     });
     expect(formatReignDuration(report!.durationSeconds)).toBe("1:25");
-    expect(formatCivicRecord(report)).toBe("CIVIC RECORD: TAKEN 9  //  INTEGRATED 4  //  RELEASED 3");
+    expect(formatCivicRecord(report)).toBe("CIVIC RECORD: TAKEN 9  //  INTEGRATED 4  //  RELEASED 3  //  EXCHANGED 2");
   });
 
   it("does not create a report before the campaign resolves", () => {

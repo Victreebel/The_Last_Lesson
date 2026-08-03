@@ -130,6 +130,8 @@ export interface MoralMemory {
   readonly captivesTaken: number;
   readonly captivesIntegrated: number;
   readonly captivesReleased: number;
+  /** Optional so prior save files retain a compatible Civic Record. */
+  readonly captivesExchanged?: number;
 }
 
 export interface VictoryState {
@@ -424,14 +426,14 @@ export function createInitialWorld(
         name: "The Crown",
         resources: { food: 20, wood: 40, iron: 0, luxury: 0, faith: 0 },
         settlementIds: ["settlement-capital"],
-        moralMemory: { captivesTaken: 0, captivesIntegrated: 0, captivesReleased: 0 }
+        moralMemory: { captivesTaken: 0, captivesIntegrated: 0, captivesReleased: 0, captivesExchanged: 0 }
       },
       "empire-rival": {
         id: "empire-rival",
         name: "The Rival Crown",
         resources: { food: 20, wood: 40, iron: 0, luxury: 0, faith: 0 },
         settlementIds: ["settlement-rival", "settlement-rival-grove"],
-        moralMemory: { captivesTaken: 0, captivesIntegrated: 0, captivesReleased: 0 }
+        moralMemory: { captivesTaken: 0, captivesIntegrated: 0, captivesReleased: 0, captivesExchanged: 0 }
       }
     },
     settlements: {

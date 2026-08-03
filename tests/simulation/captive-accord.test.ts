@@ -89,6 +89,8 @@ describe("captive accords", () => {
     expect(state.settlements["settlement-rival"].population).toMatchObject({ citizens: 28, captives: 0 });
     expect(state.empires["empire-player"].moralMemory?.captivesReleased).toBe(4);
     expect(state.empires["empire-rival"].moralMemory?.captivesReleased).toBe(4);
+    expect(state.empires["empire-player"].moralMemory?.captivesExchanged).toBe(4);
+    expect(state.empires["empire-rival"].moralMemory?.captivesExchanged).toBe(4);
     expect(result.events).toContainEqual(
       expect.objectContaining({
         type: "captives-exchanged",

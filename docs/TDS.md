@@ -2,7 +2,7 @@
 
 ## Technical Design Specification
 
-**Version:** 1.4
+**Version:** 1.5
 **Status:** Active Implementation Blueprint
 **Date:** 2026-08-03
 **Working Title:** The Last Lesson  
@@ -870,7 +870,7 @@ Each empire records factual captive actions: captives taken, integrated, and rel
 
 ### 15.4b Prisoner Accord
 
-`exchange-captives` is the first implemented diplomacy command and is intentionally narrow. The God-King may exchange an equal count of captives between one Crown settlement and one rival settlement. Both settlements must retain an intact, completed Castle, each must hold the requested captive count, and each must have enough completed Castle/Villa capacity to receive the returning citizens. The command transfers no resources, does not change heir doctrine, and records the returned people as released in both empires' Civic Records. It emits one `captives-exchanged` event, so the tactical record, replay, save history, and multiplayer authority observe the same factual agreement.
+`exchange-captives` is the first implemented diplomacy command and is intentionally narrow. The God-King may exchange an equal count of captives between one Crown settlement and one rival settlement. Both settlements must retain an intact, completed Castle, each must hold the requested captive count, and each must have enough completed Castle/Villa capacity to receive the returning citizens. The command transfers no resources, does not change heir doctrine, and records the return as both a release and a separate exchanged count in each empire's Civic Record. It emits one `captives-exchanged` event, so the tactical record, replay, save history, and multiplayer authority observe the same factual agreement.
 
 Governors do not initiate, accept, learn from, or refuse an Accord. This preserves the frozen rule that diplomatic negotiation is a player-only God-King decision.
 
