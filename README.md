@@ -68,7 +68,7 @@ For container deployment, health checks, and the required `wss://` production bo
 - Mouse wheel: zoom between empire and battalion scale while keeping the hovered battlefield point in view.
 - `ORDERS [O]`: open the compact lower-left command drawer when you need labor, training, Faith, and logistics controls. It starts collapsed so the battlefield remains clear.
 - The Accord, Heir, and Build controls remain as narrow right-hand tabs until opened; only the active drawer occupies map space. Click its header, press `Esc`, or use its shortcut to close it.
-- `UPLINK [I]`: on compact tactical layouts, start with the live status brief collapsed so the upper-left map remains available; expand it only when you want operational detail. `Esc` closes it with the other temporary surfaces.
+- `UPLINK [I]`: every tactical reign starts with a compact progress tab (`1/5`, for example) so the upper-left map remains available. Expand the full live status brief only when you want operational detail; `Esc` closes it with the other temporary surfaces.
 - `FIELD [Z]`: collapse the remaining command interface for an unobstructed battlefield view. In every tactical presentation, move the pointer through a clear screen edge to pan; edge speed rises smoothly toward the bezel. The minimap supports click-and-drag camera scrubbing, and blank panel space remains map-interactive. Use `Z` again or open any management panel to restore the command interface.
 - Click or drag: select Crown forces.
 - Left-click a visible Rival force, structure, or convoy: inspect its current reconnaissance contact in the Tactical Uplink without clearing Crown field selection.

@@ -122,6 +122,7 @@ test("launches the campaign theatre and begins a Crownfall reign", async ({ page
   await beginCrownfallRivalReign(page);
   await expect(page.locator("canvas")).toHaveAttribute("data-campaign-phase", "tactical");
   await expect(page.locator("canvas")).toHaveAttribute("aria-label", "The Last Lesson tactical map and command interface");
+  await expect(page.locator("canvas")).toHaveAttribute("data-uplink-presentation", "compact");
   expect(await page.locator("canvas").getAttribute("aria-keyshortcuts")).toContain("D");
   expect(await page.locator("canvas").getAttribute("aria-keyshortcuts")).toContain("O");
   expect(await page.locator("canvas").getAttribute("aria-keyshortcuts")).toContain("V");
@@ -189,8 +190,10 @@ test("renders the compact tactical HUD at tablet width", async ({ page }) => {
   await page.locator("canvas").focus();
   await page.locator("canvas").press("i");
   await expect(page.locator("#the-last-lesson-announcements")).toContainText("Tactical Uplink expanded");
+  await expect(page.locator("canvas")).toHaveAttribute("data-uplink-presentation", "expanded");
   await page.locator("canvas").press("i");
   await expect(page.locator("#the-last-lesson-announcements")).toContainText("Tactical Uplink collapsed");
+  await expect(page.locator("canvas")).toHaveAttribute("data-uplink-presentation", "compact");
   await expectRenderedCanvas(page);
   expect(pageErrors).toEqual([]);
 });

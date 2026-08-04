@@ -2897,7 +2897,9 @@ export class MilestoneOneScene extends Phaser.Scene {
   }
 
   private createIntelPanel(): void {
-    this.intelPanelExpanded = this.scale.width >= 900;
+    // The first tactical frame must preserve the map. The Uplink remains a
+    // one-key operational report instead of claiming a large starting quadrant.
+    this.intelPanelExpanded = false;
     this.intelPanelBackground = this.add.rectangle(0, 0, INTEL_PANEL_WIDTH, INTEL_PANEL_HEIGHT, UI_COLORS.panel, 0.95).setOrigin(0);
     this.intelPanelBackground.setStrokeStyle(1, UI_COLORS.trim);
     this.intelPanelHeader = this.add.rectangle(0, 0, INTEL_PANEL_WIDTH, TACTICAL_DRAWER_TAB_HEIGHT, UI_COLORS.panelDeep, 0.98).setOrigin(0);
@@ -2947,7 +2949,11 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.intelPanelBackground.setSize(width, height);
     this.intelPanelHeader.setSize(width, TACTICAL_DRAWER_TAB_HEIGHT);
     this.intelPanel.setSize(width, height);
-    this.intelPanelTitle.setText(this.intelPanelExpanded ? "TACTICAL UPLINK [-]" : "UPLINK [I] +");
+    const mandate = getImperialMandateProgress(this.simulation.getState());
+    const activeStep = Math.min(mandate.completedSteps + 1, mandate.steps.length);
+    this.intelPanelTitle.setText(
+      this.intelPanelExpanded ? "TACTICAL UPLINK [-]" : `UPLINK [I] ${activeStep}/${mandate.steps.length}`
+    );
     this.statusText.setVisible(this.intelPanelExpanded);
     this.eventText.setVisible(this.intelPanelExpanded);
     this.intelPanelDivider.setVisible(this.intelPanelExpanded);
@@ -3865,6 +3871,7 @@ export class MilestoneOneScene extends Phaser.Scene {
       "data-tactical-presentation",
       theatreOpen ? "theatre" : this.fieldMode ? "field" : "command"
     );
+    this.game.canvas.setAttribute("data-uplink-presentation", this.intelPanelExpanded ? "expanded" : "compact");
     this.game.canvas.setAttribute(
       "aria-label",
       theatreOpen ? "The Last Lesson Campaign Theatre selection" : "The Last Lesson tactical map and command interface"

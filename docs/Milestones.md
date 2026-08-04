@@ -98,6 +98,7 @@ Implemented:
 - A dedicated Campaign Theatre presentation phase that suppresses inactive HUD and map labels behind the scenario chooser, retaining the painted battlefield as a deliberate backdrop and restoring the full tactical shell when a reign starts.
 - Selected Campaign Theatres now state their actual terrain lesson before commitment, including the riverine logistics, marsh recovery, and hill-fort defense openings that differentiate the authored maps. Every theatre card also carries a short terrain tag so players can compare the four campaign openings at a glance.
 - A compact, tested Tactical Uplink that dedicates its limited battlefield space to live orders, force readiness, labor, stability, and Faith while permanent civic history remains in the Book of Lessons.
+- Every tactical opening now begins with that Uplink compact, carrying only the active Mandate count until the player deliberately opens its complete report; the opening map and mandated action surface remain visible from the first frame.
 - A third opening settlement, Grovewatch, so conquering the first rival throne produces a governed frontier rather than ending the campaign.
 - Inspectable Crown castles that focus the heir console and Book of Lessons on the selected settlement's governor.
 - Settlement-contextual command controls: selecting a Crown castle routes labor, construction, recruitment, logistics, assimilation, and local miracles to its governed settlement.

@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.6.61 - 2026-08-04
+
+- Reclaimed the tactical opening on every supported desktop layout. The Tactical Uplink now begins as a compact `UPLINK [I] 1/5` progress tab instead of covering the upper-left battlefield; click it or press `I` for the full five-line operational report, and press `Esc` to return to the map.
+- The compact tab retains the active Imperial Mandate count, while the existing Build, Accord, Heir, and command highlights continue to identify the next actionable control. The change is presentation-only and is covered by the production-bundle browser suite.
+
 ## 2.6.60 - 2026-08-04
 
 - Added fog-respecting Reconnaissance Contacts. Left-click any already visible rival battalion, building, or convoy to inspect its current public condition and terrain consequence in the existing Tactical Uplink; a blue map focus keeps that contact legible without replacing the active Crown selection.
