@@ -3041,14 +3041,40 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.commandDockTitle.setText(this.commandDockExpanded ? "COMMAND ORDERS [O]" : "ORDERS [O]");
     this.commandMandateText.setVisible(this.commandDockExpanded);
     this.commandDockContent.forEach((control) => {
-      (control as Phaser.GameObjects.GameObject & Phaser.GameObjects.Components.Visible).setVisible(
-        this.commandDockExpanded
-      );
+      this.setTacticalControlVisibility(control, this.commandDockExpanded);
     });
     this.commandDock.setSize(width, height);
     if (relayout) {
       this.layoutUi();
     }
+  }
+
+  /**
+   * A closed tactical drawer must release both its pixels and its hit areas back to
+   * the battlefield. Phaser's visual visibility and input eligibility are separate,
+   * so keep them synchronized rather than relying on invisible children to pass
+   * map clicks through by implementation detail.
+   */
+  private setTacticalControlVisibility(
+    control: Phaser.GameObjects.GameObject,
+    visible: boolean
+  ): void {
+    const displayControl = control as Phaser.GameObjects.GameObject & Phaser.GameObjects.Components.Visible;
+    displayControl.setVisible(visible);
+    if (control.input) {
+      control.input.enabled = visible;
+    }
+  }
+
+  /** Keeps an entire screen-anchored surface from owning input while it is hidden. */
+  private setTacticalPanelVisibility(panel: Phaser.GameObjects.Container, visible: boolean): void {
+    panel.setVisible(visible);
+    panel.iterate((child: Phaser.GameObjects.GameObject) => {
+      const displayChild = child as Phaser.GameObjects.GameObject & Phaser.GameObjects.Components.Visible;
+      if (child.input) {
+        child.input.enabled = visible && displayChild.visible;
+      }
+    });
   }
 
   private createCommandTooltip(): void {
@@ -3412,7 +3438,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     );
     this.accordPanelTitle.setColor(accordIsMandated ? UI_COLORS.text : "#f2d77f");
     this.accordPanelBody.setVisible(this.accordPanelExpanded);
-    this.accordExchangeButton.setVisible(this.accordPanelExpanded);
+    this.setTacticalControlVisibility(this.accordExchangeButton, this.accordPanelExpanded);
     this.accordExchangeLabel.setVisible(this.accordPanelExpanded);
 
     if (this.accordPanelExpanded) {
@@ -3518,7 +3544,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.heirPanelTitle.setColor(heirLessonIsMandated ? UI_COLORS.text : "#f2d77f");
     this.heirPanelBody.setVisible(this.heirPanelExpanded);
     this.heirFeedbackControls.forEach((control) => {
-      control.button.setVisible(this.heirPanelExpanded);
+      this.setTacticalControlVisibility(control.button, this.heirPanelExpanded);
       control.label.setVisible(this.heirPanelExpanded);
       control.button.setAlpha(reviewedDoctrine ? 1 : 0.42);
       control.label.setAlpha(reviewedDoctrine ? 1 : 0.42);
@@ -3526,7 +3552,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.heirReviewControls.forEach((control, index) => {
       const doctrine = recentDoctrines[index];
       const selected = doctrine?.id === reviewedDoctrine?.id;
-      control.button.setVisible(this.heirPanelExpanded && Boolean(doctrine));
+      this.setTacticalControlVisibility(control.button, this.heirPanelExpanded && Boolean(doctrine));
       control.label.setVisible(this.heirPanelExpanded && Boolean(doctrine));
       control.button.setFillStyle(selected ? UI_COLORS.commandActive : UI_COLORS.command, 1);
       control.button.setAlpha(doctrine ? 1 : 0.42);
@@ -3847,11 +3873,11 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.bookControl.setVisible(commandInterfaceVisible);
     this.realmControl.setVisible(commandInterfaceVisible);
     this.resourceText.setVisible(tacticalVisible);
-    this.intelPanel.setVisible(commandInterfaceVisible && this.scale.width >= 640);
-    this.commandDock.setVisible(commandInterfaceVisible);
-    this.accordPanel.setVisible(commandInterfaceVisible && (!activeDrawer || activeDrawer === "accord"));
-    this.heirPanel.setVisible(commandInterfaceVisible && (!activeDrawer || activeDrawer === "heir"));
-    this.buildingsPanel.setVisible(commandInterfaceVisible && (!activeDrawer || activeDrawer === "build"));
+    this.setTacticalPanelVisibility(this.intelPanel, commandInterfaceVisible && this.scale.width >= 640);
+    this.setTacticalPanelVisibility(this.commandDock, commandInterfaceVisible);
+    this.setTacticalPanelVisibility(this.accordPanel, commandInterfaceVisible && (!activeDrawer || activeDrawer === "accord"));
+    this.setTacticalPanelVisibility(this.heirPanel, commandInterfaceVisible && (!activeDrawer || activeDrawer === "heir"));
+    this.setTacticalPanelVisibility(this.buildingsPanel, commandInterfaceVisible && (!activeDrawer || activeDrawer === "build"));
     this.fieldModeControl.setVisible(tacticalVisible);
     this.fieldModeControlButton.setFillStyle(this.fieldMode ? UI_COLORS.commandActive : UI_COLORS.command, 0.98);
     this.fieldModeControlLabel.setText(this.fieldMode ? "HUD [Z]" : "FIELD [Z]");
@@ -3914,7 +3940,7 @@ export class MilestoneOneScene extends Phaser.Scene {
       const isSelected = kind === this.selectedBuildingKind;
       const isMandated = mandateGuidance.buildingTargets.includes(kind);
       const affordability = this.getBuildingAffordability(kind);
-      tile.button.setVisible(this.buildingsPanelExpanded);
+      this.setTacticalControlVisibility(tile.button, this.buildingsPanelExpanded);
       tile.icon.setVisible(this.buildingsPanelExpanded);
       tile.label.setVisible(this.buildingsPanelExpanded);
       tile.count.setVisible(this.buildingsPanelExpanded);

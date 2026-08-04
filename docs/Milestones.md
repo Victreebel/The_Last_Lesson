@@ -27,6 +27,7 @@ Implemented:
 - Deterministic terrain signatures for grassland, fields, forests, iron veins, luxury groves, hills, water, and marshes, preserving clear labels while making terrain readable through pattern as well as color.
 - Camera panning with arrow keys, middle-button dragging, smooth map-edge scrolling through reserved clear gutters, and click-and-drag minimap scrubbing in both Command and Field view, without changing the simulation.
 - A compact `ORDERS [O]` drawer and a narrow right-hand Build/Heir/Accord rail keep the normal tactical presentation map-first; a single expanded drawer owns the temporary management surface while all unused panel background remains pass-through tactical space.
+- Collapsed tactical drawers now explicitly disable the pointer hit areas of their hidden child actions, so no invisible Build, Heir, Accord, or Orders controls can reserve map interaction beneath the compact rail.
 - Campaign Theatre now exposes a rerollable deterministic opening seed. New reigns and Theatre repeats use that exact seed, while local/portable restoration restores the archived opening seed for reproducible replay.
 - Shift-queued battalion routes with visible deterministic waypoint legs, preserving direct-command control while remaining part of the ordinary simulation command, save, replay, and multiplayer contracts.
 - Deterministic line formations for multi-battalion movement and advance orders, so direct control remains readable and tactically intentional without adding special simulation behavior.

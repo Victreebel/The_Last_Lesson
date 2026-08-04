@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.62 - 2026-08-04
+
+- Closed tactical drawers now explicitly release their hidden child controls from pointer input. The compact Build, Heir, Accord, and Orders surfaces therefore never retain invisible map-blocking hit areas; only visible headers and actions may intercept a battlefield click.
+
 ## 2.6.61 - 2026-08-04
 
 - Reclaimed the tactical opening on every supported desktop layout. The Tactical Uplink now begins as a compact `UPLINK [I] 1/5` progress tab instead of covering the upper-left battlefield; click it or press `I` for the full five-line operational report, and press `Esc` to return to the map.

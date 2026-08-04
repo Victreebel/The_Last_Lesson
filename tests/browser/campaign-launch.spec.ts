@@ -319,6 +319,22 @@ test("keeps tactical map input available through unused drawer space and support
   expect(afterMinimapDrag.equals(beforeMinimapDrag)).toBe(false);
 });
 
+test("releases hidden drawer controls so collapsed UI never captures battlefield clicks", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto("/");
+  await beginCrownfallRivalReign(page);
+
+  // The first Build tile lives here when its palette is expanded. With BUILD
+  // collapsed, that same map coordinate must be ordinary tactical terrain.
+  await clickCanvasPoint(page, { x: 1200, y: 276 });
+  await expect(page.locator("#the-last-lesson-announcements")).toContainText("Selection cleared");
+
+  // Command actions likewise sit directly below the compact Orders header when
+  // expanded. A map click in their former footprint must not create a caravan.
+  await clickCanvasPoint(page, { x: 56, y: 790 });
+  await expect(page.locator("#the-last-lesson-announcements")).toContainText("Selection cleared");
+});
+
 test("surfaces and resolves Ashen Oath's opening civic crisis", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto("/");
