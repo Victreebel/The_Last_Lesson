@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.63 - 2026-08-04
+
+- Made tactical selection legible at a glance without adding another map-blocking surface. Selected Crown battalions and convoys now receive a bright green world halo, while the active Castle command seat carries the same outline. Blue remains exclusive to inspected rival reconnaissance contacts.
+
 ## 2.6.62 - 2026-08-04
 
 - Closed tactical drawers now explicitly release their hidden child controls from pointer input. The compact Build, Heir, Accord, and Orders surfaces therefore never retain invisible map-blocking hit areas; only visible headers and actions may intercept a battlefield click.

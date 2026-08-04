@@ -19,6 +19,7 @@ import { describeGameEvent, selectTacticalReportEvents } from "../eventNarrative
 import { getMiracleFeedbackPresentation } from "../miraclePresentation";
 import { getOrderIndicators } from "../orderPresentation";
 import { getReconnaissanceContact, type ReconnaissanceContact } from "../reconnaissancePresentation";
+import { getTacticalSelectionPresentation } from "../selectionPresentation";
 import { getLineFormationDestinations } from "../formationPresentation";
 import { getLessonPresentationLines, type LessonPresentationStatus } from "../lessonPresentation";
 import { formatRivalCounterDoctrine, getRivalCounterDoctrineSummaries } from "../rivalIntelligencePresentation";
@@ -5324,11 +5325,19 @@ export class MilestoneOneScene extends Phaser.Scene {
     }
 
     sprite.setPosition(building.position.x, building.position.y);
-    sprite.setFillStyle(building.complete ? color : 0x6a6041, building.complete ? 0.12 : 0.28);
-    sprite.setStrokeStyle(
-      this.reconnaissanceContactId === building.id ? 3 : 2,
-      this.reconnaissanceContactId === building.id ? 0x84cbe1 : 0x191c16
+    const commandSeat =
+      building.kind === "castle" &&
+      building.ownerEmpireId === "empire-player" &&
+      building.settlementId === this.inspectedSettlementId;
+    const selection = getTacticalSelectionPresentation({
+      selected: commandSeat,
+      inspected: this.reconnaissanceContactId === building.id
+    });
+    sprite.setFillStyle(
+      building.complete ? color : 0x6a6041,
+      building.complete ? (selection.haloVisible ? 0.2 : 0.12) : 0.28
     );
+    sprite.setStrokeStyle(selection.strokeWidth, selection.strokeColor);
     const visible =
       building.ownerEmpireId === "empire-player" ||
       isPositionVisibleToEmpire(this.simulation.getState(), "empire-player", building.position);
@@ -5375,7 +5384,17 @@ export class MilestoneOneScene extends Phaser.Scene {
       const readinessTrack = this.add.rectangle(-38, -43, 76, 5, 0x10150f, 0.9).setOrigin(0, 0.5);
       readinessTrack.setStrokeStyle(1, 0xe6ead7, 0.48);
       const readinessFill = this.add.rectangle(-37, -43, 74, 3, 0x87c777, 0.96).setOrigin(0, 0.5);
-      container = this.add.container(battalion.position.x, battalion.position.y, [marker, art, label, readinessTrack, readinessFill]);
+      const selectionHalo = this.add.ellipse(0, 0, 104, 68);
+      selectionHalo.setStrokeStyle(3, 0xc8f59d, 0.94);
+      selectionHalo.setVisible(false);
+      container = this.add.container(battalion.position.x, battalion.position.y, [
+        marker,
+        art,
+        label,
+        readinessTrack,
+        readinessFill,
+        selectionHalo
+      ]);
       container.setSize(96, 104);
       container.setInteractive({ useHandCursor: true });
       container.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
@@ -5409,9 +5428,19 @@ export class MilestoneOneScene extends Phaser.Scene {
 
     container.setPosition(battalion.position.x, battalion.position.y);
     const marker = container.getAt(0) as Phaser.GameObjects.Ellipse;
-    marker.setFillStyle(battalion.ownerEmpireId === "empire-player" ? 0x3d7391 : 0x9d4640, 0.35);
     const inspected = this.reconnaissanceContactId === battalion.id;
-    marker.setStrokeStyle(this.selectedBattalionIds.has(battalion.id) ? 4 : inspected ? 3 : 2, inspected ? 0x84cbe1 : 0xf0d36f);
+    const selection = getTacticalSelectionPresentation({
+      selected: this.selectedBattalionIds.has(battalion.id),
+      inspected
+    });
+    marker.setFillStyle(
+      battalion.ownerEmpireId === "empire-player" ? 0x3d7391 : 0x9d4640,
+      selection.fillAlpha
+    );
+    marker.setStrokeStyle(selection.strokeWidth, selection.strokeColor);
+    const selectionHalo = container.getAt(5) as Phaser.GameObjects.Ellipse;
+    selectionHalo.setStrokeStyle(3, selection.haloColor, selection.haloAlpha);
+    selectionHalo.setVisible(selection.haloVisible);
     const art = container.getAt(1) as Phaser.GameObjects.Image;
     if (battalion.ownerEmpireId === "empire-player") {
       art.clearTint();
@@ -5464,7 +5493,14 @@ export class MilestoneOneScene extends Phaser.Scene {
       if (shipArt) {
         label.setY(49);
       }
-      container = this.add.container(caravan.position.x, caravan.position.y, shipArt ? [base, shipArt, label] : [base, label]);
+      const selectionHalo = shipArt ? this.add.ellipse(0, 0, 104, 68) : this.add.rectangle(0, 0, 68, 42);
+      selectionHalo.setStrokeStyle(3, 0xc8f59d, 0.94);
+      selectionHalo.setVisible(false);
+      container = this.add.container(
+        caravan.position.x,
+        caravan.position.y,
+        shipArt ? [base, shipArt, label, selectionHalo] : [base, label, selectionHalo]
+      );
       container.setSize(shipArt ? 96 : 54, shipArt ? 104 : 28);
       container.setInteractive({ useHandCursor: true });
       container.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
@@ -5524,7 +5560,14 @@ export class MilestoneOneScene extends Phaser.Scene {
         : caravan.ownerEmpireId === "empire-player" ? 0xb58c43 : 0x7c4542
     );
     const inspected = this.reconnaissanceContactId === caravan.id;
-    base.setStrokeStyle(this.selectedCaravanId === caravan.id ? 4 : inspected ? 3 : 2, inspected ? 0x84cbe1 : 0xf0d36f);
+    const selection = getTacticalSelectionPresentation({
+      selected: this.selectedCaravanId === caravan.id,
+      inspected
+    });
+    base.setStrokeStyle(selection.strokeWidth, selection.strokeColor);
+    const selectionHalo = container.getAt(caravan.kind === "ship" ? 3 : 2) as Phaser.GameObjects.Shape;
+    selectionHalo.setStrokeStyle(3, selection.haloColor, selection.haloAlpha);
+    selectionHalo.setVisible(selection.haloVisible);
     const shipArt = caravan.kind === "ship" ? (container.getAt(1) as Phaser.GameObjects.Image) : undefined;
     if (shipArt) {
       if (caravan.ownerEmpireId === "empire-player") {

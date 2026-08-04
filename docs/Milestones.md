@@ -53,7 +53,7 @@ Known limitations:
 
 - Buildings and battalions use painterly assets, while combat effects remain intentionally lightweight rather than bespoke animated art.
 - Art and audio still need wider content coverage beyond the tactical feedback baseline.
-- Selection feedback is intentionally functional rather than final.
+- Crown selection now uses high-contrast, presentation-only tactical halos for forces and convoys, with a matching outline for the active Castle command seat; rival reconnaissance remains visually distinct in blue.
 
 ## Milestone 2: Heir and Conquest Foundation
 
