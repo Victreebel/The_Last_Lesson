@@ -7,6 +7,7 @@ export interface TerrainPresentation {
   readonly patternColor: number;
   readonly symbol: string;
   readonly detail: string;
+  readonly compactDetail: string;
   readonly pattern: TerrainPattern;
 }
 
@@ -20,6 +21,7 @@ export const TERRAIN_PRESENTATIONS: Record<TerrainKind, TerrainPresentation> = {
     patternColor: 0x9ab66b,
     symbol: "G",
     detail: "OPEN BUILD // 100% MOVE",
+    compactDetail: "OPEN BUILD",
     pattern: "grass"
   },
   fertile: {
@@ -27,6 +29,7 @@ export const TERRAIN_PRESENTATIONS: Record<TerrainKind, TerrainPresentation> = {
     patternColor: 0xd5d67f,
     symbol: "F",
     detail: "FARMS / FOOD // 100% MOVE",
+    compactDetail: "FARM / FOOD",
     pattern: "furrows"
   },
   forest: {
@@ -34,6 +37,7 @@ export const TERRAIN_PRESENTATIONS: Record<TerrainKind, TerrainPresentation> = {
     patternColor: 0x7ba26b,
     symbol: "W",
     detail: "MILLS / WOOD // 72% MOVE // +12% DEF",
+    compactDetail: "MILL / WOOD",
     pattern: "canopy"
   },
   "iron-vein": {
@@ -41,6 +45,7 @@ export const TERRAIN_PRESENTATIONS: Record<TerrainKind, TerrainPresentation> = {
     patternColor: 0xbfc8ce,
     symbol: "I",
     detail: "MINES / IRON // 100% MOVE",
+    compactDetail: "MINE / IRON",
     pattern: "veins"
   },
   "luxury-grove": {
@@ -48,6 +53,7 @@ export const TERRAIN_PRESENTATIONS: Record<TerrainKind, TerrainPresentation> = {
     patternColor: 0xf0c979,
     symbol: "L",
     detail: "PLANTATIONS / LUXURY // 100% MOVE",
+    compactDetail: "PLANTATION / LUX",
     pattern: "blooms"
   },
   hills: {
@@ -55,6 +61,7 @@ export const TERRAIN_PRESENTATIONS: Record<TerrainKind, TerrainPresentation> = {
     patternColor: 0xd3c68a,
     symbol: "H",
     detail: "68% MOVE // +22% DEF",
+    compactDetail: "68% MOVE / +22 DEF",
     pattern: "contours"
   },
   water: {
@@ -62,6 +69,7 @@ export const TERRAIN_PRESENTATIONS: Record<TerrainKind, TerrainPresentation> = {
     patternColor: 0x9cc8d5,
     symbol: "~",
     detail: "LAND BLOCKED // SHIPS ONLY",
+    compactDetail: "SHIPS ONLY",
     pattern: "ripples"
   },
   marsh: {
@@ -69,8 +77,22 @@ export const TERRAIN_PRESENTATIONS: Record<TerrainKind, TerrainPresentation> = {
     patternColor: 0xafbd82,
     symbol: "M",
     detail: "UNBUILDABLE // 45% MOVE // -10% DEF",
+    compactDetail: "45% MOVE / -10 DEF",
     pattern: "reeds"
   }
 };
 
 export const getTerrainPresentation = (kind: TerrainKind): TerrainPresentation => TERRAIN_PRESENTATIONS[kind];
+
+/**
+ * World labels identify terrain without turning every test zone into a full
+ * screen-sidecard. The full detail remains available to placement and theatre
+ * guidance, while this compact cue preserves the playable field.
+ */
+export function getTerrainZoneBadge(kind: TerrainKind, label: string): { readonly heading: string; readonly detail: string } {
+  const presentation = getTerrainPresentation(kind);
+  return {
+    heading: `[${presentation.symbol}] ${label}`,
+    detail: presentation.compactDetail
+  };
+}

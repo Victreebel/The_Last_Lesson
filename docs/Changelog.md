@@ -842,3 +842,7 @@
 - Replaced raw internal event identifiers in the Tactical Uplink and Book of Lessons with a deterministic, player-facing Chronicle. Doctrine observations, heir decisions and concerns, miracles, civic crises, logistics, combat, and captures now report what happened and why using the existing immutable event payloads.
 - Added narrative regression coverage for doctrine, autonomous heir decisions, and Mend Settlement recovery without introducing a second simulation or history format.
 - Prioritized decisive tactical reports in the Uplink so a miracle, civic crisis, lesson, or battlefield reversal cannot be immediately buried by routine production events; the Book still retains the unfiltered timeline.
+# 2.6.61 - 2026-08-04
+
+- Reworked terrain-zone annotations into compact symbol-coded tactical badges, preserving clear resource and combat identification without covering the playable field. Full terrain rules remain available in the existing construction feedback and Campaign Theatre intelligence.
+- Aligned desktop camera bounds to the actual battlefield. Management controls now overlay the map instead of creating a permanent empty margin, and Field view exposes that recovered terrain immediately.

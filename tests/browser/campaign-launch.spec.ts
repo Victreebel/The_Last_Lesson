@@ -17,6 +17,13 @@ async function expectRenderedCanvas(page: Page): Promise<void> {
   expect(maximum - minimum).toBeGreaterThan(24);
 }
 
+async function readCanvasPixel(page: Page, x: number, y: number): Promise<readonly [number, number, number]> {
+  const screenshot = await page.locator("canvas").screenshot();
+  const { data, info } = await sharp(screenshot).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  const offset = (Math.floor(y) * info.width + Math.floor(x)) * info.channels;
+  return [data[offset], data[offset + 1], data[offset + 2]];
+}
+
 async function beginCrownfallRivalReign(page: Page): Promise<void> {
   const canvas = page.locator("canvas");
   const bounds = await canvas.boundingBox();
@@ -220,6 +227,8 @@ test("clears management chrome in Field view and restores it for a panel shortcu
   await canvas.press("z");
   await expect(canvas).toHaveAttribute("data-tactical-presentation", "field");
   await expect(page.locator("#the-last-lesson-announcements")).toContainText("Field view enabled");
+  const fieldEdge = await readCanvasPixel(page, 24, 420);
+  expect(Math.max(...fieldEdge)).toBeGreaterThan(24);
 
   await canvas.press("b");
   await expect(canvas).toHaveAttribute("data-tactical-presentation", "command");
@@ -247,7 +256,9 @@ test("pans the battlefield with middle-mouse drag and edge scrolling in normal t
   expect(afterDrag.equals(beforeDrag)).toBe(false);
 
   const beforeEdgeScroll = await canvas.screenshot();
-  await page.mouse.move(bounds.x + bounds.width - 2, bounds.y + bounds.height * 0.5);
+  // The drag above reaches the rightmost valid map extent on this viewport, so
+  // verify edge scrolling by returning through the still-available left lane.
+  await page.mouse.move(bounds.x + 2, bounds.y + bounds.height * 0.5);
   await page.waitForTimeout(180);
   const afterEdgeScroll = await canvas.screenshot();
   expect(afterEdgeScroll.equals(beforeEdgeScroll)).toBe(false);

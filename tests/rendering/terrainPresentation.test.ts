@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { TERRAIN_PRESENTATIONS } from "../../src/rendering/terrainPresentation";
+import { getTerrainZoneBadge, TERRAIN_PRESENTATIONS } from "../../src/rendering/terrainPresentation";
 import { terrainDefenseMultiplier, terrainMovementMultiplier, type TerrainKind } from "../../src/simulation/state/WorldState";
 
 describe("terrain presentation", () => {
@@ -26,5 +26,16 @@ describe("terrain presentation", () => {
         expect(detail).toContain(`${defensePercent > 0 ? "+" : ""}${defensePercent}% DEF`);
       }
     }
+  });
+
+  it("keeps map-zone badges compact while retaining an unambiguous terrain symbol and use", () => {
+    expect(getTerrainZoneBadge("fertile", "FERTILE FIELDS")).toEqual({
+      heading: "[F] FERTILE FIELDS",
+      detail: "FARM / FOOD"
+    });
+    expect(getTerrainZoneBadge("water", "RIVER")).toEqual({
+      heading: "[~] RIVER",
+      detail: "SHIPS ONLY"
+    });
   });
 });

@@ -22,7 +22,7 @@ import { getReconnaissanceContact, type ReconnaissanceContact } from "../reconna
 import { getLineFormationDestinations } from "../formationPresentation";
 import { getLessonPresentationLines, type LessonPresentationStatus } from "../lessonPresentation";
 import { formatRivalCounterDoctrine, getRivalCounterDoctrineSummaries } from "../rivalIntelligencePresentation";
-import { getTerrainPresentation } from "../terrainPresentation";
+import { getTerrainPresentation, getTerrainZoneBadge } from "../terrainPresentation";
 import { getTacticalUplinkStatusLines } from "../tacticalUplink";
 import { BOOK_PANEL_HEIGHT, CAMPAIGN_THEATRE_LAYOUT } from "../uiLayout";
 import { Simulation } from "../../simulation/Simulation";
@@ -469,8 +469,9 @@ export class MilestoneOneScene extends Phaser.Scene {
   }
 
   create(): void {
-    // Reserve lateral camera room for the permanent command panels without moving authoritative world coordinates.
-    this.cameras.main.setBounds(-280, 0, 1680, 900);
+    // The command shell overlays the battlefield. Keeping camera bounds aligned to
+    // the authoritative map prevents a permanent dead strip when Field view clears it.
+    this.cameras.main.setBounds(0, 0, 1400, 900);
     this.configureAccessibility();
     this.worldLayer = this.add.container(0, 0);
     this.cursors = this.input.keyboard?.createCursorKeys();
@@ -1038,15 +1039,18 @@ export class MilestoneOneScene extends Phaser.Scene {
     graphics.lineStyle(2, 0xd6d1af, 0.35);
     graphics.strokeRoundedRect(bounds.x, bounds.y, bounds.width, bounds.height, 12);
 
-    const label = this.add.text(bounds.x + bounds.width / 2, bounds.y + 14, `[${presentation.symbol}] ${zone.label}\n${presentation.detail}`, {
+    const badge = getTerrainZoneBadge(zone.kind, zone.label);
+    const label = this.add.text(bounds.x + 10, bounds.y + 10, `${badge.heading}\n${badge.detail}`, {
       fontFamily: "Arial Black, Arial",
-      fontSize: "11px",
+      fontSize: "9px",
       color: "#f4f0d5",
-      align: "center",
-      lineSpacing: 3,
+      align: "left",
+      lineSpacing: 1,
+      padding: { left: 5, right: 5, top: 3, bottom: 3 },
       backgroundColor: "#111818"
     });
-    label.setOrigin(0.5, 0);
+    label.setAlpha(0.9);
+    label.setOrigin(0, 0);
     this.terrainLayer?.add(label);
   }
 
