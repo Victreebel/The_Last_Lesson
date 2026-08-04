@@ -178,6 +178,12 @@ test("renders the compact tactical HUD at tablet width", async ({ page }) => {
   await beginCrownfallRivalReign(page);
   await page.waitForTimeout(800);
   await expect(page.locator("canvas")).toHaveAttribute("data-campaign-phase", "tactical");
+  expect(await page.locator("canvas").getAttribute("aria-keyshortcuts")).toContain("I");
+  await page.locator("canvas").focus();
+  await page.locator("canvas").press("i");
+  await expect(page.locator("#the-last-lesson-announcements")).toContainText("Tactical Uplink expanded");
+  await page.locator("canvas").press("i");
+  await expect(page.locator("#the-last-lesson-announcements")).toContainText("Tactical Uplink collapsed");
   await expectRenderedCanvas(page);
   expect(pageErrors).toEqual([]);
 });
@@ -258,6 +264,45 @@ test("keeps command orders compact until the Crown opens the drawer", async ({ p
   await expect(page.locator("#the-last-lesson-announcements")).toContainText("Command drawer expanded");
   await canvas.press("o");
   await expect(page.locator("#the-last-lesson-announcements")).toContainText("Command drawer collapsed");
+});
+
+test("keeps tactical map input available through unused drawer space and supports minimap scrubbing", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto("/");
+  await beginCrownfallRivalReign(page);
+
+  const canvas = page.locator("canvas");
+  const bounds = await canvas.boundingBox();
+  if (!bounds) {
+    throw new Error("Tactical canvas did not expose a layout box.");
+  }
+  const resolution = await canvas.evaluate((element: HTMLCanvasElement) => ({ width: element.width, height: element.height }));
+  const point = (x: number, y: number) => ({
+    x: bounds.x + (x / resolution.width) * bounds.width,
+    y: bounds.y + (y / resolution.height) * bounds.height
+  });
+
+  await canvas.focus();
+  await canvas.press("b");
+  await expect(page.locator("#the-last-lesson-announcements")).toContainText("Build panel expanded");
+
+  // The last Build row has no third tile. It is decorative drawer background, so a
+  // normal click there must still reach the battlefield input handler.
+  const unusedBuildSpace = point(1250, 526);
+  await page.mouse.click(unusedBuildSpace.x, unusedBuildSpace.y);
+  await expect(page.locator("#the-last-lesson-announcements")).toContainText("Selection cleared");
+
+  const beforeMinimapDrag = await canvas.screenshot();
+  // The expanded Build drawer moves the minimap beneath it at this viewport.
+  const minimapStart = point(1062, 575);
+  const minimapEnd = point(1238, 690);
+  await page.mouse.move(minimapStart.x, minimapStart.y);
+  await page.mouse.down();
+  await page.mouse.move(minimapEnd.x, minimapEnd.y, { steps: 8 });
+  await page.mouse.up();
+  await page.waitForTimeout(80);
+  const afterMinimapDrag = await canvas.screenshot();
+  expect(afterMinimapDrag.equals(beforeMinimapDrag)).toBe(false);
 });
 
 test("surfaces and resolves Ashen Oath's opening civic crisis", async ({ page }) => {

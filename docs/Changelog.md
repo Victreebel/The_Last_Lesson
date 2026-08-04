@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.6.57 - 2026-08-04
+
+- Made the tactical chrome map-permeable. Build, Heir, Accord, and Tactical Uplink backgrounds are now display-only; only actual headers and controls capture pointer input, so empty drawer space no longer blocks battlefield selection, placement, or orders.
+- Improved strategic navigation with a 28px smooth-acceleration edge-pan lane and click-and-drag minimap scrubbing. Both remain renderer-only camera controls and are covered by browser regression tests.
+- Made the Tactical Uplink a demand-driven compact tab at tablet and compact-desktop widths. `UPLINK [I]` opens the full live brief, while `Esc` restores the map-first view; wide displays retain the expanded default.
+- Normalized browser `Escape` handling through the scene-wide tactical keyboard path so closing a temporary surface is reliable across browser, desktop, and automated input.
+
 ## 2.6.56 - 2026-08-04
 
 - Added the canonical `HOLD POSITION [V]` battalion order. It cancels movement and attack routes, persists as an authoritative stance through saves, replays, and multiplayer, lets a force answer only in-range threats, and prevents its governor from repurposing the held battalion until a new direct field order releases it.

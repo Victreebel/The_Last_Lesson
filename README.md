@@ -65,7 +65,8 @@ For container deployment, health checks, and the required `wss://` production bo
 - Mouse wheel: zoom between empire and battalion scale while keeping the hovered battlefield point in view.
 - `ORDERS [O]`: open the compact lower-left command drawer when you need labor, training, Faith, and logistics controls. It starts collapsed so the battlefield remains clear.
 - The Accord, Heir, and Build controls remain as narrow right-hand tabs until opened; only the active drawer occupies map space. Click its header, press `Esc`, or use its shortcut to close it.
-- `FIELD [Z]`: collapse the remaining command interface for an unobstructed battlefield view. In every tactical presentation, move the pointer through a clear screen edge to pan; use `Z` again or open any management panel to restore the command interface.
+- `UPLINK [I]`: on compact tactical layouts, start with the live status brief collapsed so the upper-left map remains available; expand it only when you want operational detail. `Esc` closes it with the other temporary surfaces.
+- `FIELD [Z]`: collapse the remaining command interface for an unobstructed battlefield view. In every tactical presentation, move the pointer through a clear screen edge to pan; edge speed rises smoothly toward the bezel. The minimap supports click-and-drag camera scrubbing, and blank panel space remains map-interactive. Use `Z` again or open any management panel to restore the command interface.
 - Click or drag: select Crown forces.
 - Right-click or use the command dock: issue movement, attack, retreat, embarkation, and supply orders. Selected battalions receive a deterministic line formation around a shared movement or advance order. Hold `Shift` while right-clicking terrain to append a visible deterministic waypoint route for selected battalions; a normal move, attack, retreat, advance, embark, or garrison order replaces that route.
 - `BUILD`: choose a structure, then click terrain; drag to lay roads and walls.

@@ -203,6 +203,8 @@ const BUILDING_DISPLAY_LABELS: Record<BuildingKind, string> = {
 const BUILD_PANEL_WIDTH = 306;
 const HEIR_PANEL_WIDTH = 286;
 const ACCORD_PANEL_WIDTH = 262;
+const INTEL_PANEL_WIDTH = 332;
+const INTEL_PANEL_HEIGHT = 218;
 const TACTICAL_DRAWER_TAB_WIDTH = 118;
 const TACTICAL_DRAWER_TAB_HEIGHT = 42;
 const TACTICAL_DRAWER_TAB_GAP = 8;
@@ -218,8 +220,9 @@ const AUTO_SAVE_INTERVAL_TICKS = 5;
 const CAMERA_ZOOM_MIN = 0.72;
 const CAMERA_ZOOM_MAX = 1.5;
 const CAMERA_ZOOM_STEP = 0.1;
-const CAMERA_EDGE_SCROLL_MARGIN = 12;
-const CAMERA_EDGE_SCROLL_SPEED = 11;
+const CAMERA_EDGE_SCROLL_MARGIN = 28;
+const CAMERA_EDGE_SCROLL_MIN_SPEED = 3;
+const CAMERA_EDGE_SCROLL_MAX_SPEED = 15;
 const UI_COLORS = {
   panel: 0x12191a,
   panelDeep: 0x0b1011,
@@ -361,6 +364,11 @@ export class MilestoneOneScene extends Phaser.Scene {
   private eventText!: Phaser.GameObjects.Text;
   private resourceText!: Phaser.GameObjects.Text;
   private intelPanel!: Phaser.GameObjects.Container;
+  private intelPanelBackground!: Phaser.GameObjects.Rectangle;
+  private intelPanelHeader!: Phaser.GameObjects.Rectangle;
+  private intelPanelTitle!: Phaser.GameObjects.Text;
+  private intelPanelDivider!: Phaser.GameObjects.Rectangle;
+  private intelPanelExpanded = true;
   private minimapPanel!: Phaser.GameObjects.Rectangle;
   private minimapGraphics!: Phaser.GameObjects.Graphics;
   private minimapTitle!: Phaser.GameObjects.Text;
@@ -511,7 +519,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     canvas.setAttribute("aria-describedby", "the-last-lesson-accessibility-brief");
     canvas.setAttribute(
       "aria-keyshortcuts",
-      "ArrowUp ArrowDown ArrowLeft ArrowRight Tab Enter B C D H N O R L M A F V X Z Escape Space 0 1 2 3 4 5 6 7 8 9 Q W E Control+1 Control+2 Control+3 Control+4 Control+5 Control+6 Control+7 Control+8 Control+9"
+      "ArrowUp ArrowDown ArrowLeft ArrowRight Tab Enter B C D H I N O R L M A F V X Z Escape Space 0 1 2 3 4 5 6 7 8 9 Q W E Control+1 Control+2 Control+3 Control+4 Control+5 Control+6 Control+7 Control+8 Control+9"
     );
     this.accessibilityAnnouncements = document.getElementById("the-last-lesson-announcements") ?? undefined;
   }
@@ -539,6 +547,7 @@ export class MilestoneOneScene extends Phaser.Scene {
 
     bind("SPACE", () => this.togglePause());
     bind("B", () => this.toggleBuildingsPanel());
+    bind("I", () => this.toggleIntelPanel());
     bind("R", () => this.toggleRealmPanel());
     bind("L", () => this.toggleBookOfLessons());
     bind("O", () => this.toggleCommandDock());
@@ -549,13 +558,17 @@ export class MilestoneOneScene extends Phaser.Scene {
     bind("V", () => this.holdSelectedBattalions());
     bind("X", () => this.toggleHighContrast());
     bind("Z", () => this.toggleFieldMode());
-    bind("ESC", () => this.cancelActiveCommand());
     keyboard.on("keydown", (event: KeyboardEvent) => {
       if (event.repeat || this.isTextInputFocused()) {
         return;
       }
       if (this.campaignSetupPending) {
         this.handleCampaignSetupKeyboard(event);
+        return;
+      }
+      if (event.key === "Escape" || event.key === "Esc" || event.code === "Escape") {
+        event.preventDefault();
+        this.cancelActiveCommand();
         return;
       }
       if (this.handleManagementPanelToggleShortcut(event)) {
@@ -734,17 +747,26 @@ export class MilestoneOneScene extends Phaser.Scene {
       this.cancelPlacement();
       return;
     }
-    if (this.bookPanelExpanded || this.realmPanelExpanded || this.accordPanelExpanded || this.heirPanelExpanded || this.buildingsPanelExpanded) {
+    if (
+      this.bookPanelExpanded ||
+      this.realmPanelExpanded ||
+      this.accordPanelExpanded ||
+      this.heirPanelExpanded ||
+      this.buildingsPanelExpanded ||
+      this.intelPanelExpanded
+    ) {
       this.bookPanelExpanded = false;
       this.realmPanelExpanded = false;
       this.accordPanelExpanded = false;
       this.heirPanelExpanded = false;
       this.buildingsPanelExpanded = false;
+      this.intelPanelExpanded = false;
       this.updateBookOfLessons();
       this.updateRealmPanel();
       this.updateAccordPanel();
       this.updateHeirPanel();
       this.updateBuildingsPanel();
+      this.updateIntelPanel();
       return;
     }
     this.mode = "select";
@@ -767,6 +789,15 @@ export class MilestoneOneScene extends Phaser.Scene {
         ? "Build panel expanded. Use keys 1 through 9, 0, Q, W, or E to select a structure."
         : "Build panel collapsed."
     ]);
+  }
+
+  private toggleIntelPanel(): void {
+    this.restoreCommandInterface();
+    this.intelPanelExpanded = !this.intelPanelExpanded;
+    this.updateIntelPanel();
+    const announcement = this.intelPanelExpanded ? "Tactical Uplink expanded." : "Tactical Uplink collapsed.";
+    this.updateUi([announcement]);
+    this.announceAccessibility(announcement);
   }
 
   private toggleHeirPanel(): void {
@@ -945,12 +976,22 @@ export class MilestoneOneScene extends Phaser.Scene {
     if (!pointer.active || pointer.y < this.topHud.height) {
       return;
     }
-    // Persistent HUD elements leave a 16px screen gutter. Keep edge panning in that
-    // gutter so it remains available in Command view without competing with a control.
-    if (pointer.x <= CAMERA_EDGE_SCROLL_MARGIN) camera.scrollX -= CAMERA_EDGE_SCROLL_SPEED;
-    if (pointer.x >= this.scale.width - CAMERA_EDGE_SCROLL_MARGIN) camera.scrollX += CAMERA_EDGE_SCROLL_SPEED;
-    if (pointer.y <= CAMERA_EDGE_SCROLL_MARGIN) camera.scrollY -= CAMERA_EDGE_SCROLL_SPEED;
-    if (pointer.y >= this.scale.height - CAMERA_EDGE_SCROLL_MARGIN) camera.scrollY += CAMERA_EDGE_SCROLL_SPEED;
+    // Panels are display surfaces, not map blockers: the clear outer edge remains a
+    // dependable pan lane and accelerates gently as the pointer reaches the bezel.
+    const edgeSpeed = (distanceFromEdge: number) =>
+      Math.round(
+        CAMERA_EDGE_SCROLL_MIN_SPEED +
+          (1 - Phaser.Math.Clamp(distanceFromEdge / CAMERA_EDGE_SCROLL_MARGIN, 0, 1)) *
+            (CAMERA_EDGE_SCROLL_MAX_SPEED - CAMERA_EDGE_SCROLL_MIN_SPEED)
+      );
+    if (pointer.x <= CAMERA_EDGE_SCROLL_MARGIN) camera.scrollX -= edgeSpeed(pointer.x);
+    if (pointer.x >= this.scale.width - CAMERA_EDGE_SCROLL_MARGIN) {
+      camera.scrollX += edgeSpeed(this.scale.width - pointer.x);
+    }
+    if (pointer.y <= CAMERA_EDGE_SCROLL_MARGIN) camera.scrollY -= edgeSpeed(pointer.y);
+    if (pointer.y >= this.scale.height - CAMERA_EDGE_SCROLL_MARGIN) {
+      camera.scrollY += edgeSpeed(this.scale.height - pointer.y);
+    }
   }
 
   private drawTerrain(): void {
@@ -2843,16 +2884,25 @@ export class MilestoneOneScene extends Phaser.Scene {
   }
 
   private createIntelPanel(): void {
-    const background = this.add.rectangle(0, 0, 332, 218, UI_COLORS.panel, 0.95).setOrigin(0);
-    background.setStrokeStyle(1, UI_COLORS.trim);
-    background.setInteractive({ useHandCursor: false });
-    background.on("pointerdown", (pointer: Phaser.Input.Pointer) => pointer.event.stopPropagation());
-    const title = this.add.text(14, 10, "TACTICAL UPLINK", {
+    this.intelPanelExpanded = this.scale.width >= 900;
+    this.intelPanelBackground = this.add.rectangle(0, 0, INTEL_PANEL_WIDTH, INTEL_PANEL_HEIGHT, UI_COLORS.panel, 0.95).setOrigin(0);
+    this.intelPanelBackground.setStrokeStyle(1, UI_COLORS.trim);
+    this.intelPanelHeader = this.add.rectangle(0, 0, INTEL_PANEL_WIDTH, TACTICAL_DRAWER_TAB_HEIGHT, UI_COLORS.panelDeep, 0.98).setOrigin(0);
+    this.intelPanelHeader.setStrokeStyle(1, UI_COLORS.trim);
+    this.intelPanelHeader.setInteractive({ useHandCursor: true });
+    this.intelPanelHeader.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+      if (!this.isPrimaryClick(pointer)) {
+        return;
+      }
+      pointer.event.stopPropagation();
+      this.toggleIntelPanel();
+    });
+    this.intelPanelTitle = this.add.text(14, 12, "TACTICAL UPLINK", {
       fontFamily: "Arial Black, Arial",
       fontSize: "11px",
       color: "#f2d77f"
     });
-    const divider = this.add.rectangle(14, 30, 304, 1, UI_COLORS.trim, 1).setOrigin(0);
+    this.intelPanelDivider = this.add.rectangle(14, 42, 304, 1, UI_COLORS.trim, 1).setOrigin(0);
     this.statusText = this.add.text(14, 42, "", {
       fontFamily: "Arial, sans-serif",
       fontSize: "10px",
@@ -2866,8 +2916,31 @@ export class MilestoneOneScene extends Phaser.Scene {
       lineSpacing: 3,
       wordWrap: { width: 302 }
     });
-    this.intelPanel = this.add.container(0, 0, [background, title, divider, this.statusText, this.eventText]);
+    this.intelPanel = this.add.container(0, 0, [
+      this.intelPanelBackground,
+      this.intelPanelHeader,
+      this.intelPanelTitle,
+      this.intelPanelDivider,
+      this.statusText,
+      this.eventText
+    ]);
     this.intelPanel.setScrollFactor(0).setDepth(40);
+    this.updateIntelPanel(false);
+  }
+
+  private updateIntelPanel(relayout = true): void {
+    const width = this.intelPanelExpanded ? INTEL_PANEL_WIDTH : TACTICAL_DRAWER_TAB_WIDTH;
+    const height = this.intelPanelExpanded ? INTEL_PANEL_HEIGHT : TACTICAL_DRAWER_TAB_HEIGHT;
+    this.intelPanelBackground.setSize(width, height);
+    this.intelPanelHeader.setSize(width, TACTICAL_DRAWER_TAB_HEIGHT);
+    this.intelPanel.setSize(width, height);
+    this.intelPanelTitle.setText(this.intelPanelExpanded ? "TACTICAL UPLINK [-]" : "UPLINK [I] +");
+    this.statusText.setVisible(this.intelPanelExpanded);
+    this.eventText.setVisible(this.intelPanelExpanded);
+    this.intelPanelDivider.setVisible(this.intelPanelExpanded);
+    if (relayout) {
+      this.layoutUi();
+    }
   }
 
   private createCommandDock(): void {
@@ -2991,13 +3064,14 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.minimapPanel.setInteractive({ useHandCursor: true });
     this.minimapPanel.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
       pointer.event.stopPropagation();
-      const innerX = Phaser.Math.Clamp(pointer.x - this.minimapBounds.x - 8, 0, MINIMAP_WIDTH - 16);
-      const innerY = Phaser.Math.Clamp(pointer.y - this.minimapBounds.y - 28, 0, MINIMAP_HEIGHT - 36);
-      this.cameras.main.centerOn(
-        (innerX / (MINIMAP_WIDTH - 16)) * 1400,
-        (innerY / (MINIMAP_HEIGHT - 36)) * 900
-      );
-      this.updateMinimap();
+      this.navigateMinimap(pointer);
+    });
+    this.minimapPanel.on("pointermove", (pointer: Phaser.Input.Pointer) => {
+      if (!pointer.leftButtonDown()) {
+        return;
+      }
+      pointer.event.stopPropagation();
+      this.navigateMinimap(pointer);
     });
     this.minimapGraphics = this.add.graphics().setScrollFactor(0).setDepth(45);
     this.minimapTitle = this.add.text(10, 8, "MINIMAP", {
@@ -3007,6 +3081,17 @@ export class MilestoneOneScene extends Phaser.Scene {
     });
     this.minimapPanel.setScrollFactor(0).setDepth(44);
     this.minimapTitle.setScrollFactor(0).setDepth(46);
+  }
+
+  /** The minimap is both a jump navigator and a scrubber for long tactical camera moves. */
+  private navigateMinimap(pointer: Phaser.Input.Pointer): void {
+    const innerX = Phaser.Math.Clamp(pointer.x - this.minimapBounds.x - 8, 0, MINIMAP_WIDTH - 16);
+    const innerY = Phaser.Math.Clamp(pointer.y - this.minimapBounds.y - 28, 0, MINIMAP_HEIGHT - 36);
+    this.cameras.main.centerOn(
+      (innerX / (MINIMAP_WIDTH - 16)) * 1400,
+      (innerY / (MINIMAP_HEIGHT - 36)) * 900
+    );
+    this.updateMinimap();
   }
 
   private updateMinimap(): void {
@@ -3168,12 +3253,6 @@ export class MilestoneOneScene extends Phaser.Scene {
   private createHeirPanel(): void {
     this.heirPanelBg = this.add.rectangle(0, 0, HEIR_PANEL_WIDTH, 48, UI_COLORS.panel, 0.96).setOrigin(0);
     this.heirPanelBg.setStrokeStyle(1, UI_COLORS.trim);
-    this.heirPanelBg.setInteractive({ useHandCursor: false });
-    this.heirPanelBg.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
-      if (!this.isMiddleClick(pointer)) {
-        pointer.event.stopPropagation();
-      }
-    });
 
     this.heirPanelHeader = this.add.rectangle(0, 0, HEIR_PANEL_WIDTH, 48, UI_COLORS.panelDeep, 0.98).setOrigin(0);
     this.heirPanelHeader.setInteractive({ useHandCursor: true });
@@ -3214,12 +3293,6 @@ export class MilestoneOneScene extends Phaser.Scene {
   private createAccordPanel(): void {
     this.accordPanelBg = this.add.rectangle(0, 0, ACCORD_PANEL_WIDTH, 48, UI_COLORS.panel, 0.96).setOrigin(0);
     this.accordPanelBg.setStrokeStyle(1, UI_COLORS.trim);
-    this.accordPanelBg.setInteractive({ useHandCursor: false });
-    this.accordPanelBg.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
-      if (!this.isMiddleClick(pointer)) {
-        pointer.event.stopPropagation();
-      }
-    });
     this.accordPanelHeader = this.add.rectangle(0, 0, ACCORD_PANEL_WIDTH, 48, UI_COLORS.panelDeep, 0.98).setOrigin(0);
     this.accordPanelHeader.setInteractive({ useHandCursor: true });
     this.accordPanelHeader.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
@@ -3555,12 +3628,6 @@ export class MilestoneOneScene extends Phaser.Scene {
   private createBuildingsPanel(): void {
     this.buildingsPanelBg = this.add.rectangle(0, 0, BUILD_PANEL_WIDTH, 48, UI_COLORS.panel, 0.96).setOrigin(0);
     this.buildingsPanelBg.setStrokeStyle(1, UI_COLORS.trim);
-    this.buildingsPanelBg.setInteractive({ useHandCursor: false });
-    this.buildingsPanelBg.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
-      if (!this.isMiddleClick(pointer)) {
-        pointer.event.stopPropagation();
-      }
-    });
     this.buildingsPanelHeader = this.add.rectangle(0, 0, BUILD_PANEL_WIDTH, 48, UI_COLORS.panelDeep, 0.98).setOrigin(0);
     this.buildingsPanelHeader.setInteractive({ useHandCursor: true });
     this.buildingsPanelHeader.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
