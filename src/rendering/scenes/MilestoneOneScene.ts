@@ -3761,7 +3761,7 @@ export class MilestoneOneScene extends Phaser.Scene {
         if (this.selectedCaravanId) {
           this.issueCaravanMoveOrder(worldPoint);
         } else {
-          this.issueMoveOrder(worldPoint);
+          this.issueMoveOrder(worldPoint, this.isShiftHeld(pointer));
         }
       }
       return;
@@ -4121,7 +4121,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.selectedCaravanId = null;
   }
 
-  private issueMoveOrder(point: Phaser.Math.Vector2): void {
+  private issueMoveOrder(point: Phaser.Math.Vector2, append = false): void {
     if (this.selectedBattalionIds.size === 0) {
       this.updateUi(["Select a battalion before issuing an order."]);
       return;
@@ -4131,10 +4131,14 @@ export class MilestoneOneScene extends Phaser.Scene {
     for (const battalionId of this.selectedBattalionIds) {
       this.issueCommand({
         type: "move-battalion",
-        payload: { battalionId, destination: { x: destination.x, y: destination.y } }
+        payload: { battalionId, destination: { x: destination.x, y: destination.y }, ...(append ? { append: true } : {}) }
       });
     }
-    this.updateUi([`Move order issued to ${this.selectedBattalionIds.size} battalion(s).`]);
+    this.updateUi([
+      append
+        ? `Waypoint queued for ${this.selectedBattalionIds.size} battalion(s).`
+        : `Move order issued to ${this.selectedBattalionIds.size} battalion(s).`
+    ]);
   }
 
   private issueAttackMoveOrder(point: Phaser.Math.Vector2): void {

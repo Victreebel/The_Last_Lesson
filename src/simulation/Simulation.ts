@@ -478,6 +478,13 @@ export class Simulation {
             }
           }
         : this.state.buildings;
+      const route = command.payload.append
+        ? [
+            ...(battalion.destination ? [battalion.destination] : []),
+            ...(battalion.waypoints ?? []),
+            command.payload.destination
+          ]
+        : [command.payload.destination];
 
       this.state = {
         ...this.state,
@@ -487,7 +494,8 @@ export class Simulation {
           [battalion.id]: {
             ...battalion,
             garrisonedInBuildingId: undefined,
-            destination: command.payload.destination,
+            destination: route[0],
+            waypoints: route.length > 1 ? route.slice(1) : undefined,
             attackMoveDestination: undefined,
             targetId: undefined
           }
@@ -532,6 +540,7 @@ export class Simulation {
             ...battalion,
             garrisonedInBuildingId: undefined,
             destination: command.payload.destination,
+            waypoints: undefined,
             attackMoveDestination: command.payload.destination,
             targetId: undefined
           }
@@ -579,6 +588,7 @@ export class Simulation {
             attackMoveDestination: undefined,
             garrisonedInBuildingId: undefined,
             destination: castle.position,
+            waypoints: undefined,
             morale: Math.max(0, battalion.morale - 2)
           }
         }
@@ -653,7 +663,8 @@ export class Simulation {
             embarkedInCaravanId: caravan.id,
             position: caravan.position,
             attackMoveDestination: undefined,
-            destination: undefined
+            destination: undefined,
+            waypoints: undefined
           }
         }
       };
@@ -732,7 +743,8 @@ export class Simulation {
             garrisonedInBuildingId: building.id,
             position: building.position,
             attackMoveDestination: undefined,
-            destination: undefined
+            destination: undefined,
+            waypoints: undefined
           }
         }
       };
@@ -789,7 +801,8 @@ export class Simulation {
             ...battalion,
             targetId: command.payload.targetId,
             attackMoveDestination: undefined,
-            destination: target.position
+            destination: target.position,
+            waypoints: undefined
           }
         }
       };
@@ -2677,11 +2690,15 @@ export class Simulation {
 
       const nextPosition = moveToward(battalion.position, battalion.destination, speed);
       const arrived = distance(nextPosition, battalion.destination) < 1;
+      const nextDestination = arrived ? battalion.waypoints?.[0] : battalion.destination;
+      const nextWaypoints = arrived ? battalion.waypoints?.slice(1) : battalion.waypoints;
       updatedBattalions[battalion.id] = {
         ...battalion,
         position: nextPosition,
-        destination: arrived ? undefined : battalion.destination,
-        attackMoveDestination: arrived && !battalion.targetId ? undefined : battalion.attackMoveDestination
+        destination: nextDestination,
+        waypoints: nextWaypoints?.length ? nextWaypoints : undefined,
+        attackMoveDestination:
+          arrived && !nextDestination && !battalion.targetId ? undefined : battalion.attackMoveDestination
       };
 
       this.eventWriter.emit(tick, "battalion-moved", {

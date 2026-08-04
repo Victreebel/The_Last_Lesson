@@ -63,6 +63,8 @@ export interface CreateBattalionPayload {
 export interface MoveBattalionPayload {
   readonly battalionId: BattalionId;
   readonly destination: Position;
+  /** Appends a deterministic waypoint to the current direct-movement route. */
+  readonly append?: boolean;
 }
 
 export interface RetreatBattalionPayload {

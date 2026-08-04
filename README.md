@@ -65,7 +65,7 @@ For container deployment, health checks, and the required `wss://` production bo
 - Mouse wheel: zoom between empire and battalion scale while keeping the hovered battlefield point in view.
 - `FIELD [Z]`: collapse the command interface for an unobstructed battlefield view. In Field view, move the pointer to a map edge to scroll; use `Z` again or open any management panel to restore the command interface.
 - Click or drag: select Crown forces.
-- Right-click or use the command dock: issue movement, attack, retreat, embarkation, and supply orders.
+- Right-click or use the command dock: issue movement, attack, retreat, embarkation, and supply orders. Hold `Shift` while right-clicking terrain to append a visible deterministic waypoint route for selected battalions; a normal move, attack, retreat, advance, embark, or garrison order replaces that route.
 - `BUILD`: choose a structure, then click terrain; drag to lay roads and walls.
 - With `BUILD` open, use its visible `1` through `9`, `0`, and `Q`/`W`/`E` shortcuts to choose a structure before placing it with the established terrain click or drag rules.
 - `HOUNDS`: train a fast four-hound scout pack from a Town Square. It costs food and wood, reveals farther than a battalion, and uses no citizens.

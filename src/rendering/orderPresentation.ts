@@ -59,6 +59,13 @@ export function getOrderIndicators(
         destination
       });
     }
+    if (!battalion.attackMoveDestination && battalion.destination && battalion.waypoints?.length) {
+      let origin = battalion.destination;
+      for (const destination of battalion.waypoints) {
+        indicators.push({ actorId: battalion.id, kind: "move", origin, destination });
+        origin = destination;
+      }
+    }
   }
 
   const caravan = selectedCaravanId ? state.caravans[selectedCaravanId] : undefined;

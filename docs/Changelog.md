@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.52 - 2026-08-04
+
+- Added Red Alert-style Shift-queued direct movement for selected battalions. Every queued waypoint is authoritative, deterministic, replay/save/network-safe, and rendered as a visible route leg; normal direct movement and all tactical replacement orders clear the queue.
+
 ## 2.6.51 - 2026-08-03
 
 - Added `FIELD [Z]`, a persistent tactical declutter control that collapses management panels and command chrome for an unobstructed battlefield while retaining the minimap and core header. Opening Build, Heir, Accord, Realm, or Book restores the command interface automatically.

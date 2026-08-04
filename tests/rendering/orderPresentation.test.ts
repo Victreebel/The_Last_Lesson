@@ -48,4 +48,24 @@ describe("order presentation", () => {
     };
     expect(getOrderIndicators(fogged, [crownBattalion.id])).toEqual([]);
   });
+
+  it("projects every queued movement leg for a selected Crown battalion", () => {
+    const world = createInitialWorld(503);
+    const crownBattalion = {
+      ...world.battalions["battalion-rival-1"],
+      id: "battalion-crown-waypoints",
+      ownerEmpireId: "empire-player" as const,
+      settlementId: "settlement-capital",
+      position: { x: 420, y: 320 },
+      destination: { x: 520, y: 320 },
+      waypoints: [{ x: 520, y: 420 }, { x: 620, y: 420 }]
+    };
+    const state = { ...world, battalions: { ...world.battalions, [crownBattalion.id]: crownBattalion } };
+
+    expect(getOrderIndicators(state, [crownBattalion.id])).toEqual([
+      { actorId: crownBattalion.id, kind: "move", origin: { x: 420, y: 320 }, destination: { x: 520, y: 320 } },
+      { actorId: crownBattalion.id, kind: "move", origin: { x: 520, y: 320 }, destination: { x: 520, y: 420 } },
+      { actorId: crownBattalion.id, kind: "move", origin: { x: 520, y: 420 }, destination: { x: 620, y: 420 } }
+    ]);
+  });
 });
