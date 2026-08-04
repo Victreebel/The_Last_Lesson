@@ -2,9 +2,9 @@
 
 ## Technical Design Specification
 
-**Version:** 1.23
+**Version:** 1.24
 **Status:** Active Implementation Blueprint
-**Date:** 2026-08-03
+**Date:** 2026-08-04
 **Working Title:** The Last Lesson  
 **Repository Identity:** `the-last-lesson`  
 **Internal Codename:** `TLL`  
@@ -99,7 +99,7 @@ The wide tactical header may expose a browser fullscreen control only where it d
 
 Every interactive child of a fixed Phaser HUD or panel must independently use a zero scroll factor. Camera bounds and world scrolling may never displace the hit area of a visibly screen-anchored tactical, campaign, management, minimap, or victory control.
 
-The tactical camera must remain usable while management surfaces are open. Arrow-key panning, cursor-anchored wheel zoom, and middle-button map drag are always available over the battlefield. Field view additionally enables bounded map-edge scrolling outside the header. Camera movement is renderer-only and must never create commands, modify selection, or enter saves, replays, or multiplayer authority. Shift-queued routes are the opposite: they are ordinary authoritative movement commands, serialized in the battalion state, included in deterministic saves, replays, snapshots, and hashes, and rendered as one visible leg per waypoint.
+The tactical camera must remain usable while management surfaces are open. Arrow-key panning, cursor-anchored wheel zoom, and middle-button map drag are always available over the battlefield. Field view additionally enables bounded map-edge scrolling outside the header. Camera movement is renderer-only and must never create commands, modify selection, or enter saves, replays, or multiplayer authority. A selected group receives a presentation-derived, ID-stable line formation perpendicular to its direction of travel; the scene turns those destinations into ordinary individual commands, so formation marching is replay-safe and needs no simulation special case. Shift-queued routes are likewise ordinary authoritative movement commands, serialized in the battalion state, included in deterministic saves, replays, snapshots, and hashes, and rendered as one visible leg per waypoint.
 
 Shortcuts are ignored during campaign setup and while a text input, select, or textarea has focus. This protects multiplayer-lobby entry and prevents browser form input from triggering game actions.
 

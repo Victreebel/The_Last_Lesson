@@ -17,6 +17,7 @@ import { getCombatFeedbackPresentation } from "../combatPresentation";
 import { describeGameEvent, selectTacticalReportEvents } from "../eventNarrative";
 import { getMiracleFeedbackPresentation } from "../miraclePresentation";
 import { getOrderIndicators } from "../orderPresentation";
+import { getLineFormationDestinations } from "../formationPresentation";
 import { getLessonPresentationLines, type LessonPresentationStatus } from "../lessonPresentation";
 import { getTacticalTopPanelLayout } from "../tacticalPanelLayout";
 import { getTerrainPresentation } from "../terrainPresentation";
@@ -4127,8 +4128,8 @@ export class MilestoneOneScene extends Phaser.Scene {
       return;
     }
 
-    const destination = this.snapToGrid(point);
-    for (const battalionId of this.selectedBattalionIds) {
+    const formation = this.getSelectedFormationDestinations(this.snapToGrid(point));
+    for (const { battalionId, destination } of formation) {
       this.issueCommand({
         type: "move-battalion",
         payload: { battalionId, destination: { x: destination.x, y: destination.y }, ...(append ? { append: true } : {}) }
@@ -4136,8 +4137,8 @@ export class MilestoneOneScene extends Phaser.Scene {
     }
     this.updateUi([
       append
-        ? `Waypoint queued for ${this.selectedBattalionIds.size} battalion(s).`
-        : `Move order issued to ${this.selectedBattalionIds.size} battalion(s).`
+        ? `${formation.length > 1 ? "Formation waypoint" : "Waypoint"} queued for ${formation.length} battalion(s).`
+        : `${formation.length > 1 ? "Formation move" : "Move"} order issued to ${formation.length} battalion(s).`
     ]);
   }
 
@@ -4146,14 +4147,25 @@ export class MilestoneOneScene extends Phaser.Scene {
       this.updateUi(["Select a battalion before ordering an advance."]);
       return;
     }
-    const destination = this.snapToGrid(point);
-    for (const battalionId of this.selectedBattalionIds) {
+    const formation = this.getSelectedFormationDestinations(this.snapToGrid(point));
+    for (const { battalionId, destination } of formation) {
       this.issueCommand({
         type: "attack-move-battalion",
         payload: { battalionId, destination: { x: destination.x, y: destination.y } }
       });
     }
-    this.updateUi([`Advance ordered for ${this.selectedBattalionIds.size} battalion(s).`]);
+    this.updateUi([`${formation.length > 1 ? "Formation advance" : "Advance"} ordered for ${formation.length} battalion(s).`]);
+  }
+
+  private getSelectedFormationDestinations(anchor: Phaser.Math.Vector2) {
+    const state = this.simulation.getState();
+    return getLineFormationDestinations(
+      [...this.selectedBattalionIds]
+        .map((id) => state.battalions[id])
+        .filter((battalion): battalion is BattalionState => Boolean(battalion))
+        .map((battalion) => ({ id: battalion.id, position: battalion.position })),
+      { x: anchor.x, y: anchor.y }
+    );
   }
 
   private retreatSelectedBattalions(): void {

@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.53 - 2026-08-04
+
+- Group move and advance orders now fan selected Crown battalions into a deterministic, grid-aligned line formation oriented to their direction of travel. Formation placement is an input-layer policy that emits ordinary commands, preserving deterministic saves, replays, and multiplayer authority.
+
 ## 2.6.52 - 2026-08-04
 
 - Added Red Alert-style Shift-queued direct movement for selected battalions. Every queued waypoint is authoritative, deterministic, replay/save/network-safe, and rendered as a visible route leg; normal direct movement and all tactical replacement orders clear the queue.
