@@ -24,7 +24,8 @@ export function getTacticalUplinkStatusLines(input: TacticalUplinkStatusInput): 
   const selection = input.selectedBattalion
     ? (() => {
         const readiness = getBattalionReadinessPresentation(input.selectedBattalion);
-        return `${getBattalionRank(input.selectedBattalion.experience).toUpperCase()} ${input.selectedBattalion.specialization.toUpperCase()} // H${readiness.defense} M${readiness.morale} S${readiness.supply}`;
+        const stance = input.selectedBattalion.stance === "hold" ? " // HOLD" : "";
+        return `${getBattalionRank(input.selectedBattalion.experience).toUpperCase()} ${input.selectedBattalion.specialization.toUpperCase()} // H${readiness.defense} M${readiness.morale} S${readiness.supply}${stance}`;
       })()
     : input.selectedCaravan
       ? "SUPPLY CARAVAN"

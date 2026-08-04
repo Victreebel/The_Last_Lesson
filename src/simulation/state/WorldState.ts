@@ -217,6 +217,9 @@ export interface BuildingState {
 
 export type BattalionSpecialization = "militia" | "spears" | "archers" | "raiders" | "hounds";
 
+/** A direct Crown stance that keeps a field force in its assigned ground until recalled. */
+export type BattalionStance = "hold";
+
 export type CaravanKind = "caravan" | "ship";
 
 export interface CaravanState {
@@ -246,6 +249,8 @@ export interface BattalionState {
   readonly waypoints?: readonly Position[];
   /** The final march point retained while an attack-move engages nearby enemies. */
   readonly attackMoveDestination?: Position;
+  /** A held battalion stays in place and is not repurposed by its governor. */
+  readonly stance?: BattalionStance;
   readonly targetId?: BattalionId | BuildingId | CaravanId;
   readonly embarkedInCaravanId?: CaravanId;
   readonly garrisonedInBuildingId?: BuildingId;

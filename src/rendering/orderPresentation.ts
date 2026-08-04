@@ -4,7 +4,7 @@ import {
   type WorldState
 } from "../simulation/state/WorldState";
 
-export type OrderIndicatorKind = "move" | "advance" | "attack" | "naval";
+export type OrderIndicatorKind = "move" | "advance" | "attack" | "naval" | "hold";
 
 export interface OrderIndicator {
   readonly actorId: string;
@@ -44,6 +44,9 @@ export function getOrderIndicators(
     const battalion = state.battalions[battalionId];
     if (!battalion || battalion.ownerEmpireId !== "empire-player") {
       continue;
+    }
+    if (battalion.stance === "hold") {
+      indicators.push({ actorId: battalion.id, kind: "hold", origin: battalion.position, destination: battalion.position });
     }
     const target = battalion.targetId ? getEntityPosition(state, battalion.targetId) : undefined;
     if (battalion.targetId && target && isTargetVisibleToCrown(state, battalion.targetId)) {

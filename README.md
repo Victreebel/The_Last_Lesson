@@ -81,6 +81,7 @@ For container deployment, health checks, and the required `wss://` production bo
 - Campaign Theatre begins from a visible opening seed. Press `N`, click the seed row, or focus it and press `Enter`/`Space` to select the next deterministic opening; repeating a Theatre retains its seed for an exact replay.
 - `M` and `A`: enter move and attack targeting modes.
 - `F`: enter advance mode. Selected battalions march to the designated position, engage visible enemies encountered en route, then resume their advance.
+- `V`: order selected battalions to **Hold Position**. They defend their current ground, fire only at threats already in range, and cannot be repurposed by a governor until they receive a new field order.
 - `X`: toggle high-contrast tactical presentation. The same local preference is available in the Book of Lessons as `VISIBILITY`.
 - `Ctrl`/`Cmd` + `1` through `9`: assign selected Crown battalions to a control group; press its number to recall surviving members and press it twice to center the camera on them.
 - `Esc`: cancel building placement, close open command panels, or clear the current selection.

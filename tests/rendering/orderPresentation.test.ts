@@ -68,4 +68,28 @@ describe("order presentation", () => {
       { actorId: crownBattalion.id, kind: "move", origin: { x: 520, y: 420 }, destination: { x: 620, y: 420 } }
     ]);
   });
+
+  it("marks the selected Crown force's held ground without inventing a movement route", () => {
+    const world = createInitialWorld(504);
+    const crownBattalion = {
+      ...world.battalions["battalion-rival-1"],
+      id: "battalion-crown-hold",
+      ownerEmpireId: "empire-player" as const,
+      settlementId: "settlement-capital",
+      position: { x: 510, y: 350 },
+      stance: "hold" as const,
+      destination: undefined,
+      targetId: undefined
+    };
+    const state = { ...world, battalions: { ...world.battalions, [crownBattalion.id]: crownBattalion } };
+
+    expect(getOrderIndicators(state, [crownBattalion.id])).toEqual([
+      {
+        actorId: crownBattalion.id,
+        kind: "hold",
+        origin: crownBattalion.position,
+        destination: crownBattalion.position
+      }
+    ]);
+  });
 });

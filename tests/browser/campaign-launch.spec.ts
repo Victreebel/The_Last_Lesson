@@ -117,6 +117,7 @@ test("launches the campaign theatre and begins a Crownfall reign", async ({ page
   await expect(page.locator("canvas")).toHaveAttribute("aria-label", "The Last Lesson tactical map and command interface");
   expect(await page.locator("canvas").getAttribute("aria-keyshortcuts")).toContain("D");
   expect(await page.locator("canvas").getAttribute("aria-keyshortcuts")).toContain("O");
+  expect(await page.locator("canvas").getAttribute("aria-keyshortcuts")).toContain("V");
   await page.locator("canvas").press("D");
   await expect(page.locator("#the-last-lesson-announcements")).toContainText("Accord panel expanded");
   await expect.poll(() => assetUrls.some((url) => url.endsWith("painterly-battlefield-v1.webp"))).toBe(true);

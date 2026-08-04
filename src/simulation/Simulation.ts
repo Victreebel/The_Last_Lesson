@@ -106,6 +106,7 @@ export class Simulation {
       this.updatePopulation(nextTick);
       this.updateSickness(nextTick);
       this.updateAttackMoveTargets(nextTick);
+      this.updateHoldPositionTargets(nextTick);
       this.updateBattalionMovement(nextTick);
       this.updateCaravanMovement(nextTick);
       this.updateCaravanDeliveries(nextTick);
@@ -497,6 +498,7 @@ export class Simulation {
             destination: route[0],
             waypoints: route.length > 1 ? route.slice(1) : undefined,
             attackMoveDestination: undefined,
+            stance: undefined,
             targetId: undefined
           }
         }
@@ -542,6 +544,7 @@ export class Simulation {
             destination: command.payload.destination,
             waypoints: undefined,
             attackMoveDestination: command.payload.destination,
+            stance: undefined,
             targetId: undefined
           }
         }
@@ -554,6 +557,31 @@ export class Simulation {
         });
       }
       this.eventWriter.emit(tick, "command-applied", { commandId: command.id });
+      this.observePlayerCommand(command, tick);
+      return;
+    }
+
+    if (command.type === "hold-battalion") {
+      const battalion = this.state.battalions[command.payload.battalionId];
+      if (!battalion || battalion.embarkedInCaravanId || battalion.garrisonedInBuildingId) {
+        this.eventWriter.emit(tick, "command-rejected", { commandId: command.id });
+        return;
+      }
+      this.state = {
+        ...this.state,
+        battalions: {
+          ...this.state.battalions,
+          [battalion.id]: {
+            ...battalion,
+            stance: "hold",
+            targetId: undefined,
+            destination: undefined,
+            waypoints: undefined,
+            attackMoveDestination: undefined
+          }
+        }
+      };
+      this.eventWriter.emit(tick, "battalion-held", { commandId: command.id, battalionId: battalion.id });
       this.observePlayerCommand(command, tick);
       return;
     }
@@ -586,6 +614,7 @@ export class Simulation {
             ...battalion,
             targetId: undefined,
             attackMoveDestination: undefined,
+            stance: undefined,
             garrisonedInBuildingId: undefined,
             destination: castle.position,
             waypoints: undefined,
@@ -661,6 +690,7 @@ export class Simulation {
           [battalion.id]: {
             ...battalion,
             embarkedInCaravanId: caravan.id,
+            stance: undefined,
             position: caravan.position,
             attackMoveDestination: undefined,
             destination: undefined,
@@ -741,6 +771,7 @@ export class Simulation {
           [battalion.id]: {
             ...battalion,
             garrisonedInBuildingId: building.id,
+            stance: undefined,
             position: building.position,
             attackMoveDestination: undefined,
             destination: undefined,
@@ -801,6 +832,7 @@ export class Simulation {
             ...battalion,
             targetId: command.payload.targetId,
             attackMoveDestination: undefined,
+            stance: undefined,
             destination: target.position,
             waypoints: undefined
           }
@@ -1280,9 +1312,11 @@ export class Simulation {
       const ownBattalions = Object.values(this.state.battalions)
         .filter(
           (battalion) =>
-            battalion.ownerEmpireId === settlement.ownerEmpireId && battalion.settlementId === settlement.id
+            battalion.ownerEmpireId === settlement.ownerEmpireId &&
+            battalion.settlementId === settlement.id
         )
         .sort((left, right) => left.id.localeCompare(right.id));
+      const commandableBattalions = ownBattalions.filter((battalion) => battalion.stance !== "hold");
       const castle = this.state.buildings[settlement.centralBuildingId];
       const nearestEnemy = castle
         ? Object.values(this.state.battalions)
@@ -1321,7 +1355,7 @@ export class Simulation {
         const building = this.state.buildings[buildingId];
         return building?.kind === "town-square" && building.complete;
       });
-      const weakestBattalion = [...ownBattalions].sort(
+      const weakestBattalion = [...commandableBattalions].sort(
         (left, right) => left.morale - right.morale || left.id.localeCompare(right.id)
       )[0];
       const garrisonTarget = Object.values(this.state.buildings)
@@ -1334,8 +1368,8 @@ export class Simulation {
             (building.garrisonBattalionIds?.length ?? 0) < this.getGarrisonCapacity(building.kind)
         )
         .sort((left, right) => left.id.localeCompare(right.id))[0];
-      const garrisonCandidate = ownBattalions.find((battalion) => !battalion.garrisonedInBuildingId);
-      const expeditionCandidate = ownBattalions.find(
+      const garrisonCandidate = commandableBattalions.find((battalion) => !battalion.garrisonedInBuildingId);
+      const expeditionCandidate = commandableBattalions.find(
         (battalion) => !battalion.garrisonedInBuildingId && !battalion.embarkedInCaravanId
       );
       const expeditionTarget = nearestEnemy && enemyDistance < 170 ? nearestEnemy : enemyCastle;
@@ -1343,7 +1377,7 @@ export class Simulation {
         currentEmpire?.id === "empire-rival" &&
         tick >= RIVAL_DIFFICULTY_PROFILES[this.state.rivalDifficulty].openingGraceTicks;
 
-      const retreatCandidate = ownBattalions
+      const retreatCandidate = commandableBattalions
         .filter((battalion) => !battalion.garrisonedInBuildingId && !battalion.embarkedInCaravanId)
         .sort((left, right) => left.morale - right.morale || left.supply - right.supply || left.id.localeCompare(right.id))[0];
       if (
@@ -1442,7 +1476,7 @@ export class Simulation {
           ? 48 + Math.max(0, 260 - enemyDistance) / 5 + this.getDoctrineUtility(currentHeir, "Raise a battalion")
           : 0;
       const defendUtility =
-        nearestEnemy && ownBattalions.length > 0 && enemyDistance < 240
+        nearestEnemy && commandableBattalions.length > 0 && enemyDistance < 240
           ? 42 + (240 - enemyDistance) / 4 + this.getDoctrineUtility(currentHeir, "Attack designated targets")
           : 0;
       const assimilationUtility =
@@ -1467,14 +1501,14 @@ export class Simulation {
         expeditionCandidate &&
         expeditionTarget &&
         rivalOpeningComplete &&
-        ownBattalions.length >= 2 &&
+        commandableBattalions.length >= 2 &&
         enemyDistance > 240
           ? 46 +
             Math.min(18, ownBattalions.reduce((total, battalion) => total + battalion.morale, 0) / 12) +
             this.getDoctrineUtility(currentHeir, "Lead an expedition")
           : 0;
 
-      if (rivalOpeningComplete && ownBattalions.length >= 2 && expeditionCandidate && !expeditionTarget) {
+      if (rivalOpeningComplete && commandableBattalions.length >= 2 && expeditionCandidate && !expeditionTarget) {
         const scoutDestination = { x: 650, y: 300 };
         if (
           expeditionCandidate.destination?.x !== scoutDestination.x ||
@@ -1774,7 +1808,7 @@ export class Simulation {
       }
 
       if (defendUtility >= 30 && nearestEnemy) {
-        const defender = ownBattalions[0];
+        const defender = commandableBattalions[0];
         this.state = {
           ...this.state,
           battalions: {
@@ -2634,6 +2668,41 @@ export class Simulation {
     this.state = { ...this.state, battalions };
   }
 
+  /**
+   * A Crown-held force may answer threats already inside its weapon range, but
+   * never pursues them. This gives a held line tactical value without handing
+   * its position back to autonomous governance.
+   */
+  private updateHoldPositionTargets(tick: number): void {
+    let battalions = this.state.battalions;
+    for (const candidate of Object.values(battalions).sort((left, right) => left.id.localeCompare(right.id))) {
+      const battalion = battalions[candidate.id];
+      if (
+        !battalion ||
+        battalion.stance !== "hold" ||
+        battalion.targetId ||
+        battalion.embarkedInCaravanId ||
+        battalion.garrisonedInBuildingId
+      ) {
+        continue;
+      }
+      const target = this.findHoldPositionTarget(battalion);
+      if (!target) {
+        continue;
+      }
+      battalions = {
+        ...battalions,
+        [battalion.id]: { ...battalion, targetId: target.id }
+      };
+      this.eventWriter.emit(tick, "attack-ordered", {
+        battalionId: battalion.id,
+        targetId: target.id,
+        reason: "hold-position"
+      });
+    }
+    this.state = { ...this.state, battalions };
+  }
+
   private findAttackMoveTarget(battalion: BattalionState): BattalionState | BuildingState | CaravanState | undefined {
     const acquisitionRange = Math.max(96, battalion.range + 88);
     const candidates = [
@@ -2645,6 +2714,22 @@ export class Simulation {
         target.ownerEmpireId !== battalion.ownerEmpireId &&
         isPositionVisibleToEmpire(this.state, battalion.ownerEmpireId, target.position) &&
         distance(battalion.position, target.position) <= acquisitionRange
+    );
+    return candidates.sort(
+      (left, right) => distance(battalion.position, left.position) - distance(battalion.position, right.position) || left.id.localeCompare(right.id)
+    )[0];
+  }
+
+  private findHoldPositionTarget(battalion: BattalionState): BattalionState | BuildingState | CaravanState | undefined {
+    const candidates = [
+      ...Object.values(this.state.battalions),
+      ...Object.values(this.state.caravans),
+      ...Object.values(this.state.buildings).filter((building) => building.complete)
+    ].filter(
+      (target): target is BattalionState | BuildingState | CaravanState =>
+        target.ownerEmpireId !== battalion.ownerEmpireId &&
+        isPositionVisibleToEmpire(this.state, battalion.ownerEmpireId, target.position) &&
+        distance(battalion.position, target.position) <= battalion.range
     );
     return candidates.sort(
       (left, right) => distance(battalion.position, left.position) - distance(battalion.position, right.position) || left.id.localeCompare(right.id)
@@ -3013,6 +3098,13 @@ export class Simulation {
       }
 
       const target = targetBattalion ?? targetBuilding ?? targetCaravan;
+      if (battalion.stance === "hold" && distance(battalion.position, target.position) > battalion.range) {
+        battalions = {
+          ...battalions,
+          [battalion.id]: { ...battalion, targetId: undefined, destination: undefined }
+        };
+        continue;
+      }
       if (distance(battalion.position, target.position) > battalion.range) {
         continue;
       }
@@ -3828,6 +3920,14 @@ function getDoctrineObservation(command: GameCommand, state: WorldState): Doctri
         key: "advance-and-engage",
         condition: "A battalion advances through contested terrain",
         preferredAction: "Advance and engage",
+        goal: "Secure the battlefield"
+      };
+    case "hold-battalion":
+      return {
+        domain: "military",
+        key: "hold-position",
+        condition: "A field force controls defensible ground",
+        preferredAction: "Hold strategic ground",
         goal: "Secure the battlefield"
       };
     case "retreat-battalion":

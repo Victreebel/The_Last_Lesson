@@ -30,6 +30,7 @@ Implemented:
 - Campaign Theatre now exposes a rerollable deterministic opening seed. New reigns and Theatre repeats use that exact seed, while local/portable restoration restores the archived opening seed for reproducible replay.
 - Shift-queued battalion routes with visible deterministic waypoint legs, preserving direct-command control while remaining part of the ordinary simulation command, save, replay, and multiplayer contracts.
 - Deterministic line formations for multi-battalion movement and advance orders, so direct control remains readable and tactically intentional without adding special simulation behavior.
+- Hold Position gives direct commanders a durable tactical stance: held battalions remain on the assigned ground, answer only in-range threats, and are excluded from governor reassignment until a later direct field order clears the stance.
 - UI controls for farm placement, battalion creation, movement, attacking, and manual ticks.
 - Build-palette hover guidance for every structure's terrain requirement and tactical or civic role.
 - Simulation-backed food, wood, iron, and faith readouts.

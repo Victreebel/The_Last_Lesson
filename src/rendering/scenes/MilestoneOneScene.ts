@@ -208,6 +208,7 @@ const TACTICAL_DRAWER_TAB_HEIGHT = 42;
 const TACTICAL_DRAWER_TAB_GAP = 8;
 const COMMAND_DOCK_COMPACT_WIDTH = 184;
 const COMMAND_DOCK_COMPACT_HEIGHT = 42;
+const COMMAND_DOCK_EXPANDED_HEIGHT = 488;
 const PLACEMENT_GRID_SIZE = 32;
 const DRAG_THRESHOLD = 10;
 const MINIMAP_WIDTH = 230;
@@ -510,7 +511,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     canvas.setAttribute("aria-describedby", "the-last-lesson-accessibility-brief");
     canvas.setAttribute(
       "aria-keyshortcuts",
-      "ArrowUp ArrowDown ArrowLeft ArrowRight Tab Enter B C D H N O R L M A F X Z Escape Space 0 1 2 3 4 5 6 7 8 9 Q W E Control+1 Control+2 Control+3 Control+4 Control+5 Control+6 Control+7 Control+8 Control+9"
+      "ArrowUp ArrowDown ArrowLeft ArrowRight Tab Enter B C D H N O R L M A F V X Z Escape Space 0 1 2 3 4 5 6 7 8 9 Q W E Control+1 Control+2 Control+3 Control+4 Control+5 Control+6 Control+7 Control+8 Control+9"
     );
     this.accessibilityAnnouncements = document.getElementById("the-last-lesson-announcements") ?? undefined;
   }
@@ -545,6 +546,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     bind("M", () => this.enterMoveMode());
     bind("A", () => this.enterAttackMode());
     bind("F", () => this.enterAttackMoveMode());
+    bind("V", () => this.holdSelectedBattalions());
     bind("X", () => this.toggleHighContrast());
     bind("Z", () => this.toggleFieldMode());
     bind("ESC", () => this.cancelActiveCommand());
@@ -2869,7 +2871,7 @@ export class MilestoneOneScene extends Phaser.Scene {
   }
 
   private createCommandDock(): void {
-    this.commandDockBackground = this.add.rectangle(0, 0, 410, 434, UI_COLORS.panel, 0.96).setOrigin(0);
+    this.commandDockBackground = this.add.rectangle(0, 0, 410, COMMAND_DOCK_EXPANDED_HEIGHT, UI_COLORS.panel, 0.96).setOrigin(0);
     this.commandDockBackground.setStrokeStyle(1, UI_COLORS.trim);
     this.commandDockHeader = this.add.rectangle(0, 0, 410, COMMAND_DOCK_COMPACT_HEIGHT, UI_COLORS.panelDeep, 0.98).setOrigin(0);
     this.commandDockHeader.setStrokeStyle(1, UI_COLORS.trim);
@@ -2926,6 +2928,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.addCommandButton(14, 366, "HOUNDS", "8F 4W", () => this.createBattalion("hounds"));
     this.addCommandButton(110, 366, "MEND", "14 FAITH", () => this.castMendSettlement(), UI_COLORS.command, "mend");
     this.addWideCommandButton(206, 366, "DIVINE JUDGMENT", "18 FAITH / RELIGIOUS WARD", () => this.castDivineJudgment());
+    this.addWideCommandButton(110, 420, "HOLD POSITION [V]", "LOCK SELECTED GROUND", () => this.holdSelectedBattalions());
     this.updateCommandDock(false);
   }
 
@@ -2940,7 +2943,7 @@ export class MilestoneOneScene extends Phaser.Scene {
 
   private updateCommandDock(relayout = true): void {
     const width = this.commandDockExpanded ? 410 : COMMAND_DOCK_COMPACT_WIDTH;
-    const height = this.commandDockExpanded ? 434 : COMMAND_DOCK_COMPACT_HEIGHT;
+    const height = this.commandDockExpanded ? COMMAND_DOCK_EXPANDED_HEIGHT : COMMAND_DOCK_COMPACT_HEIGHT;
     this.commandDockBackground.setSize(width, height);
     this.commandDockHeader.setSize(width, COMMAND_DOCK_COMPACT_HEIGHT);
     this.commandDockTitle.setText(this.commandDockExpanded ? "COMMAND ORDERS [O]" : "ORDERS [O]");
@@ -3695,7 +3698,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.intelPanel.setVisible(!narrow);
     this.intelPanel.setPosition(16, topHeight + 14);
     this.commandDock.setScale(narrow ? 0.86 : 1);
-    const commandDockHeight = this.commandDockExpanded ? 434 : COMMAND_DOCK_COMPACT_HEIGHT;
+    const commandDockHeight = this.commandDockExpanded ? COMMAND_DOCK_EXPANDED_HEIGHT : COMMAND_DOCK_COMPACT_HEIGHT;
     this.commandDock.setPosition(
       narrow ? 8 : 16,
       Math.max(topHeight + 12, height - commandDockHeight * this.commandDock.scaleY - 16)
@@ -4363,6 +4366,20 @@ export class MilestoneOneScene extends Phaser.Scene {
     }
     this.mode = "select";
     this.updateUi([`Retreat ordered for ${this.selectedBattalionIds.size} battalion(s).`]);
+  }
+
+  private holdSelectedBattalions(): void {
+    if (this.selectedBattalionIds.size === 0) {
+      this.updateUi(["Select a Crown battalion before ordering it to hold ground."]);
+      return;
+    }
+    for (const battalionId of this.selectedBattalionIds) {
+      this.issueCommand({ type: "hold-battalion", payload: { battalionId } });
+    }
+    this.mode = "select";
+    this.updateUi([
+      `Hold Position ordered for ${this.selectedBattalionIds.size} battalion(s). Governors will not repurpose them.`
+    ]);
   }
 
   private issueCaravanMoveOrder(point: Phaser.Math.Vector2): void {
@@ -5035,13 +5052,22 @@ export class MilestoneOneScene extends Phaser.Scene {
 
     for (const indicator of getOrderIndicators(state, this.selectedBattalionIds, this.selectedCaravanId)) {
       const color =
-        indicator.kind === "attack"
+        indicator.kind === "hold"
+          ? 0x94c788
+          : indicator.kind === "attack"
           ? 0xe75f4f
           : indicator.kind === "advance"
             ? 0xf2d77f
             : indicator.kind === "naval"
               ? 0x9cc8d5
               : 0x84cbe1;
+      if (indicator.kind === "hold") {
+        this.orderLayer.lineStyle(2, color, 0.9);
+        this.orderLayer.strokeCircle(indicator.origin.x, indicator.origin.y, 26);
+        this.orderLayer.lineBetween(indicator.origin.x - 12, indicator.origin.y, indicator.origin.x + 12, indicator.origin.y);
+        this.orderLayer.lineBetween(indicator.origin.x, indicator.origin.y - 12, indicator.origin.x, indicator.origin.y + 12);
+        continue;
+      }
       const angle = Phaser.Math.Angle.Between(
         indicator.origin.x,
         indicator.origin.y,

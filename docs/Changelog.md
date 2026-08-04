@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.56 - 2026-08-04
+
+- Added the canonical `HOLD POSITION [V]` battalion order. It cancels movement and attack routes, persists as an authoritative stance through saves, replays, and multiplayer, lets a force answer only in-range threats, and prevents its governor from repurposing the held battalion until a new direct field order releases it.
+
 ## 2.6.55 - 2026-08-04
 
 - Campaign Theatre now shows the selected deterministic opening seed and supports a deliberate `[N] REROLL` action by pointer, keyboard focus, or `N`. New/repeated reigns use the selected seed, while restored local and portable campaigns synchronize to their replay origin.

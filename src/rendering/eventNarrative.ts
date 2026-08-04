@@ -113,6 +113,8 @@ export const describeGameEvent = (event: GameEvent, context: EventNarrativeConte
       return `${context.entityName(getString(event, "battalionId"))} has been raised.`;
     case "battalion-retreated":
       return `${battalion} withdrew to ${settlement}, preserving the field force.`;
+    case "battalion-held":
+      return `${battalion} is holding this ground until the Crown issues a new field order.`;
     case "attack-ordered":
       return `${battalion} was ordered to engage ${target}.`;
     case "attack-move-engaged":

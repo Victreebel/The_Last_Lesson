@@ -32,6 +32,7 @@ export type EventType =
   | "supply-delivered"
   | "caravan-destroyed"
   | "battalion-moved"
+  | "battalion-held"
   | "battalion-retreated"
   | "supply-changed"
   | "morale-recovered"

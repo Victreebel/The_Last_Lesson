@@ -124,6 +124,7 @@ export class LocalAuthority {
         return ownsSettlement(intent.payload.settlementId);
       case "move-battalion":
       case "attack-move-battalion":
+      case "hold-battalion":
       case "retreat-battalion":
         return ownsBattalion(intent.payload.battalionId);
       case "move-caravan":

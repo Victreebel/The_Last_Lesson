@@ -10,6 +10,7 @@ export type CommandType =
   | "create-ship"
   | "move-battalion"
   | "attack-move-battalion"
+  | "hold-battalion"
   | "retreat-battalion"
   | "move-caravan"
   | "embark-battalion"
@@ -68,6 +69,10 @@ export interface MoveBattalionPayload {
 }
 
 export interface RetreatBattalionPayload {
+  readonly battalionId: BattalionId;
+}
+
+export interface HoldBattalionPayload {
   readonly battalionId: BattalionId;
 }
 
@@ -147,6 +152,7 @@ export type GameCommand =
   | GameCommandBase<"create-ship", CreateShipPayload>
   | GameCommandBase<"move-battalion", MoveBattalionPayload>
   | GameCommandBase<"attack-move-battalion", MoveBattalionPayload>
+  | GameCommandBase<"hold-battalion", HoldBattalionPayload>
   | GameCommandBase<"retreat-battalion", RetreatBattalionPayload>
   | GameCommandBase<"move-caravan", MoveCaravanPayload>
   | GameCommandBase<"embark-battalion", EmbarkBattalionPayload>
