@@ -2,7 +2,7 @@
 
 ## Technical Design Specification
 
-**Version:** 1.28
+**Version:** 1.29
 **Status:** Active Implementation Blueprint
 **Date:** 2026-08-04
 **Working Title:** The Last Lesson  
@@ -755,7 +755,20 @@ Heirs have two states:
 
 The prime heir begins in learning state and cannot disagree with the player. Conquered settlements generate a new heir to govern the settlement. Crown governors may independently choose and explain a response to current pressure, but that response is only a provisional zero-confidence lesson until the player Rewards or Punishes it. Crown governor doctrine confidence may never increase from autonomous repetition or passive observation. Rival governors retain their separately declared difficulty-profile adaptation rate.
 
-### 13.4 Heir Mortality
+### 13.4 Rival Counter-Doctrine
+
+Rival governors may learn from the Crown, but only from a player command whose source entity or settlement lies inside existing Rival Crown vision at the instant the command resolves. This rule uses the same `isPositionVisibleToEmpire` contract as hostile targeting and fog-of-war presentation; difficulty never grants hidden vision.
+
+The nearest living rival governor forms the counter-lesson. Initial confidence is `16 + (2 * doctrineConfidenceGain)` and repeated witnessed examples add the active Rival Doctrine profile's `doctrineConfidenceGain`, bounded to `100`. The first delivery maps visible Crown behavior to existing utility vocabulary:
+
+- Crown assault or attack-move -> `Garrison defensive works`.
+- Crown hold or garrison order -> `Lead an expedition`.
+- Crown caravan creation or routing -> `Interdict Crown logistics`.
+- Crown mobilization -> `Raise a battalion`.
+
+`Interdict Crown logistics` may select an observed hostile caravan as the rival expedition target. Every update emits `rival-doctrine-observed`, including the observer, doctrine, counter-action, confidence, and source command type. The event is visible in the Tactical Uplink and Book of Lessons so adaptation is inspectable rather than a hidden difficulty adjustment.
+
+### 13.5 Heir Mortality
 
 An heir can die only when their Castle/Throne or central construction building falls.
 
@@ -1545,6 +1558,7 @@ The following compatible systems are now implemented in the prototype and are th
 - The Book of Lessons may export a versioned portable `.tll` archive that contains both the current versioned save and its campaign opening world. Import validation must reject malformed archives before replacing presentation state; a valid archive restores the same deterministic reign and replay origin. The browser import picker has a stable nonvisual identifier for automated coverage, an accessible file label, and removes itself after either a selection or cancellation. Portable archives are unavailable while connected to multiplayer authority and must never alter the multiplayer protocol.
 - The Book of Lessons may also enter replay-review mode. It snapshots the active live simulation with the existing versioned save format, replays its applied command log from the scenario opening in a separate simulation instance, prevents new commands and auto-saves during review, and restores the exact live save on return. Replay review must stop before advancing beyond the recorded target tick.
 - Rival heirs use the same deterministic governance utility model as player-governed settlements. The initial rival receives an eight-tick opening grace period, then recruits a second field battalion and records a doctrine-backed expedition toward the nearest opposing throne. This opening behavior is deterministic, inspectable, and deliberately delayed so the player has time to establish their first economy.
+- Rival counter-doctrine extends that shared utility model without creating a second enemy-AI path. Witnessed Crown assaults increase existing defensive-garrison preference; witnessed fixed lines reinforce expeditions; witnessed supply routes create a bounded logistics-interdiction preference that can target only a currently observed Crown caravan. Unseen Crown behavior remains unknowable to the rival.
 - Visibility is resolved from completed friendly structures, field battalions, and caravans. The tactical renderer and minimap suppress unseen hostile entities, while governing heirs filter threats and enemy thrones through the same visibility calculation. When its rival is not yet observed, the initial rival heir scouts a fixed contested frontier rather than using omniscient targeting.
 - `campaign/ImperialMandate.ts` derives a presentation-only, scenario-aware first-session path from authoritative state. It includes each theatre's defining civic or defensive opening, then farm establishment, a field battalion, reconnaissance, one reward-or-punishment Heir lesson, and rival-throne capture. Progress is projected as a compact count in the Tactical Uplink, adds no tutorial state, and therefore cannot affect world mutation, saves, replays, or deterministic outcomes.
 - `campaign/MandateGuidance.ts` maps each derived Mandate step to its existing Build, Command, Accord, or Heir control. The renderer uses this contract for static visual emphasis and a compact dock cue; it never opens a panel, queues a command, modifies focus, or enters authoritative state. Ashen Oath marks the player-only Accord header as the captive-policy surface while its dock-based assimilation and release alternatives remain equally highlighted.

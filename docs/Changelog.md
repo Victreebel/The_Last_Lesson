@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.6.58 - 2026-08-04
+
+- Added fog-gated Rival Counter-Doctrine. A rival heir can now form a visible counter-lesson only after witnessing Crown military, logistics, or mobilization behavior through the shared vision system; unseen player actions remain unknown.
+- Counter-lessons reuse the existing governance utility model rather than introducing a parallel AI: assaults favor defense, fixed lines favor expeditions, mobilization favors recruitment, and a witnessed Crown caravan can become an actual logistics-interdiction target.
+- Added a high-priority Tactical Uplink and Book of Lessons report for every rival adaptation, including the counter-action and confidence. Difficulty still changes only opening pace and learning rate, never resources, combat, or vision.
+
 ## 2.6.57 - 2026-08-04
 
 - Made the tactical chrome map-permeable. Build, Heir, Accord, and Tactical Uplink backgrounds are now display-only; only actual headers and controls capture pointer input, so empty drawer space no longer blocks battlefield selection, placement, or orders.

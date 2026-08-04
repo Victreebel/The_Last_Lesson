@@ -25,6 +25,19 @@ describe("event narrative", () => {
     ).toBe("Lady Ilyra observed Protect Caravans as a 42% conviction.");
   });
 
+  it("makes observed rival adaptation explicit in the tactical record", () => {
+    expect(
+      describeGameEvent(
+        event("rival-doctrine-observed", {
+          heirId: "heir-capital",
+          action: "interdict crown logistics",
+          confidence: 22
+        }),
+        context
+      )
+    ).toBe("Lady Ilyra witnessed the Crown and adapted: Interdict Crown Logistics is now a 22% conviction.");
+  });
+
   it("describes an heir decision with its deterministic rationale", () => {
     expect(
       describeGameEvent(

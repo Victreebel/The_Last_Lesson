@@ -17,6 +17,7 @@ const TACTICAL_EVENT_PRIORITY: Partial<Record<GameEvent["type"], number>> = {
   "housing-destroyed": 90,
   "heir-concern": 85,
   "heir-decision": 80,
+  "rival-doctrine-observed": 78,
   "doctrine-observed": 75,
   "doctrine-reinforced": 75,
   "doctrine-disciplined": 75,
@@ -85,6 +86,8 @@ export const describeGameEvent = (event: GameEvent, context: EventNarrativeConte
   switch (event.type) {
     case "doctrine-observed":
       return `${heir} observed ${describeWords(getString(event, "action"), "a new action")} as a ${getNumber(event, "confidence") ?? 0}% conviction.`;
+    case "rival-doctrine-observed":
+      return `${heir} witnessed the Crown and adapted: ${describeWords(getString(event, "action"), "a counter-doctrine")} is now a ${getNumber(event, "confidence") ?? 0}% conviction.`;
     case "doctrine-reinforced":
       return `${heir}'s last lesson was rewarded. Conviction is now ${getNumber(event, "confidence") ?? 0}%.`;
     case "doctrine-disciplined":

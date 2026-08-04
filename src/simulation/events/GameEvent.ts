@@ -47,6 +47,7 @@ export type EventType =
   | "housing-destroyed"
   | "captive-escape"
   | "doctrine-observed"
+  | "rival-doctrine-observed"
   | "doctrine-reinforced"
   | "doctrine-disciplined"
   | "heir-decision"

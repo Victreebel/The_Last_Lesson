@@ -1211,6 +1211,8 @@ export class Simulation {
       return;
     }
 
+    this.observeRivalCounterDoctrine(command, tick);
+
     const learningHeirs = Object.values(this.state.heirs)
       .filter((heir) => heir.ownerEmpireId === "empire-player" && heir.alive && heir.mode === "learning")
       .sort((a, b) => a.id.localeCompare(b.id));
@@ -1255,6 +1257,76 @@ export class Simulation {
         confidence: doctrine.confidence
       });
     }
+  }
+
+  /**
+   * Rival adaptation is deliberately bound to the same fog-of-war rule as
+   * every other hostile decision. A Crown action that has not been witnessed
+   * cannot become an enemy lesson.
+   */
+  private observeRivalCounterDoctrine(command: GameCommand, tick: number): void {
+    const observation = getRivalCounterDoctrineObservation(command);
+    const position = getCommandObservationPosition(command, this.state);
+    if (!observation || !position || !isPositionVisibleToEmpire(this.state, "empire-rival", position)) {
+      return;
+    }
+
+    const observer = Object.values(this.state.heirs)
+      .filter((heir) => heir.ownerEmpireId === "empire-rival" && heir.alive && heir.mode === "governance")
+      .map((heir) => ({
+        heir,
+        castle: Object.values(this.state.settlements)
+          .find((settlement) => settlement.heirId === heir.id)
+          ?.centralBuildingId
+      }))
+      .map(({ heir, castle }) => ({ heir, castle: castle ? this.state.buildings[castle] : undefined }))
+      .filter((candidate): candidate is { heir: HeirState; castle: BuildingState } => Boolean(candidate.castle))
+      .sort(
+        (left, right) =>
+          distance(left.castle.position, position) - distance(right.castle.position, position) ||
+          left.heir.id.localeCompare(right.heir.id)
+      )[0]?.heir;
+    if (!observer) {
+      return;
+    }
+
+    const doctrineId = `doctrine-${observer.id}-counter-${observation.key}`;
+    const existing = this.state.doctrines[doctrineId];
+    const confidenceGain = RIVAL_DIFFICULTY_PROFILES[this.state.rivalDifficulty].doctrineConfidenceGain;
+    const doctrine: DoctrineRule = existing
+      ? {
+          ...existing,
+          confidence: Math.min(100, existing.confidence + confidenceGain),
+          updatedAtTick: tick
+        }
+      : {
+          id: doctrineId,
+          ownerId: observer.id,
+          domain: observation.domain,
+          condition: observation.condition,
+          preferredAction: observation.preferredAction,
+          goal: observation.goal,
+          confidence: Math.min(100, 16 + confidenceGain * 2),
+          createdAtTick: tick,
+          updatedAtTick: tick
+        };
+    const nextObserver: HeirState = {
+      ...observer,
+      lastDoctrineId: doctrineId,
+      doctrineIds: existing ? observer.doctrineIds : [...observer.doctrineIds, doctrineId]
+    };
+    this.state = {
+      ...this.state,
+      doctrines: { ...this.state.doctrines, [doctrineId]: doctrine },
+      heirs: { ...this.state.heirs, [observer.id]: nextObserver }
+    };
+    this.eventWriter.emit(tick, "rival-doctrine-observed", {
+      heirId: observer.id,
+      doctrineId,
+      action: doctrine.preferredAction,
+      confidence: doctrine.confidence,
+      sourceCommandType: command.type
+    });
   }
 
   private applyHeirFeedback(
@@ -1372,7 +1444,26 @@ export class Simulation {
       const expeditionCandidate = commandableBattalions.find(
         (battalion) => !battalion.garrisonedInBuildingId && !battalion.embarkedInCaravanId
       );
-      const expeditionTarget = nearestEnemy && enemyDistance < 170 ? nearestEnemy : enemyCastle;
+      const nearestEnemyCaravan = castle
+        ? Object.values(this.state.caravans)
+            .filter(
+              (caravan) =>
+                caravan.ownerEmpireId !== currentSettlement.ownerEmpireId &&
+                isPositionVisibleToEmpire(this.state, currentSettlement.ownerEmpireId, caravan.position)
+            )
+            .sort(
+              (left, right) =>
+                distance(left.position, castle.position) - distance(right.position, castle.position) ||
+                left.id.localeCompare(right.id)
+            )[0]
+        : undefined;
+      const logisticsInterdiction = this.getDoctrineUtility(currentHeir, "Interdict Crown logistics");
+      const expeditionTarget =
+        nearestEnemy && enemyDistance < 170
+          ? nearestEnemy
+          : nearestEnemyCaravan && logisticsInterdiction >= 8
+            ? nearestEnemyCaravan
+            : enemyCastle;
       const rivalOpeningComplete =
         currentEmpire?.id === "empire-rival" &&
         tick >= RIVAL_DIFFICULTY_PROFILES[this.state.rivalDifficulty].openingGraceTicks;
@@ -1505,7 +1596,8 @@ export class Simulation {
         enemyDistance > 240
           ? 46 +
             Math.min(18, ownBattalions.reduce((total, battalion) => total + battalion.morale, 0) / 12) +
-            this.getDoctrineUtility(currentHeir, "Lead an expedition")
+            this.getDoctrineUtility(currentHeir, "Lead an expedition") +
+            logisticsInterdiction
           : 0;
 
       if (rivalOpeningComplete && commandableBattalions.length >= 2 && expeditionCandidate && !expeditionTarget) {
@@ -3847,6 +3939,93 @@ function getMiracleCost(kind: MiracleKind): number {
     return 14;
   }
   return kind === "inspire-battalion" ? 16 : 18;
+}
+
+function getRivalCounterDoctrineObservation(command: GameCommand): DoctrineObservation | undefined {
+  switch (command.type) {
+    case "attack-target":
+    case "attack-move-battalion":
+      return {
+        domain: "military",
+        key: "fortify-against-crown-assault",
+        condition: "The Crown attacks inside observed territory",
+        preferredAction: "Garrison defensive works",
+        goal: "Hold the settlement against Crown assault"
+      };
+    case "hold-battalion":
+    case "garrison-battalion":
+      return {
+        domain: "military",
+        key: "probe-fixed-crown-lines",
+        condition: "The Crown fixes a field force on observed ground",
+        preferredAction: "Lead an expedition",
+        goal: "Test fixed Crown lines before they harden"
+      };
+    case "create-caravan":
+    case "move-caravan":
+      return {
+        domain: "military",
+        key: "interdict-crown-logistics",
+        condition: "A Crown supply route is visible",
+        preferredAction: "Interdict Crown logistics",
+        goal: "Break distant Crown support"
+      };
+    case "create-battalion":
+      return {
+        domain: "military",
+        key: "match-crown-mobilization",
+        condition: "The Crown mobilizes citizens inside observed territory",
+        preferredAction: "Raise a battalion",
+        goal: "Maintain a credible field force"
+      };
+    default:
+      return undefined;
+  }
+}
+
+function getCommandObservationPosition(command: GameCommand, state: WorldState): Position | undefined {
+  const settlementPosition = (settlementId: string) => {
+    const settlement = state.settlements[settlementId];
+    return settlement ? state.buildings[settlement.centralBuildingId]?.position : undefined;
+  };
+  const battalionPosition = (battalionId: string) => state.battalions[battalionId]?.position;
+  const caravanPosition = (caravanId: string) => state.caravans[caravanId]?.position;
+
+  switch (command.type) {
+    case "assign-labor":
+    case "place-building":
+    case "create-battalion":
+    case "create-caravan":
+    case "create-ship":
+    case "assimilate-captives":
+    case "release-captives":
+      return settlementPosition(command.payload.settlementId);
+    case "move-battalion":
+    case "attack-move-battalion":
+    case "hold-battalion":
+    case "retreat-battalion":
+    case "attack-target":
+    case "embark-battalion":
+      return battalionPosition(command.payload.battalionId);
+    case "garrison-battalion":
+      return state.buildings[command.payload.buildingId]?.position ?? battalionPosition(command.payload.battalionId);
+    case "move-caravan":
+    case "disembark-caravan":
+      return caravanPosition(command.payload.caravanId);
+    case "attack-with-ship":
+      return caravanPosition(command.payload.shipId);
+    case "cast-miracle":
+      return command.payload.targetId
+        ? battalionPosition(command.payload.targetId)
+        : command.payload.settlementId
+          ? settlementPosition(command.payload.settlementId)
+          : undefined;
+    case "exchange-captives":
+    case "generate-faith":
+    case "reward-heir":
+    case "punish-heir":
+      return undefined;
+  }
 }
 
 function getDoctrineObservation(command: GameCommand, state: WorldState): DoctrineObservation | undefined {
