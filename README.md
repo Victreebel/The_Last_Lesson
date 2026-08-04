@@ -20,6 +20,7 @@ The current browser prototype is a playable single-player campaign: establish th
 - Multi-settlement Crown management through castle selection and the compact `REALM` navigator.
 - A campaign-opening rival doctrine choice: `DISCIPLE`, `RIVAL`, or `ARCHITECT` changes only the rival's opening grace and doctrine-learning pace, never grants hidden resources or combat bonuses.
 - Observable Rival Counter-Doctrine: enemies counter only what they witness through shared fog-of-war rules, then explain the resulting defense, expedition, recruitment, or logistics response in the live record.
+- Rival Intelligence: the Book of Lessons retains the latest witnessed counter-doctrines, while the Tactical Uplink briefly calls out a fresh adaptation when no higher-priority crisis is active.
 - Four deterministic Campaign Theatre openings with distinct authoritative terrain: `CROWNFALL` for a balanced throne war, `RIVERGATE` for a navigable civic-waterway and naval play, `ASHEN OATH` for plague recovery, captives, and a bounded Prisoner Accord beyond a blighted marsh belt, and `STONEWALL` for hill-fort defense, logistics, retreat, and counter-siege play.
 - Rival settlements begin with their own terrain-valid farms and labeled fertile fields, so every theatre opens against sustainable enemy economies rather than passive empty-castle targets.
 - A local Campaign Chronicle marks every theatre the Crown has conquered and recommends a four-chapter route through the theatres without locking scenario access or changing match rules.

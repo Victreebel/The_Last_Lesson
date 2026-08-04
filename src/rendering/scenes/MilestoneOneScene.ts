@@ -20,6 +20,7 @@ import { getMiracleFeedbackPresentation } from "../miraclePresentation";
 import { getOrderIndicators } from "../orderPresentation";
 import { getLineFormationDestinations } from "../formationPresentation";
 import { getLessonPresentationLines, type LessonPresentationStatus } from "../lessonPresentation";
+import { formatRivalCounterDoctrine, getRivalCounterDoctrineSummaries } from "../rivalIntelligencePresentation";
 import { getTerrainPresentation } from "../terrainPresentation";
 import { getTacticalUplinkStatusLines } from "../tacticalUplink";
 import { BOOK_PANEL_HEIGHT, CAMPAIGN_THEATRE_LAYOUT } from "../uiLayout";
@@ -2618,6 +2619,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     const settlement = this.getActiveSettlement();
     const heir = this.getActiveHeir();
     const doctrines = this.getHeirDoctrines(heir).slice(0, 4);
+    const rivalIntelligence = getRivalCounterDoctrineSummaries(state).slice(0, 2);
     const recentEvents = this.simulation
       .getEventLog()
       .slice(-6)
@@ -2629,6 +2631,10 @@ export class MilestoneOneScene extends Phaser.Scene {
       `STATE: ${heir?.mode.toUpperCase() ?? "NONE"}  //  TRUST: ${heir?.trust ?? 0}`,
       `REIGN SEED: ${formatCampaignSeed(state.seed)}`,
       `RIVAL DOCTRINE: ${RIVAL_DIFFICULTY_PROFILES[state.rivalDifficulty].label}`,
+      "RIVAL INTELLIGENCE:",
+      ...(rivalIntelligence.length
+        ? rivalIntelligence.map((counterDoctrine) => `- ${formatRivalCounterDoctrine(counterDoctrine)}`)
+        : ["- No rival counter-doctrine has witnessed the Crown."]),
       `THEATRE HONOR: ${this.getCampaignHonor(state.scenarioId)?.label ?? `UNSEALED // ${SCENARIO_HONORS[state.scenarioId].condition.toUpperCase()}`}`,
       `FAITH: ${settlement?.internalFaith ?? 0}  //  RIVAL PRESSURE: ${settlement?.externalReligiousPressure ?? 0}`,
       formatCivicRecord(state.empires["empire-player"]?.moralMemory),
@@ -5627,6 +5633,11 @@ export class MilestoneOneScene extends Phaser.Scene {
     }
     if (!castle) {
       return "THE GOVERNING CASTLE HAS FALLEN.";
+    }
+
+    const newestCounterDoctrine = getRivalCounterDoctrineSummaries(state)[0];
+    if (newestCounterDoctrine && state.tick - newestCounterDoctrine.updatedAtTick <= 18) {
+      return `RIVAL ADAPTED: ${newestCounterDoctrine.action.toUpperCase()}.`;
     }
 
     const rivalOpeningTicks = RIVAL_DIFFICULTY_PROFILES[state.rivalDifficulty].openingGraceTicks - state.tick;

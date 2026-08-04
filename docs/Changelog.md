@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.6.59 - 2026-08-04
+
+- Added durable Rival Intelligence to the Book of Lessons. The two newest visible enemy counter-doctrines now identify the observing heir, the learned response, and its confidence; before first contact, the Book says plainly that no counter-doctrine has witnessed the Crown.
+- The Tactical Uplink now briefly reports a fresh rival adaptation when no more urgent food, rebellion, religious, or castle-loss threat is present. It reuses the same pure doctrine projection as the Book and never adds a map-blocking panel.
+
 ## 2.6.58 - 2026-08-04
 
 - Added fog-gated Rival Counter-Doctrine. A rival heir can now form a visible counter-lesson only after witnessing Crown military, logistics, or mobilization behavior through the shared vision system; unseen player actions remain unknown.
