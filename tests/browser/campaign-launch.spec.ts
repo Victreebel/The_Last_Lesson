@@ -102,6 +102,12 @@ test("launches the campaign theatre and begins a Crownfall reign", async ({ page
   await expect(page.locator("canvas")).toHaveAttribute("data-campaign-phase", "theatre");
   await expect(page.locator("canvas")).toHaveAttribute("aria-label", "The Last Lesson Campaign Theatre selection");
   expect(await page.locator("canvas").getAttribute("aria-keyshortcuts")).toContain("Control+9");
+  expect(await page.locator("canvas").getAttribute("aria-keyshortcuts")).toContain("N");
+  const openingSeed = await page.locator("canvas").getAttribute("data-campaign-seed");
+  await page.locator("canvas").focus();
+  await page.locator("canvas").press("n");
+  await expect(page.locator("#the-last-lesson-announcements")).toContainText("Opening seed changed");
+  await expect.poll(() => page.locator("canvas").getAttribute("data-campaign-seed")).not.toBe(openingSeed);
   await expect(page.locator('link[rel="manifest"]')).toHaveAttribute("href", /manifest[.]webmanifest$/);
   await page.waitForTimeout(800);
   await expectRenderedCanvas(page);
@@ -138,6 +144,8 @@ test("navigates Campaign Theatre with the keyboard before beginning a reign", as
 
   await canvas.press("ArrowDown");
   await expect(page.locator("#the-last-lesson-announcements")).toContainText("Chapter 4, STONEWALL");
+  await canvas.press("Tab");
+  await expect(page.locator("#the-last-lesson-announcements")).toContainText("Opening seed");
   await canvas.press("Tab");
   await expect(page.locator("#the-last-lesson-announcements")).toContainText("Begin DISCIPLE");
   await expect(page.locator("#the-last-lesson-announcements")).toContainText("Measured opening. The rival learns slowly from each exchange");

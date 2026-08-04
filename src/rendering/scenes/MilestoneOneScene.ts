@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { getEarnedScenarioHonor, SCENARIO_HONORS, type CampaignHonor } from "../../campaign/CampaignHonors";
 import { getCampaignChapter, getCampaignProgression } from "../../campaign/CampaignProgression";
+import { DEFAULT_CAMPAIGN_SEED, formatCampaignSeed, getNextCampaignSeed } from "../../campaign/CampaignSeed";
 import { createPlaytestRecord, createPlaytestRecordFilename, serializePlaytestRecord } from "../../campaign/PlaytestRecord";
 import { getImperialMandateProgress } from "../../campaign/ImperialMandate";
 import { getMandateGuidance, type MandateCommandControl } from "../../campaign/MandateGuidance";
@@ -270,6 +271,7 @@ interface ReplayReviewState {
 
 type CampaignSetupFocus =
   | { readonly kind: "scenario"; readonly scenario: ScenarioId; readonly x: number; readonly y: number }
+  | { readonly kind: "seed"; readonly x: number; readonly y: number }
   | { readonly kind: "difficulty"; readonly difficulty: RivalDifficulty; readonly x: number; readonly y: number }
   | { readonly kind: "local-save"; readonly x: number; readonly y: number };
 
@@ -279,10 +281,11 @@ const CAMPAIGN_DIFFICULTIES: readonly RivalDifficulty[] = ["disciple", "rival", 
 export class MilestoneOneScene extends Phaser.Scene {
   private campaignDifficulty: RivalDifficulty = "rival";
   private campaignScenario: ScenarioId = "crownfall";
+  private campaignSeed = DEFAULT_CAMPAIGN_SEED;
   private campaignChronicle: Partial<Record<ScenarioId, number>> = {};
   private campaignHonors: Partial<Record<ScenarioId, true>> = {};
   private recordedCampaignVictoryScenario?: ScenarioId;
-  private campaignInitialWorld: WorldState = createInitialWorld(777, this.campaignDifficulty, this.campaignScenario);
+  private campaignInitialWorld: WorldState = createInitialWorld(this.campaignSeed, this.campaignDifficulty, this.campaignScenario);
   private simulation = new Simulation(structuredClone(this.campaignInitialWorld));
   private remoteAuthority?: RemoteAuthorityClient;
   private remoteUnsubscribe?: () => void;
@@ -507,7 +510,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     canvas.setAttribute("aria-describedby", "the-last-lesson-accessibility-brief");
     canvas.setAttribute(
       "aria-keyshortcuts",
-      "ArrowUp ArrowDown ArrowLeft ArrowRight Tab Enter B C D H O R L M A F X Z Escape Space 0 1 2 3 4 5 6 7 8 9 Q W E Control+1 Control+2 Control+3 Control+4 Control+5 Control+6 Control+7 Control+8 Control+9"
+      "ArrowUp ArrowDown ArrowLeft ArrowRight Tab Enter B C D H N O R L M A F X Z Escape Space 0 1 2 3 4 5 6 7 8 9 Q W E Control+1 Control+2 Control+3 Control+4 Control+5 Control+6 Control+7 Control+8 Control+9"
     );
     this.accessibilityAnnouncements = document.getElementById("the-last-lesson-announcements") ?? undefined;
   }
@@ -685,6 +688,11 @@ export class MilestoneOneScene extends Phaser.Scene {
 
   private handleCampaignSetupKeyboard(event: KeyboardEvent): void {
     const key = event.key;
+    if (key.toUpperCase() === "N") {
+      event.preventDefault();
+      this.rerollCampaignSeed();
+      return;
+    }
     if (key === "Tab") {
       event.preventDefault();
       this.cycleCampaignSetupFocus(event.shiftKey ? -1 : 1);
@@ -2158,7 +2166,23 @@ export class MilestoneOneScene extends Phaser.Scene {
       fontSize: "9px",
       color: "#e2bd61"
     });
-    controls.push(beginPrompt);
+    const seedFocused = focusedControl?.kind === "seed";
+    const seedButton = this.add
+      .rectangle(20, CAMPAIGN_THEATRE_LAYOUT.seedY, 430, CAMPAIGN_THEATRE_LAYOUT.seedHeight, UI_COLORS.command, 1)
+      .setOrigin(0);
+    seedButton.setScrollFactor(0);
+    seedButton.setStrokeStyle(seedFocused ? 3 : 1, seedFocused ? 0xf7efc8 : UI_COLORS.trim);
+    const seedLabel = this.add.text(
+      30,
+      CAMPAIGN_THEATRE_LAYOUT.seedY + 6,
+      `OPENING SEED // ${formatCampaignSeed(this.campaignSeed)} // [N] REROLL`,
+      {
+        fontFamily: "Arial Black, Arial",
+        fontSize: "9px",
+        color: UI_COLORS.text
+      }
+    );
+    controls.push(seedButton, seedLabel, beginPrompt);
     CAMPAIGN_DIFFICULTIES.forEach((difficulty, index) => {
       const profile = RIVAL_DIFFICULTY_PROFILES[difficulty];
       const focused = focusedControl?.kind === "difficulty" && focusedControl.difficulty === difficulty;
@@ -2236,12 +2260,23 @@ export class MilestoneOneScene extends Phaser.Scene {
     }
 
     if (
+      localY >= CAMPAIGN_THEATRE_LAYOUT.seedY &&
+      localY < CAMPAIGN_THEATRE_LAYOUT.seedY + CAMPAIGN_THEATRE_LAYOUT.seedHeight &&
+      localX >= 20 &&
+      localX < 450
+    ) {
+      this.campaignSetupFocusIndex = CAMPAIGN_SCENARIOS.length;
+      this.rerollCampaignSeed();
+      return;
+    }
+
+    if (
       localY >= CAMPAIGN_THEATRE_LAYOUT.difficultyY &&
       localY < CAMPAIGN_THEATRE_LAYOUT.difficultyY + CAMPAIGN_THEATRE_LAYOUT.difficultyHeight
     ) {
       const index = Math.floor((localX - 20) / 146);
       if (index >= 0 && index < CAMPAIGN_DIFFICULTIES.length && localX >= 20 + index * 146 && localX < 156 + index * 146) {
-        this.campaignSetupFocusIndex = CAMPAIGN_SCENARIOS.length + index;
+        this.campaignSetupFocusIndex = CAMPAIGN_SCENARIOS.length + 1 + index;
         this.startCampaign(CAMPAIGN_DIFFICULTIES[index]);
       }
       return;
@@ -2254,7 +2289,7 @@ export class MilestoneOneScene extends Phaser.Scene {
       localX >= 20 &&
       localX < 450
     ) {
-      this.campaignSetupFocusIndex = CAMPAIGN_SCENARIOS.length + CAMPAIGN_DIFFICULTIES.length;
+      this.campaignSetupFocusIndex = CAMPAIGN_SCENARIOS.length + 1 + CAMPAIGN_DIFFICULTIES.length;
       this.loadLocalGame();
     }
   }
@@ -2291,9 +2326,14 @@ export class MilestoneOneScene extends Phaser.Scene {
       x: 20 + index * 146 + 68,
       y: CAMPAIGN_THEATRE_LAYOUT.difficultyY + CAMPAIGN_THEATRE_LAYOUT.difficultyHeight / 2
     }));
+    const seedEntry = {
+      kind: "seed" as const,
+      x: 235,
+      y: CAMPAIGN_THEATRE_LAYOUT.seedY + CAMPAIGN_THEATRE_LAYOUT.seedHeight / 2
+    };
     return hasSavedReign
-      ? [...scenarioEntries, ...difficultyEntries, { kind: "local-save", x: 235, y: CAMPAIGN_THEATRE_LAYOUT.localSaveY + 17 }]
-      : [...scenarioEntries, ...difficultyEntries];
+      ? [...scenarioEntries, seedEntry, ...difficultyEntries, { kind: "local-save", x: 235, y: CAMPAIGN_THEATRE_LAYOUT.localSaveY + 17 }]
+      : [...scenarioEntries, seedEntry, ...difficultyEntries];
   }
 
   private describeCampaignSetupFocus(focus: CampaignSetupFocus | undefined): string {
@@ -2304,6 +2344,9 @@ export class MilestoneOneScene extends Phaser.Scene {
       const profile = SCENARIO_PROFILES[focus.scenario];
       const honor = SCENARIO_HONORS[focus.scenario];
       return `Campaign Theatre focus: Chapter ${getCampaignChapter(focus.scenario)}, ${profile.label}. ${profile.summary} Terrain: ${profile.terrainIntel}. Opening: ${profile.openingDirective} Honor: ${honor.label}. ${honor.condition}`;
+    }
+    if (focus.kind === "seed") {
+      return `Campaign Theatre focus: Opening seed ${formatCampaignSeed(this.campaignSeed)}. Press Enter or Space, or use N, to choose the next deterministic opening.`;
     }
     if (focus.kind === "difficulty") {
       const profile = RIVAL_DIFFICULTY_PROFILES[focus.difficulty];
@@ -2366,6 +2409,10 @@ export class MilestoneOneScene extends Phaser.Scene {
       this.selectCampaignScenario(focus.scenario);
       return;
     }
+    if (focus.kind === "seed") {
+      this.rerollCampaignSeed();
+      return;
+    }
     if (focus.kind === "difficulty") {
       this.startCampaign(focus.difficulty);
       return;
@@ -2379,15 +2426,23 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.campaignSetupPanel.setVisible(false);
     this.campaignSetupInput?.setVisible(false).disableInteractive();
     this.restartCampaign(`${RIVAL_DIFFICULTY_PROFILES[difficulty].label} rival doctrine selected.`);
-    const campaignAnnouncement = `${SCENARIO_PROFILES[this.campaignScenario].label} reign begins. ${this.getImperialMandate()}`;
+    const campaignAnnouncement = `${SCENARIO_PROFILES[this.campaignScenario].label} reign begins on seed ${formatCampaignSeed(this.campaignSeed)}. ${this.getImperialMandate()}`;
     // Phaser dispatches the scene-wide pointer-up after this button's pointer-down handler.
     // Announce on the next frame so the generic selection message cannot mask the campaign transition.
     this.time.delayedCall(16, () => this.announceAccessibility(campaignAnnouncement));
   }
 
+  private rerollCampaignSeed(): void {
+    this.campaignSeed = getNextCampaignSeed(this.campaignSeed);
+    this.refreshCampaignSetupPanel();
+    const announcement = `Opening seed changed to ${formatCampaignSeed(this.campaignSeed)}. This reign will remain reproducible.`;
+    this.updateUi([announcement]);
+    this.announceAccessibility(announcement);
+  }
+
   private restartCampaign(message = "A new reign begins."): void {
     this.disconnectFromMultiplayer();
-    this.campaignInitialWorld = createInitialWorld(777, this.campaignDifficulty, this.campaignScenario);
+    this.campaignInitialWorld = createInitialWorld(this.campaignSeed, this.campaignDifficulty, this.campaignScenario);
     this.localPersistenceSuppressed = false;
     this.simulation = new Simulation(structuredClone(this.campaignInitialWorld));
     this.commandSequence = 0;
@@ -2529,6 +2584,7 @@ export class MilestoneOneScene extends Phaser.Scene {
       `CURRENT SEAT: ${this.getSettlementDisplayName(settlement?.id)}`,
       `CURRENT HEIR: ${heir?.name.toUpperCase() ?? "UNASSIGNED"}`,
       `STATE: ${heir?.mode.toUpperCase() ?? "NONE"}  //  TRUST: ${heir?.trust ?? 0}`,
+      `REIGN SEED: ${formatCampaignSeed(state.seed)}`,
       `RIVAL DOCTRINE: ${RIVAL_DIFFICULTY_PROFILES[state.rivalDifficulty].label}`,
       `THEATRE HONOR: ${this.getCampaignHonor(state.scenarioId)?.label ?? `UNSEALED // ${SCENARIO_HONORS[state.scenarioId].condition.toUpperCase()}`}`,
       `FAITH: ${settlement?.internalFaith ?? 0}  //  RIVAL PRESSURE: ${settlement?.externalReligiousPressure ?? 0}`,
@@ -2652,6 +2708,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.localPersistenceSuppressed = false;
     this.simulation = restoreSaveGame(save);
     this.campaignInitialWorld = structuredClone(campaignInitialWorld);
+    this.campaignSeed = this.campaignInitialWorld.seed;
     this.campaignDifficulty = this.simulation.getState().rivalDifficulty;
     this.campaignScenario = this.simulation.getState().scenarioId;
     this.campaignSetupPending = false;
@@ -3720,6 +3777,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     }
 
     this.game.canvas.setAttribute("data-campaign-phase", theatreOpen ? "theatre" : "tactical");
+    this.game.canvas.setAttribute("data-campaign-seed", String(this.campaignSeed >>> 0));
     this.game.canvas.setAttribute(
       "data-tactical-presentation",
       theatreOpen ? "theatre" : this.fieldMode ? "field" : "command"

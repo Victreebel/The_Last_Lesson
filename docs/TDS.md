@@ -2,7 +2,7 @@
 
 ## Technical Design Specification
 
-**Version:** 1.25
+**Version:** 1.26
 **Status:** Active Implementation Blueprint
 **Date:** 2026-08-04
 **Working Title:** The Last Lesson  
@@ -79,6 +79,7 @@ The scene exposes the same command state through pointer controls and keyboard c
 | --- | --- |
 | `B`, `H`, `R`, `L` | Toggle Build, Heir, Realm, and Book panels. Build, Heir, and Accord occupy a compact right-hand rail until one is expanded; Realm and Book remain mutually exclusive. |
 | `O` / `ORDERS` | Toggle the lower-left command drawer. It begins compact and contains the existing labor, production, logistics, Faith, and captive-policy actions when expanded. |
+| `N` (Campaign Theatre only) | Advance the visible opening seed to the next deterministic seed. Enter or Space activates the same action when the seed row is focused. The chosen seed is passed into the initial `WorldState`, so local saves, portable archives, replays, balance evidence, and multiplayer setup retain exact reproducibility. |
 | `M`, `A` | Enter movement or attack targeting mode. |
 | `F` | Enter advance mode. Selected battalions receive deterministic attack-move orders that retain a final destination while engaging visible nearby enemies. |
 | `Shift` + right-click terrain | Append a direct-movement waypoint for every selected Crown battalion. The authoritative route is the battalion's current destination followed by ordered waypoints; the renderer projects every route leg. A normal direct move, attack, retreat, advance, embark, or garrison order clears the queue. |
@@ -92,7 +93,7 @@ When their panel is expanded, the Heir console reserves visible `1` and `2` for 
 
 Mandate guidance must use this same visible vocabulary. The captive-policy step identifies `ACCORD [D]`, then `1` to propose its available exchange; the teaching step identifies the player's last field order as the observed lesson, then identifies `HEIR [H]`, `1` to Reward and reinforce that judgment, or `2` to Punish and weaken it. The Heir console may expose a bounded pointer-selected review target for its newest two doctrines; the visible numeric feedback keys apply only to that selected target. Guidance may highlight or describe an existing input route, but it must never submit it, synthesize a command, or introduce tutorial authority state.
 
-Campaign Theatre summary, terrain, Honor, opening, scenario-tag, status, and Rival Doctrine briefing text must remain readable at compact desktop scale. Presentation may raise type size or wrap static copy within the existing campaign layout, but it must not alter authored campaign focus order, card hit regions, or any scenario/difficulty selection semantics.
+Campaign Theatre summary, terrain, Honor, opening, scenario-tag, status, Rival Doctrine briefing text, and the opening-seed row must remain readable at compact desktop scale. The Theatre begins with the backwards-compatible default seed `777`, but the player may advance it before beginning a reign. A seed change is a pre-simulation presentation choice: it may rebuild the Theatre UI and update accessibility text, but it must not mutate the active reign. Starting or repeating a Theatre creates its initial `WorldState` from the selected seed; restoring a save synchronizes the Theatre's seed to the archived replay origin. Presentation may raise type size or wrap static copy within the existing campaign layout, but it must not alter authored campaign focus order, card hit regions, or any scenario/difficulty selection semantics.
 
 Campaign Theatre art is a cropped presentation atlas. Every rendered crop must be bounded to its own visible scenario card on fresh renderer loads; an atlas coordinate or origin may never cover the campaign briefing, another card, focus outline, or card hit region. Art remains non-authoritative and may not influence campaign selection or scenario state.
 

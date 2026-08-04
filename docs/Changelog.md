@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.55 - 2026-08-04
+
+- Campaign Theatre now shows the selected deterministic opening seed and supports a deliberate `[N] REROLL` action by pointer, keyboard focus, or `N`. New/repeated reigns use the selected seed, while restored local and portable campaigns synchronize to their replay origin.
+
 ## 2.6.54 - 2026-08-04
 
 - Reworked tactical chrome around uninterrupted map control. The Orders surface now begins as a compact `ORDERS [O]` drawer, and Build, Heir, and Accord use a narrow right-hand rail until a single drawer is opened.

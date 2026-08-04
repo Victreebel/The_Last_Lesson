@@ -78,6 +78,7 @@ For container deployment, health checks, and the required `wss://` production bo
 - `B`, `H`, `R`, and `L`: toggle the Build, Heir, Realm, and Book panels.
 - `FULL`: use the wide-screen top-bar control to enter or leave browser fullscreen. It changes presentation only.
 - In Campaign Theatre, use arrow keys to move the visible focus between theatres and rival doctrines, `Tab` to cycle every available choice, and `Enter` or `Space` to select or begin the focused reign.
+- Campaign Theatre begins from a visible opening seed. Press `N`, click the seed row, or focus it and press `Enter`/`Space` to select the next deterministic opening; repeating a Theatre retains its seed for an exact replay.
 - `M` and `A`: enter move and attack targeting modes.
 - `F`: enter advance mode. Selected battalions march to the designated position, engage visible enemies encountered en route, then resume their advance.
 - `X`: toggle high-contrast tactical presentation. The same local preference is available in the Book of Lessons as `VISIBILITY`.
