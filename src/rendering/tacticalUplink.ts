@@ -1,5 +1,6 @@
 import { getBattalionRank, type BattalionState, type SettlementState } from "../simulation/state/WorldState";
 import { getBattalionReadinessPresentation } from "./battalionReadinessPresentation";
+import type { ReconnaissanceContact } from "./reconnaissancePresentation";
 
 export interface TacticalUplinkStatusInput {
   readonly order: string;
@@ -10,6 +11,7 @@ export interface TacticalUplinkStatusInput {
   readonly selectedCaravan: boolean;
   readonly selectedBattalionCount: number;
   readonly activeControlGroup?: number;
+  readonly reconnaissanceContact?: ReconnaissanceContact;
 }
 
 /**
@@ -21,7 +23,9 @@ export function getTacticalUplinkStatusLines(input: TacticalUplinkStatusInput): 
   const { settlement } = input;
   const population = settlement.population;
   const controlGroup = input.activeControlGroup === undefined ? "" : ` // GROUP ${input.activeControlGroup}`;
-  const selection = input.selectedBattalion
+  const selection = input.reconnaissanceContact
+    ? `CONTACT ${input.reconnaissanceContact.heading}`
+    : input.selectedBattalion
     ? (() => {
         const readiness = getBattalionReadinessPresentation(input.selectedBattalion);
         const stance = input.selectedBattalion.stance === "hold" ? " // HOLD" : "";

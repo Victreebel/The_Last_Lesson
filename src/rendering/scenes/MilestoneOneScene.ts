@@ -18,6 +18,7 @@ import { getCombatFeedbackPresentation } from "../combatPresentation";
 import { describeGameEvent, selectTacticalReportEvents } from "../eventNarrative";
 import { getMiracleFeedbackPresentation } from "../miraclePresentation";
 import { getOrderIndicators } from "../orderPresentation";
+import { getReconnaissanceContact, type ReconnaissanceContact } from "../reconnaissancePresentation";
 import { getLineFormationDestinations } from "../formationPresentation";
 import { getLessonPresentationLines, type LessonPresentationStatus } from "../lessonPresentation";
 import { formatRivalCounterDoctrine, getRivalCounterDoctrineSummaries } from "../rivalIntelligencePresentation";
@@ -307,6 +308,8 @@ export class MilestoneOneScene extends Phaser.Scene {
   private inspectedSettlementId = "settlement-capital";
   private selectedBattalionId: string | null = null;
   private selectedCaravanId: string | null = null;
+  /** A visible rival contact can be inspected without replacing Crown field selection. */
+  private reconnaissanceContactId?: string;
   private readonly selectedBattalionIds = new Set<string>();
   private readonly controlGroups = new Map<number, readonly string[]>();
   private lastControlGroupSlot?: number;
@@ -4381,6 +4384,26 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.selectedBattalionIds.clear();
     this.selectedBattalionId = null;
     this.selectedCaravanId = null;
+    this.reconnaissanceContactId = undefined;
+  }
+
+  private inspectReconnaissanceContact(entityId: string): void {
+    const contact = getReconnaissanceContact(this.simulation.getState(), entityId);
+    if (!contact) {
+      this.reconnaissanceContactId = undefined;
+      this.updateUi(["The contact is no longer visible to the Crown."]);
+      return;
+    }
+    this.reconnaissanceContactId = entityId;
+    this.renderWorld();
+    this.updateUi([`Reconnaissance contact inspected: ${contact.heading}.`]);
+  }
+
+  private getInspectedReconnaissanceContact(): ReconnaissanceContact | undefined {
+    if (!this.reconnaissanceContactId) {
+      return undefined;
+    }
+    return getReconnaissanceContact(this.simulation.getState(), this.reconnaissanceContactId);
   }
 
   private issueMoveOrder(point: Phaser.Math.Vector2, append = false): void {
@@ -5114,6 +5137,9 @@ export class MilestoneOneScene extends Phaser.Scene {
     if (this.selectedBattalionId && !state.battalions[this.selectedBattalionId]) {
       this.selectedBattalionId = this.selectedBattalionIds.values().next().value ?? null;
     }
+    if (this.reconnaissanceContactId && !this.getInspectedReconnaissanceContact()) {
+      this.reconnaissanceContactId = undefined;
+    }
   }
 
   private renderOrderIndicators(state: WorldState): void {
@@ -5229,6 +5255,11 @@ export class MilestoneOneScene extends Phaser.Scene {
           return;
         }
 
+        if (currentBuilding.ownerEmpireId !== "empire-player" && this.mode === "select") {
+          this.inspectReconnaissanceContact(currentBuilding.id);
+          return;
+        }
+
         if (currentBuilding.ownerEmpireId === "empire-player" && this.mode === "attack") {
           this.updateUi(["Cannot target a structure held by the Crown."]);
           return;
@@ -5257,6 +5288,10 @@ export class MilestoneOneScene extends Phaser.Scene {
 
     sprite.setPosition(building.position.x, building.position.y);
     sprite.setFillStyle(building.complete ? color : 0x6a6041, building.complete ? 0.12 : 0.28);
+    sprite.setStrokeStyle(
+      this.reconnaissanceContactId === building.id ? 3 : 2,
+      this.reconnaissanceContactId === building.id ? 0x84cbe1 : 0x191c16
+    );
     const visible =
       building.ownerEmpireId === "empire-player" ||
       isPositionVisibleToEmpire(this.simulation.getState(), "empire-player", building.position);
@@ -5326,7 +5361,7 @@ export class MilestoneOneScene extends Phaser.Scene {
           return;
         }
         if (battalion.ownerEmpireId !== "empire-player") {
-          this.updateUi(["Rival battalion detected. Select Crown forces to attack."]);
+          this.inspectReconnaissanceContact(battalion.id);
           return;
         }
         this.selectBattalion(battalion.id, this.isShiftHeld(pointer));
@@ -5338,7 +5373,8 @@ export class MilestoneOneScene extends Phaser.Scene {
     container.setPosition(battalion.position.x, battalion.position.y);
     const marker = container.getAt(0) as Phaser.GameObjects.Ellipse;
     marker.setFillStyle(battalion.ownerEmpireId === "empire-player" ? 0x3d7391 : 0x9d4640, 0.35);
-    marker.setStrokeStyle(this.selectedBattalionIds.has(battalion.id) ? 4 : 2, 0xf0d36f);
+    const inspected = this.reconnaissanceContactId === battalion.id;
+    marker.setStrokeStyle(this.selectedBattalionIds.has(battalion.id) ? 4 : inspected ? 3 : 2, inspected ? 0x84cbe1 : 0xf0d36f);
     const art = container.getAt(1) as Phaser.GameObjects.Image;
     if (battalion.ownerEmpireId === "empire-player") {
       art.clearTint();
@@ -5433,7 +5469,7 @@ export class MilestoneOneScene extends Phaser.Scene {
           return;
         }
         if (caravan.ownerEmpireId !== "empire-player") {
-          this.updateUi(["Rival supply convoy detected. Select Crown battalions to raid it."]);
+          this.inspectReconnaissanceContact(caravan.id);
           return;
         }
         this.clearSelection();
@@ -5450,7 +5486,8 @@ export class MilestoneOneScene extends Phaser.Scene {
         ? caravan.ownerEmpireId === "empire-player" ? 0x2f667c : 0x5f3f62
         : caravan.ownerEmpireId === "empire-player" ? 0xb58c43 : 0x7c4542
     );
-    base.setStrokeStyle(this.selectedCaravanId === caravan.id ? 4 : 2, 0xf0d36f);
+    const inspected = this.reconnaissanceContactId === caravan.id;
+    base.setStrokeStyle(this.selectedCaravanId === caravan.id ? 4 : inspected ? 3 : 2, inspected ? 0x84cbe1 : 0xf0d36f);
     const shipArt = caravan.kind === "ship" ? (container.getAt(1) as Phaser.GameObjects.Image) : undefined;
     if (shipArt) {
       if (caravan.ownerEmpireId === "empire-player") {
@@ -5506,6 +5543,7 @@ export class MilestoneOneScene extends Phaser.Scene {
         ? state.battalions[this.selectedBattalionIds.values().next().value as string]
         : undefined;
     const activeControlGroup = this.getActiveControlGroup();
+    const reconnaissanceContact = this.getInspectedReconnaissanceContact();
     this.resourceText.setText(
       this.scale.width < 640
         ? `SEAT ${this.getSettlementDisplayName(settlement.id)}  //  TICK ${state.tick}\nFOOD ${settlement.localFood}  WOOD ${empire.resources.wood}  IRON ${empire.resources.iron}  LUX ${empire.resources.luxury}  FAITH ${empire.resources.faith}`
@@ -5520,14 +5558,15 @@ export class MilestoneOneScene extends Phaser.Scene {
         selectedBattalion,
         selectedCaravan: Boolean(this.selectedCaravanId),
         selectedBattalionCount: this.selectedBattalionIds.size,
-        activeControlGroup
+        activeControlGroup,
+        reconnaissanceContact
       }).join("\n")
     );
     const victory = state.victory.winnerEmpireId;
     this.eventText.setText(
       victory
         ? `VICTORY // ${state.empires[victory]?.name.toUpperCase() ?? "THE WINNER"} HOLDS EVERY THRONE.`
-        : this.getTacticalUplinkMandate(settlement, events)
+        : this.getTacticalUplinkMandate(settlement, events, reconnaissanceContact)
     );
     this.updateAccordPanel();
     this.updateHeirPanel();
@@ -5609,7 +5648,19 @@ export class MilestoneOneScene extends Phaser.Scene {
     }
   }
 
-  private getTacticalUplinkMandate(settlement: SettlementState, events: readonly string[]): string {
+  private getTacticalUplinkMandate(
+    settlement: SettlementState,
+    events: readonly string[],
+    reconnaissanceContact?: ReconnaissanceContact
+  ): string {
+    if (reconnaissanceContact) {
+      return [
+        `RECON CONTACT: ${reconnaissanceContact.heading}`,
+        reconnaissanceContact.detail,
+        reconnaissanceContact.ground,
+        `THREAT: ${this.getThreatForecast(settlement)}`
+      ].join("\\n");
+    }
     const mandate = getImperialMandateProgress(this.simulation.getState());
     return [
       `MANDATE ${Math.min(mandate.completedSteps + 1, mandate.steps.length)}/${mandate.steps.length}: ${mandate.activeStep.label}`,

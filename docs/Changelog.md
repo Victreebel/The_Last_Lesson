@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.6.60 - 2026-08-04
+
+- Added fog-respecting Reconnaissance Contacts. Left-click any already visible rival battalion, building, or convoy to inspect its current public condition and terrain consequence in the existing Tactical Uplink; a blue map focus keeps that contact legible without replacing the active Crown selection.
+- Contact information disappears when vision is lost, the entity is destroyed, or the player clears field selection. The projection is presentation-only and cannot reveal hidden entities or alter simulation, saves, replays, or multiplayer authority.
+
 ## 2.6.59 - 2026-08-04
 
 - Added durable Rival Intelligence to the Book of Lessons. The two newest visible enemy counter-doctrines now identify the observing heir, the learned response, and its confidence; before first contact, the Book says plainly that no counter-doctrine has witnessed the Crown.

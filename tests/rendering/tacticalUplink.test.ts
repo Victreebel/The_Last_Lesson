@@ -62,4 +62,26 @@ describe("tactical Uplink presentation", () => {
     expect(lines).toHaveLength(5);
     expect(lines[0]).toBe("ORDER: ATTACK // VETERAN SPEARS // H100 M84 S92");
   });
+
+  it("prioritizes a deliberately inspected fog-visible rival contact in the same compact first line", () => {
+    const state = createInitialWorld(9203);
+    const settlement = state.settlements["settlement-capital"];
+    const lines = getTacticalUplinkStatusLines({
+      order: "SELECT",
+      settlement,
+      citizenCapacity: 24,
+      captiveCapacity: 0,
+      selectedCaravan: false,
+      selectedBattalionCount: 0,
+      reconnaissanceContact: {
+        entityId: "battalion-rival-1",
+        heading: "RIVAL MILITIA SPEARS",
+        detail: "8 TROOPS // H100 M70 S100",
+        ground: "GROUND: OPEN BUILD // 100% MOVE"
+      }
+    });
+
+    expect(lines).toHaveLength(5);
+    expect(lines[0]).toBe("ORDER: SELECT // CONTACT RIVAL MILITIA SPEARS");
+  });
 });
