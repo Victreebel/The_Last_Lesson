@@ -2,7 +2,7 @@
 
 ## Technical Design Specification
 
-**Version:** 1.24
+**Version:** 1.25
 **Status:** Active Implementation Blueprint
 **Date:** 2026-08-04
 **Working Title:** The Last Lesson  
@@ -77,7 +77,8 @@ The scene exposes the same command state through pointer controls and keyboard c
 
 | Input | Presentation result |
 | --- | --- |
-| `B`, `H`, `R`, `L` | Toggle Build, Heir, Realm, and Book panels. Realm and Book remain mutually exclusive. |
+| `B`, `H`, `R`, `L` | Toggle Build, Heir, Realm, and Book panels. Build, Heir, and Accord occupy a compact right-hand rail until one is expanded; Realm and Book remain mutually exclusive. |
+| `O` / `ORDERS` | Toggle the lower-left command drawer. It begins compact and contains the existing labor, production, logistics, Faith, and captive-policy actions when expanded. |
 | `M`, `A` | Enter movement or attack targeting mode. |
 | `F` | Enter advance mode. Selected battalions receive deterministic attack-move orders that retain a final destination while engaging visible nearby enemies. |
 | `Shift` + right-click terrain | Append a direct-movement waypoint for every selected Crown battalion. The authoritative route is the battalion's current destination followed by ordered waypoints; the renderer projects every route leg. A normal direct move, attack, retreat, advance, embark, or garrison order clears the queue. |
@@ -99,7 +100,7 @@ The wide tactical header may expose a browser fullscreen control only where it d
 
 Every interactive child of a fixed Phaser HUD or panel must independently use a zero scroll factor. Camera bounds and world scrolling may never displace the hit area of a visibly screen-anchored tactical, campaign, management, minimap, or victory control.
 
-The tactical camera must remain usable while management surfaces are open. Arrow-key panning, cursor-anchored wheel zoom, and middle-button map drag are always available over the battlefield. Field view additionally enables bounded map-edge scrolling outside the header. Camera movement is renderer-only and must never create commands, modify selection, or enter saves, replays, or multiplayer authority. A selected group receives a presentation-derived, ID-stable line formation perpendicular to its direction of travel; the scene turns those destinations into ordinary individual commands, so formation marching is replay-safe and needs no simulation special case. Shift-queued routes are likewise ordinary authoritative movement commands, serialized in the battalion state, included in deterministic saves, replays, snapshots, and hashes, and rendered as one visible leg per waypoint.
+The tactical camera must remain usable while management surfaces are open. Arrow-key panning, cursor-anchored wheel zoom, and middle-button map drag are always available over the battlefield. A reserved clear gutter on every tactical screen edge enables bounded map-edge scrolling in both Command and Field presentation, avoiding interaction with the screen-anchored controls. The Orders dock begins as a compact header and the Accord, Heir, and Build headers form a narrow right-hand rail; expanding a single drawer hides the inactive tabs, so at most one temporary management surface covers the battlefield. Middle-button gestures on the right-hand rail never activate a management action. Camera movement is renderer-only and must never create commands, modify selection, or enter saves, replays, or multiplayer authority. A selected group receives a presentation-derived, ID-stable line formation perpendicular to its direction of travel; the scene turns those destinations into ordinary individual commands, so formation marching is replay-safe and needs no simulation special case. Shift-queued routes are likewise ordinary authoritative movement commands, serialized in the battalion state, included in deterministic saves, replays, snapshots, and hashes, and rendered as one visible leg per waypoint.
 
 Shortcuts are ignored during campaign setup and while a text input, select, or textarea has focus. This protects multiplayer-lobby entry and prevents browser form input from triggering game actions.
 

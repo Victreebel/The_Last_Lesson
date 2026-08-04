@@ -25,7 +25,8 @@ Implemented:
 
 - Phaser world view with grid terrain, explicit terrain symbols, and a painterly isometric building atlas.
 - Deterministic terrain signatures for grassland, fields, forests, iron veins, luxury groves, hills, water, and marshes, preserving clear labels while making terrain readable through pattern as well as color.
-- Camera panning with arrow keys, middle-button dragging, and an optional Field view with map-edge scrolling that collapses command chrome without changing the simulation.
+- Camera panning with arrow keys, middle-button dragging, and map-edge scrolling through reserved clear gutters in both Command and Field view, without changing the simulation.
+- A compact `ORDERS [O]` drawer and a narrow right-hand Build/Heir/Accord rail keep the normal tactical presentation map-first; a single expanded drawer owns the temporary management surface.
 - Shift-queued battalion routes with visible deterministic waypoint legs, preserving direct-command control while remaining part of the ordinary simulation command, save, replay, and multiplayer contracts.
 - Deterministic line formations for multi-battalion movement and advance orders, so direct control remains readable and tactically intentional without adding special simulation behavior.
 - UI controls for farm placement, battalion creation, movement, attacking, and manual ticks.

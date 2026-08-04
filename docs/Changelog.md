@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.6.54 - 2026-08-04
+
+- Reworked tactical chrome around uninterrupted map control. The Orders surface now begins as a compact `ORDERS [O]` drawer, and Build, Heir, and Accord use a narrow right-hand rail until a single drawer is opened.
+- Map-edge scrolling now works through clear screen gutters in normal Command view as well as Field view. Middle-button gestures on management tabs do not activate them, retaining camera control without affecting authoritative state.
+
 ## 2.6.53 - 2026-08-04
 
 - Group move and advance orders now fan selected Crown battalions into a deterministic, grid-aligned line formation oriented to their direction of travel. Formation placement is an input-layer policy that emits ordinary commands, preserving deterministic saves, replays, and multiplayer authority.

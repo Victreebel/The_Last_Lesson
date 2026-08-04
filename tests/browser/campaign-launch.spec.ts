@@ -110,6 +110,7 @@ test("launches the campaign theatre and begins a Crownfall reign", async ({ page
   await expect(page.locator("canvas")).toHaveAttribute("data-campaign-phase", "tactical");
   await expect(page.locator("canvas")).toHaveAttribute("aria-label", "The Last Lesson tactical map and command interface");
   expect(await page.locator("canvas").getAttribute("aria-keyshortcuts")).toContain("D");
+  expect(await page.locator("canvas").getAttribute("aria-keyshortcuts")).toContain("O");
   await page.locator("canvas").press("D");
   await expect(page.locator("#the-last-lesson-announcements")).toContainText("Accord panel expanded");
   await expect.poll(() => assetUrls.some((url) => url.endsWith("painterly-battlefield-v1.webp"))).toBe(true);
@@ -210,7 +211,7 @@ test("clears management chrome in Field view and restores it for a panel shortcu
   await expect(page.locator("#the-last-lesson-announcements")).toContainText("Build panel expanded");
 });
 
-test("pans the battlefield with middle-mouse drag and Field-view edge scrolling", async ({ page }) => {
+test("pans the battlefield with middle-mouse drag and edge scrolling in normal tactical view", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto("/");
   await beginCrownfallRivalReign(page);
@@ -230,13 +231,24 @@ test("pans the battlefield with middle-mouse drag and Field-view edge scrolling"
   const afterDrag = await canvas.screenshot();
   expect(afterDrag.equals(beforeDrag)).toBe(false);
 
-  await canvas.focus();
-  await canvas.press("z");
   const beforeEdgeScroll = await canvas.screenshot();
   await page.mouse.move(bounds.x + bounds.width - 2, bounds.y + bounds.height * 0.5);
   await page.waitForTimeout(180);
   const afterEdgeScroll = await canvas.screenshot();
   expect(afterEdgeScroll.equals(beforeEdgeScroll)).toBe(false);
+});
+
+test("keeps command orders compact until the Crown opens the drawer", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto("/");
+  await beginCrownfallRivalReign(page);
+
+  const canvas = page.locator("canvas");
+  await canvas.focus();
+  await canvas.press("o");
+  await expect(page.locator("#the-last-lesson-announcements")).toContainText("Command drawer expanded");
+  await canvas.press("o");
+  await expect(page.locator("#the-last-lesson-announcements")).toContainText("Command drawer collapsed");
 });
 
 test("surfaces and resolves Ashen Oath's opening civic crisis", async ({ page }) => {

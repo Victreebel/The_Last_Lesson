@@ -19,7 +19,6 @@ import { getMiracleFeedbackPresentation } from "../miraclePresentation";
 import { getOrderIndicators } from "../orderPresentation";
 import { getLineFormationDestinations } from "../formationPresentation";
 import { getLessonPresentationLines, type LessonPresentationStatus } from "../lessonPresentation";
-import { getTacticalTopPanelLayout } from "../tacticalPanelLayout";
 import { getTerrainPresentation } from "../terrainPresentation";
 import { getTacticalUplinkStatusLines } from "../tacticalUplink";
 import { BOOK_PANEL_HEIGHT, CAMPAIGN_THEATRE_LAYOUT } from "../uiLayout";
@@ -203,6 +202,11 @@ const BUILDING_DISPLAY_LABELS: Record<BuildingKind, string> = {
 const BUILD_PANEL_WIDTH = 306;
 const HEIR_PANEL_WIDTH = 286;
 const ACCORD_PANEL_WIDTH = 262;
+const TACTICAL_DRAWER_TAB_WIDTH = 118;
+const TACTICAL_DRAWER_TAB_HEIGHT = 42;
+const TACTICAL_DRAWER_TAB_GAP = 8;
+const COMMAND_DOCK_COMPACT_WIDTH = 184;
+const COMMAND_DOCK_COMPACT_HEIGHT = 42;
 const PLACEMENT_GRID_SIZE = 32;
 const DRAG_THRESHOLD = 10;
 const MINIMAP_WIDTH = 230;
@@ -212,7 +216,7 @@ const AUTO_SAVE_INTERVAL_TICKS = 5;
 const CAMERA_ZOOM_MIN = 0.72;
 const CAMERA_ZOOM_MAX = 1.5;
 const CAMERA_ZOOM_STEP = 0.1;
-const CAMERA_EDGE_SCROLL_MARGIN = 24;
+const CAMERA_EDGE_SCROLL_MARGIN = 12;
 const CAMERA_EDGE_SCROLL_SPEED = 11;
 const UI_COLORS = {
   panel: 0x12191a,
@@ -359,7 +363,12 @@ export class MilestoneOneScene extends Phaser.Scene {
   private minimapBounds = { x: 0, y: 0 };
   private minimapEligible = false;
   private commandDock!: Phaser.GameObjects.Container;
+  private commandDockBackground!: Phaser.GameObjects.Rectangle;
+  private commandDockHeader!: Phaser.GameObjects.Rectangle;
+  private commandDockTitle!: Phaser.GameObjects.Text;
   private commandMandateText!: Phaser.GameObjects.Text;
+  private commandDockExpanded = false;
+  private readonly commandDockContent: Phaser.GameObjects.GameObject[] = [];
   private commandTooltip!: Phaser.GameObjects.Container;
   private commandTooltipBackground!: Phaser.GameObjects.Rectangle;
   private commandTooltipLabel!: Phaser.GameObjects.Text;
@@ -498,7 +507,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     canvas.setAttribute("aria-describedby", "the-last-lesson-accessibility-brief");
     canvas.setAttribute(
       "aria-keyshortcuts",
-      "ArrowUp ArrowDown ArrowLeft ArrowRight Tab Enter B C D H R L M A F X Z Escape Space 0 1 2 3 4 5 6 7 8 9 Q W E Control+1 Control+2 Control+3 Control+4 Control+5 Control+6 Control+7 Control+8 Control+9"
+      "ArrowUp ArrowDown ArrowLeft ArrowRight Tab Enter B C D H O R L M A F X Z Escape Space 0 1 2 3 4 5 6 7 8 9 Q W E Control+1 Control+2 Control+3 Control+4 Control+5 Control+6 Control+7 Control+8 Control+9"
     );
     this.accessibilityAnnouncements = document.getElementById("the-last-lesson-announcements") ?? undefined;
   }
@@ -528,6 +537,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     bind("B", () => this.toggleBuildingsPanel());
     bind("R", () => this.toggleRealmPanel());
     bind("L", () => this.toggleBookOfLessons());
+    bind("O", () => this.toggleCommandDock());
     bind("C", () => this.castMendSettlement());
     bind("M", () => this.enterMoveMode());
     bind("A", () => this.enterAttackMode());
@@ -917,7 +927,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     if (this.cursors?.up.isDown) camera.scrollY -= speed;
     if (this.cursors?.down.isDown) camera.scrollY += speed;
 
-    if (!this.fieldMode || this.campaignSetupPending || this.cameraDragOrigin) {
+    if (this.campaignSetupPending || this.cameraDragOrigin) {
       return;
     }
 
@@ -925,6 +935,8 @@ export class MilestoneOneScene extends Phaser.Scene {
     if (!pointer.active || pointer.y < this.topHud.height) {
       return;
     }
+    // Persistent HUD elements leave a 16px screen gutter. Keep edge panning in that
+    // gutter so it remains available in Command view without competing with a control.
     if (pointer.x <= CAMERA_EDGE_SCROLL_MARGIN) camera.scrollX -= CAMERA_EDGE_SCROLL_SPEED;
     if (pointer.x >= this.scale.width - CAMERA_EDGE_SCROLL_MARGIN) camera.scrollX += CAMERA_EDGE_SCROLL_SPEED;
     if (pointer.y <= CAMERA_EDGE_SCROLL_MARGIN) camera.scrollY -= CAMERA_EDGE_SCROLL_SPEED;
@@ -2800,11 +2812,20 @@ export class MilestoneOneScene extends Phaser.Scene {
   }
 
   private createCommandDock(): void {
-    const background = this.add.rectangle(0, 0, 410, 434, UI_COLORS.panel, 0.96).setOrigin(0);
-    background.setStrokeStyle(1, UI_COLORS.trim);
-    background.setInteractive({ useHandCursor: false });
-    background.on("pointerdown", (pointer: Phaser.Input.Pointer) => pointer.event.stopPropagation());
-    const title = this.add.text(14, 9, "COMMAND ORDERS", {
+    this.commandDockBackground = this.add.rectangle(0, 0, 410, 434, UI_COLORS.panel, 0.96).setOrigin(0);
+    this.commandDockBackground.setStrokeStyle(1, UI_COLORS.trim);
+    this.commandDockHeader = this.add.rectangle(0, 0, 410, COMMAND_DOCK_COMPACT_HEIGHT, UI_COLORS.panelDeep, 0.98).setOrigin(0);
+    this.commandDockHeader.setStrokeStyle(1, UI_COLORS.trim);
+    this.commandDockHeader.setInteractive({ useHandCursor: true });
+    this.commandDockHeader.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+      if (!this.isPrimaryClick(pointer)) {
+        return;
+      }
+      pointer.event.stopPropagation();
+      this.suppressNextPointerUp = true;
+      this.toggleCommandDock();
+    });
+    this.commandDockTitle = this.add.text(14, 14, "ORDERS [O]", {
       fontFamily: "Arial Black, Arial",
       fontSize: "11px",
       color: "#f2d77f"
@@ -2815,8 +2836,15 @@ export class MilestoneOneScene extends Phaser.Scene {
       color: "#e2bd61"
     });
     const divider = this.add.rectangle(14, 29, 382, 1, UI_COLORS.trim, 1).setOrigin(0);
-    this.commandDock = this.add.container(0, 0, [background, title, this.commandMandateText, divider]);
+    this.commandDock = this.add.container(0, 0, [
+      this.commandDockBackground,
+      this.commandDockHeader,
+      this.commandDockTitle,
+      this.commandMandateText,
+      divider
+    ]);
     this.commandDock.setScrollFactor(0).setDepth(40);
+    this.commandDockContent.push(this.commandMandateText, divider);
 
     this.addCommandButton(14, 42, "SUPPLY", "WAGON", () => this.createCaravan(), UI_COLORS.command, "supply");
     this.addCommandButton(110, 42, "MOVE", "UNIT", () => this.enterMoveMode(), UI_COLORS.command, "move");
@@ -2841,6 +2869,34 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.addCommandButton(14, 366, "HOUNDS", "8F 4W", () => this.createBattalion("hounds"));
     this.addCommandButton(110, 366, "MEND", "14 FAITH", () => this.castMendSettlement(), UI_COLORS.command, "mend");
     this.addWideCommandButton(206, 366, "DIVINE JUDGMENT", "18 FAITH / RELIGIOUS WARD", () => this.castDivineJudgment());
+    this.updateCommandDock(false);
+  }
+
+  private toggleCommandDock(): void {
+    this.restoreCommandInterface();
+    this.commandDockExpanded = !this.commandDockExpanded;
+    this.updateCommandDock();
+    const announcement = this.commandDockExpanded ? "Command drawer expanded." : "Command drawer collapsed.";
+    this.updateUi([announcement]);
+    this.announceAccessibility(announcement);
+  }
+
+  private updateCommandDock(relayout = true): void {
+    const width = this.commandDockExpanded ? 410 : COMMAND_DOCK_COMPACT_WIDTH;
+    const height = this.commandDockExpanded ? 434 : COMMAND_DOCK_COMPACT_HEIGHT;
+    this.commandDockBackground.setSize(width, height);
+    this.commandDockHeader.setSize(width, COMMAND_DOCK_COMPACT_HEIGHT);
+    this.commandDockTitle.setText(this.commandDockExpanded ? "COMMAND ORDERS [O]" : "ORDERS [O]");
+    this.commandMandateText.setVisible(this.commandDockExpanded);
+    this.commandDockContent.forEach((control) => {
+      (control as Phaser.GameObjects.GameObject & Phaser.GameObjects.Components.Visible).setVisible(
+        this.commandDockExpanded
+      );
+    });
+    this.commandDock.setSize(width, height);
+    if (relayout) {
+      this.layoutUi();
+    }
   }
 
   private createCommandTooltip(): void {
@@ -2954,6 +3010,9 @@ export class MilestoneOneScene extends Phaser.Scene {
     button.setStrokeStyle(1, UI_COLORS.trim);
     button.setInteractive({ useHandCursor: true });
     button.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+      if (!this.isPrimaryClick(pointer)) {
+        return;
+      }
       pointer.event.stopPropagation();
       this.suppressNextPointerUp = true;
       this.audio.play("command");
@@ -2972,6 +3031,7 @@ export class MilestoneOneScene extends Phaser.Scene {
       color: "#b6c5bb"
     });
     this.commandDock.add([button, primary, secondary]);
+    this.commandDockContent.push(button, primary, secondary);
     if (mandateControl) {
       this.commandTiles.set(mandateControl, { button, primary, secondary, fill });
     }
@@ -2982,6 +3042,9 @@ export class MilestoneOneScene extends Phaser.Scene {
     button.setStrokeStyle(1, UI_COLORS.trim);
     button.setInteractive({ useHandCursor: true });
     button.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+      if (!this.isPrimaryClick(pointer)) {
+        return;
+      }
       pointer.event.stopPropagation();
       this.suppressNextPointerUp = true;
       this.audio.play("command");
@@ -3000,6 +3063,7 @@ export class MilestoneOneScene extends Phaser.Scene {
       color: "#b6c5bb"
     });
     this.commandDock.add([button, primary, secondary]);
+    this.commandDockContent.push(button, primary, secondary);
   }
 
   private addWideCommandButton(
@@ -3014,6 +3078,9 @@ export class MilestoneOneScene extends Phaser.Scene {
     button.setStrokeStyle(1, UI_COLORS.trim);
     button.setInteractive({ useHandCursor: true });
     button.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+      if (!this.isPrimaryClick(pointer)) {
+        return;
+      }
       pointer.event.stopPropagation();
       this.suppressNextPointerUp = true;
       this.audio.play("command");
@@ -3032,6 +3099,7 @@ export class MilestoneOneScene extends Phaser.Scene {
       color: "#b6c5bb"
     });
     this.commandDock.add([button, primary, secondary]);
+    this.commandDockContent.push(button, primary, secondary);
     if (mandateControl) {
       this.commandTiles.set(mandateControl, { button, primary, secondary, fill: UI_COLORS.commandActive });
     }
@@ -3041,11 +3109,18 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.heirPanelBg = this.add.rectangle(0, 0, HEIR_PANEL_WIDTH, 48, UI_COLORS.panel, 0.96).setOrigin(0);
     this.heirPanelBg.setStrokeStyle(1, UI_COLORS.trim);
     this.heirPanelBg.setInteractive({ useHandCursor: false });
-    this.heirPanelBg.on("pointerdown", (pointer: Phaser.Input.Pointer) => pointer.event.stopPropagation());
+    this.heirPanelBg.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+      if (!this.isMiddleClick(pointer)) {
+        pointer.event.stopPropagation();
+      }
+    });
 
     this.heirPanelHeader = this.add.rectangle(0, 0, HEIR_PANEL_WIDTH, 48, UI_COLORS.panelDeep, 0.98).setOrigin(0);
     this.heirPanelHeader.setInteractive({ useHandCursor: true });
     this.heirPanelHeader.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+      if (!this.isPrimaryClick(pointer)) {
+        return;
+      }
       pointer.event.stopPropagation();
       this.toggleHeirPanel();
     });
@@ -3080,10 +3155,17 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.accordPanelBg = this.add.rectangle(0, 0, ACCORD_PANEL_WIDTH, 48, UI_COLORS.panel, 0.96).setOrigin(0);
     this.accordPanelBg.setStrokeStyle(1, UI_COLORS.trim);
     this.accordPanelBg.setInteractive({ useHandCursor: false });
-    this.accordPanelBg.on("pointerdown", (pointer: Phaser.Input.Pointer) => pointer.event.stopPropagation());
+    this.accordPanelBg.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+      if (!this.isMiddleClick(pointer)) {
+        pointer.event.stopPropagation();
+      }
+    });
     this.accordPanelHeader = this.add.rectangle(0, 0, ACCORD_PANEL_WIDTH, 48, UI_COLORS.panelDeep, 0.98).setOrigin(0);
     this.accordPanelHeader.setInteractive({ useHandCursor: true });
     this.accordPanelHeader.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+      if (!this.isPrimaryClick(pointer)) {
+        return;
+      }
       pointer.event.stopPropagation();
       this.toggleAccordPanel();
     });
@@ -3103,6 +3185,9 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.accordExchangeButton.setStrokeStyle(1, UI_COLORS.trim);
     this.accordExchangeButton.setInteractive({ useHandCursor: true });
     this.accordExchangeButton.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+      if (!this.isPrimaryClick(pointer)) {
+        return;
+      }
       pointer.event.stopPropagation();
       this.suppressNextPointerUp = true;
       this.exchangeCaptives();
@@ -3162,14 +3247,16 @@ export class MilestoneOneScene extends Phaser.Scene {
     const accord = this.getPrisonerAccord();
     const activeMandate = getImperialMandateProgress(this.simulation.getState()).activeStep;
     const accordIsMandated = getMandateGuidance(activeMandate.id).surface === "accord";
-    const height = this.accordPanelExpanded ? 190 : 48;
-    this.accordPanelBg.setSize(ACCORD_PANEL_WIDTH, height);
-    this.accordPanel.setSize(ACCORD_PANEL_WIDTH, height);
+    const width = this.accordPanelExpanded ? ACCORD_PANEL_WIDTH : TACTICAL_DRAWER_TAB_WIDTH;
+    const height = this.accordPanelExpanded ? 190 : TACTICAL_DRAWER_TAB_HEIGHT;
+    this.accordPanelBg.setSize(width, height);
+    this.accordPanelHeader.setSize(width, TACTICAL_DRAWER_TAB_HEIGHT);
+    this.accordPanel.setSize(width, height);
     this.accordPanelHeader.setFillStyle(accordIsMandated ? UI_COLORS.commandActive : UI_COLORS.panelDeep, 0.98);
     this.accordPanelTitle.setText(
       this.accordPanelExpanded
         ? "ACCORD // PRISONERS [-]"
-        : `ACCORD // PRISONERS [${accordIsMandated ? "!" : "+"}]`
+        : `ACCORD [D] ${accordIsMandated ? "!" : "+"}`
     );
     this.accordPanelTitle.setColor(accordIsMandated ? UI_COLORS.text : "#f2d77f");
     this.accordPanelBody.setVisible(this.accordPanelExpanded);
@@ -3210,6 +3297,9 @@ export class MilestoneOneScene extends Phaser.Scene {
     button.setStrokeStyle(1, UI_COLORS.trim);
     button.setInteractive({ useHandCursor: true });
     button.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+      if (!this.isPrimaryClick(pointer)) {
+        return;
+      }
       pointer.event.stopPropagation();
       this.suppressNextPointerUp = true;
       this.sendHeirFeedback(commandType);
@@ -3230,6 +3320,9 @@ export class MilestoneOneScene extends Phaser.Scene {
     button.setStrokeStyle(1, UI_COLORS.trim);
     button.setInteractive({ useHandCursor: true });
     button.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+      if (!this.isPrimaryClick(pointer)) {
+        return;
+      }
       pointer.event.stopPropagation();
       const doctrine = this.getHeirRecentDoctrines(this.getActiveHeir())[index];
       if (!doctrine) {
@@ -3258,15 +3351,17 @@ export class MilestoneOneScene extends Phaser.Scene {
     const lastDoctrine = heir?.lastDoctrineId ? this.simulation.getState().doctrines[heir.lastDoctrineId] : undefined;
     const reviewedDoctrine = recentDoctrines.find((doctrine) => doctrine.id === this.reviewedHeirDoctrineId) ?? lastDoctrine;
     this.reviewedHeirDoctrineId = reviewedDoctrine?.id;
-    const height = this.heirPanelExpanded ? 436 : 48;
+    const width = this.heirPanelExpanded ? HEIR_PANEL_WIDTH : TACTICAL_DRAWER_TAB_WIDTH;
+    const height = this.heirPanelExpanded ? 436 : TACTICAL_DRAWER_TAB_HEIGHT;
 
-    this.heirPanelBg.setSize(HEIR_PANEL_WIDTH, height);
-    this.heirPanel.setSize(HEIR_PANEL_WIDTH, height);
+    this.heirPanelBg.setSize(width, height);
+    this.heirPanelHeader.setSize(width, TACTICAL_DRAWER_TAB_HEIGHT);
+    this.heirPanel.setSize(width, height);
     this.heirPanelHeader.setFillStyle(heirLessonIsMandated ? UI_COLORS.commandActive : UI_COLORS.panelDeep, 0.98);
     this.heirPanelTitle.setText(
       this.heirPanelExpanded
         ? `HEIR // ${this.getSettlementDisplayName(settlement?.id)} [-]`
-        : `HEIR // ${this.getSettlementDisplayName(settlement?.id)} [${heirLessonIsMandated ? "!" : "+"}]`
+        : `HEIR [H] ${heirLessonIsMandated ? "!" : "+"}`
     );
     this.heirPanelTitle.setColor(heirLessonIsMandated ? UI_COLORS.text : "#f2d77f");
     this.heirPanelBody.setVisible(this.heirPanelExpanded);
@@ -3401,10 +3496,17 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.buildingsPanelBg = this.add.rectangle(0, 0, BUILD_PANEL_WIDTH, 48, UI_COLORS.panel, 0.96).setOrigin(0);
     this.buildingsPanelBg.setStrokeStyle(1, UI_COLORS.trim);
     this.buildingsPanelBg.setInteractive({ useHandCursor: false });
-    this.buildingsPanelBg.on("pointerdown", (pointer: Phaser.Input.Pointer) => pointer.event.stopPropagation());
+    this.buildingsPanelBg.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+      if (!this.isMiddleClick(pointer)) {
+        pointer.event.stopPropagation();
+      }
+    });
     this.buildingsPanelHeader = this.add.rectangle(0, 0, BUILD_PANEL_WIDTH, 48, UI_COLORS.panelDeep, 0.98).setOrigin(0);
     this.buildingsPanelHeader.setInteractive({ useHandCursor: true });
     this.buildingsPanelHeader.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+      if (!this.isPrimaryClick(pointer)) {
+        return;
+      }
       pointer.event.stopPropagation();
       this.toggleBuildingsPanel();
     });
@@ -3442,6 +3544,9 @@ export class MilestoneOneScene extends Phaser.Scene {
       button.setStrokeStyle(1, UI_COLORS.trim);
       button.setInteractive({ useHandCursor: true });
       button.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+        if (!this.isPrimaryClick(pointer)) {
+          return;
+        }
         pointer.event.stopPropagation();
         this.suppressNextPointerUp = true;
         this.selectBuilding(option.kind);
@@ -3475,12 +3580,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     const narrow = width < 640;
     const wideHeader = width >= 1100;
     const topHeight = narrow ? 122 : compact ? 94 : 58;
-    const topPanelLayout = getTacticalTopPanelLayout(width, {
-      accord: ACCORD_PANEL_WIDTH,
-      heir: HEIR_PANEL_WIDTH,
-      build: BUILD_PANEL_WIDTH
-    });
-    const scale = narrow ? 0.6 : topPanelLayout.scale;
+    const drawerScale = narrow ? 0.8 : 1;
 
     this.topHud.setSize(width, topHeight);
     this.gameTitleText.setPosition(18, 10);
@@ -3538,10 +3638,14 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.intelPanel.setVisible(!narrow);
     this.intelPanel.setPosition(16, topHeight + 14);
     this.commandDock.setScale(narrow ? 0.86 : 1);
-    this.commandDock.setPosition(narrow ? 8 : 16, narrow ? Math.max(topHeight + 112, height - 400) : Math.max(topHeight + 220, height - 450));
+    const commandDockHeight = this.commandDockExpanded ? 434 : COMMAND_DOCK_COMPACT_HEIGHT;
+    this.commandDock.setPosition(
+      narrow ? 8 : 16,
+      Math.max(topHeight + 12, height - commandDockHeight * this.commandDock.scaleY - 16)
+    );
     const buildPanelHeight = this.buildingsPanelExpanded ? 76 + Math.ceil(BUILDING_OPTIONS.length / 3) * 76 + 8 : 48;
     const minimapY = this.buildingsPanelExpanded
-      ? Math.max(topHeight + 210, topHeight + 14 + buildPanelHeight * scale + 12)
+      ? Math.max(topHeight + 210, topHeight + 14 + buildPanelHeight * drawerScale + 12)
       : Math.max(topHeight + 210, height - MINIMAP_HEIGHT - 16);
     const minimapVisible = !narrow && minimapY + MINIMAP_HEIGHT <= height - 16;
     this.minimapEligible = minimapVisible;
@@ -3556,17 +3660,24 @@ export class MilestoneOneScene extends Phaser.Scene {
       minimapVisible ? Math.max(topHeight + 12, minimapY - 38) : Math.max(topHeight + 12, height - 42)
     );
     this.updateMinimap();
+    const activeDrawer = this.getActiveTacticalDrawer();
+    const tabX = width - 16 - TACTICAL_DRAWER_TAB_WIDTH * drawerScale;
+    const tabY = topHeight + 14;
+    const drawerPosition = (drawer: "accord" | "heir" | "build", panelWidth: number, tabIndex: number) =>
+      activeDrawer === drawer
+        ? { x: width - 16 - panelWidth * drawerScale, y: tabY }
+        : { x: tabX, y: tabY + tabIndex * (TACTICAL_DRAWER_TAB_HEIGHT + TACTICAL_DRAWER_TAB_GAP) * drawerScale };
     if (this.heirPanel) {
-      this.heirPanel.setScale(scale);
-      this.heirPanel.setPosition(narrow ? 10 : topPanelLayout.heirX, topHeight + 14);
+      const position = drawerPosition("heir", HEIR_PANEL_WIDTH, 1);
+      this.heirPanel.setScale(drawerScale).setPosition(position.x, position.y);
     }
     if (this.accordPanel) {
-      this.accordPanel.setScale(scale);
-      this.accordPanel.setPosition(narrow ? 10 : topPanelLayout.accordX, narrow ? topHeight + 70 : topHeight + 14);
+      const position = drawerPosition("accord", ACCORD_PANEL_WIDTH, 0);
+      this.accordPanel.setScale(drawerScale).setPosition(position.x, position.y);
     }
     if (this.buildingsPanel) {
-      this.buildingsPanel.setScale(scale);
-      this.buildingsPanel.setPosition(narrow ? 194 : topPanelLayout.buildX, topHeight + 14);
+      const position = drawerPosition("build", BUILD_PANEL_WIDTH, 2);
+      this.buildingsPanel.setScale(drawerScale).setPosition(position.x, position.y);
     }
     // The Heir panel requests an early layout while the Build panel is still being created.
     if (this.buildingsPanel) {
@@ -3579,6 +3690,7 @@ export class MilestoneOneScene extends Phaser.Scene {
     const theatreOpen = this.campaignSetupPending;
     const tacticalVisible = !theatreOpen;
     const commandInterfaceVisible = tacticalVisible && !this.fieldMode;
+    const activeDrawer = this.getActiveTacticalDrawer();
 
     this.worldLayer.setAlpha(theatreOpen ? 0.3 : 1);
     this.pauseControl.setVisible(tacticalVisible);
@@ -3591,9 +3703,9 @@ export class MilestoneOneScene extends Phaser.Scene {
     this.resourceText.setVisible(tacticalVisible);
     this.intelPanel.setVisible(commandInterfaceVisible && this.scale.width >= 640);
     this.commandDock.setVisible(commandInterfaceVisible);
-    this.accordPanel.setVisible(commandInterfaceVisible);
-    this.heirPanel.setVisible(commandInterfaceVisible);
-    this.buildingsPanel.setVisible(commandInterfaceVisible);
+    this.accordPanel.setVisible(commandInterfaceVisible && (!activeDrawer || activeDrawer === "accord"));
+    this.heirPanel.setVisible(commandInterfaceVisible && (!activeDrawer || activeDrawer === "heir"));
+    this.buildingsPanel.setVisible(commandInterfaceVisible && (!activeDrawer || activeDrawer === "build"));
     this.fieldModeControl.setVisible(tacticalVisible);
     this.fieldModeControlButton.setFillStyle(this.fieldMode ? UI_COLORS.commandActive : UI_COLORS.command, 0.98);
     this.fieldModeControlLabel.setText(this.fieldMode ? "HUD [Z]" : "FIELD [Z]");
@@ -3618,20 +3730,35 @@ export class MilestoneOneScene extends Phaser.Scene {
     );
   }
 
+  private getActiveTacticalDrawer(): "accord" | "heir" | "build" | undefined {
+    if (this.accordPanelExpanded) {
+      return "accord";
+    }
+    if (this.heirPanelExpanded) {
+      return "heir";
+    }
+    if (this.buildingsPanelExpanded) {
+      return "build";
+    }
+    return undefined;
+  }
+
   private updateBuildingsPanel(): void {
     const settlement = this.getActiveControlledSettlement();
     const mandateGuidance = getMandateGuidance(getImperialMandateProgress(this.simulation.getState()).activeStep.id);
     const farmIsMandated = mandateGuidance.surface === "build";
     const counts = this.getBuildingCounts();
     const buildRows = Math.ceil(BUILDING_OPTIONS.length / 3);
-    const height = this.buildingsPanelExpanded ? 76 + buildRows * 76 + 8 : 48;
+    const width = this.buildingsPanelExpanded ? BUILD_PANEL_WIDTH : TACTICAL_DRAWER_TAB_WIDTH;
+    const height = this.buildingsPanelExpanded ? 76 + buildRows * 76 + 8 : TACTICAL_DRAWER_TAB_HEIGHT;
 
-    this.buildingsPanelBg.setSize(BUILD_PANEL_WIDTH, height);
-    this.buildingsPanel.setSize(BUILD_PANEL_WIDTH, height);
+    this.buildingsPanelBg.setSize(width, height);
+    this.buildingsPanelHeader.setSize(width, TACTICAL_DRAWER_TAB_HEIGHT);
+    this.buildingsPanel.setSize(width, height);
     this.buildingsPanelTitle.setText(
       this.buildingsPanelExpanded
         ? `BUILD // ${this.getSettlementDisplayName(settlement?.id)} [-]`
-        : `BUILD // ${this.getSettlementDisplayName(settlement?.id)} [${farmIsMandated ? "!" : "+"}]`
+        : `BUILD [B] ${farmIsMandated ? "!" : "+"}`
     );
     this.buildingsPanelTitle.setColor(farmIsMandated ? UI_COLORS.text : "#f2d77f");
     this.buildingsPanelBody.setVisible(this.buildingsPanelExpanded);
